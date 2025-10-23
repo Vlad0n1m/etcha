@@ -14,7 +14,7 @@ export default function MobileHeader() {
     }
 
     return (
-        <header className="fixed top-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-b border-gray-200">
+        <header className="fixed top-0 left-0 right-0 z-40 bg-white/35 backdrop-blur-sm border-b border-gray-200/35">
             <div className="flex items-center justify-between px-4 py-3">
                 {/* Logo */}
                 <div className="flex items-center">
