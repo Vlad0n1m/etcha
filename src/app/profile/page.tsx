@@ -7,6 +7,7 @@ import MobileHeader from "@/components/MobileHeader"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Image from "next/image"
+import Link from 'next/link'
 
 const mockTickets = [
     {
@@ -134,11 +135,11 @@ export default function ProfilePage() {
     }
 
     return (
-        <div className="min-h-screen bg-[linear-gradient(to_bottom,theme(colors.purple.500)_0%,theme(colors.purple.300)_10%,theme(colors.purple.100)_20%,theme(colors.slate.50)_100%)]">
+        <div className="min-h-screen bg-background">
             <MobileHeader />
             <div className="px-3 pt-24 pb-3">
                 <div className="flex flex-col items-start mb-4">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-500 via-purple-500 to-pink-600 mb-3 flex items-center justify-center overflow-hidden">
+                    <div className="w-16 h-16 rounded-full mb-3 flex items-center justify-center overflow-hidden">
                         <div
                             className="w-full h-full"
                             style={{
@@ -211,34 +212,35 @@ export default function ProfilePage() {
                                 const priceChange = ((ticket.marketPrice - ticket.originalPrice) / ticket.originalPrice * 100)
                                 const isPositive = priceChange > 0
                                 return (
-                                    <div
-                                        key={ticket.id}
-                                        className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition-all duration-200 shadow-sm flex flex-col"
-                                    >
-                                        <div className="aspect-square bg-gray-50 relative flex-shrink-0">
-                                            <Image
-                                                src={ticket.eventImage || "/placeholder.svg"}
-                                                alt={ticket.eventTitle}
-                                                fill
-                                                className="object-cover"
-                                            />
-                                        </div>
-                                        <div className="flex-1 flex flex-col p-3 justify-between">
-                                            <div className="mb-auto">
-                                                <div className="text-gray-900 text-sm font-semibold line-clamp-2">{ticket.eventTitle}</div>
+                                    <Link key={ticket.id} href={`/tickets/${ticket.id}`} className="block">
+                                        <div
+                                            className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition-all duration-200 shadow-sm flex flex-col"
+                                        >
+                                            <div className="aspect-square bg-gray-50 relative flex-shrink-0">
+                                                <Image
+                                                    src={ticket.eventImage || "/placeholder.svg"}
+                                                    alt={ticket.eventTitle}
+                                                    fill
+                                                    className="object-cover"
+                                                />
                                             </div>
-                                            <div className="space-y-1">
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-gray-600 text-xs">{ticket.date}</span>
-                                                    <span className="text-gray-600 text-xs font-medium">{ticket.price} SOL</span>
+                                            <div className="flex-1 flex flex-col p-3 justify-between">
+                                                <div className="mb-auto">
+                                                    <div className="text-gray-900 text-sm font-semibold line-clamp-2">{ticket.eventTitle}</div>
                                                 </div>
-                                                <div className="flex items-center gap-1">
-                                                    {isPositive ? <TrendingUp className="w-3 h-3 text-green-600" /> : <TrendingDown className="w-3 h-3 text-red-600" />}
-                                                    <span className={`text-xs font-medium ${isPositive ? "text-green-600" : "text-red-600"}`}>{priceChange.toFixed(1)}%</span>
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-gray-600 text-xs">{ticket.date}</span>
+                                                        <span className="text-gray-600 text-xs font-medium">{ticket.price} SOL</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1">
+                                                        {isPositive ? <TrendingUp className="w-3 h-3 text-green-600" /> : <TrendingDown className="w-3 h-3 text-red-600" />}
+                                                        <span className={`text-xs font-medium ${isPositive ? "text-green-600" : "text-red-600"}`}>{priceChange.toFixed(1)}%</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    </Link>
                                 )
                             })}
                         </div>
