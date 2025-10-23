@@ -28,8 +28,8 @@ const pageVariants = {
 }
 
 const pageTransition = {
-    type: "tween",
-    ease: "anticipate",
+    type: "tween" as const,
+    ease: "anticipate" as const,
     duration: 0.4
 }
 
@@ -55,7 +55,7 @@ const itemVariants = {
         y: 0,
         scale: 1,
         transition: {
-            type: "spring",
+            type: "spring" as const,
             stiffness: 100,
             damping: 12
         }
@@ -74,7 +74,7 @@ const cardVariants = {
         y: 0,
         scale: 1,
         transition: {
-            type: "spring",
+            type: "spring" as const,
             stiffness: 120,
             damping: 15
         }
@@ -91,7 +91,7 @@ const navVariants = {
         opacity: 1,
         y: 0,
         transition: {
-            type: "spring",
+            type: "spring" as const,
             stiffness: 100,
             damping: 12
         }
@@ -110,7 +110,7 @@ const modalVariants = {
         scale: 1,
         y: 0,
         transition: {
-            type: "spring",
+            type: "spring" as const,
             stiffness: 300,
             damping: 25
         }
@@ -239,7 +239,7 @@ export function DelayedAnimation({
             animate={{ opacity: 1, y: 0 }}
             transition={{
                 delay,
-                type: "spring",
+                type: "spring" as const,
                 stiffness: 100,
                 damping: 12
             }}
@@ -257,7 +257,7 @@ export function SlideUpAnimation({ children, className = "" }: PageTransitionPro
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
-                type: "spring",
+                type: "spring" as const,
                 stiffness: 100,
                 damping: 15
             }}
@@ -275,7 +275,7 @@ export function SlideLeftAnimation({ children, className = "" }: PageTransitionP
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{
-                type: "spring",
+                type: "spring" as const,
                 stiffness: 100,
                 damping: 15
             }}
@@ -293,7 +293,7 @@ export function SlideRightAnimation({ children, className = "" }: PageTransition
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{
-                type: "spring",
+                type: "spring" as const,
                 stiffness: 100,
                 damping: 15
             }}
@@ -311,7 +311,7 @@ export function ScaleAnimation({ children, className = "" }: PageTransitionProps
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{
-                type: "spring",
+                type: "spring" as const,
                 stiffness: 200,
                 damping: 20
             }}

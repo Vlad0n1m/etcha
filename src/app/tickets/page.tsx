@@ -5,47 +5,59 @@ import MobileHeader from '@/components/MobileHeader'
 import TicketCard from '@/components/TicketCard'
 
 // Mock data for tickets
-const mockTickets = [
-    {
-        id: '1',
-        eventTitle: "Arcium's <encrypted> Side Track",
-        eventDate: '2024-03-15',
-        eventTime: '19:00',
-        ticketType: 'General Admission',
-        price: 20000,
-        status: 'purchased',
-        qrCode: 'QR123456789',
-        venue: 'Tech Conference Center, San Francisco, CA',
-        eventImage: '/banner1.png',
-        nftId: 'NFT123456789'
-    },
-    {
-        id: '2',
-        eventTitle: 'Blockchain Security Workshop',
-        eventDate: '2024-03-15',
-        eventTime: '21:30',
-        ticketType: 'VIP',
-        price: 8000,
-        status: 'purchased',
-        qrCode: 'QR987654321',
-        venue: 'Crypto Hub, New York, NY',
-        eventImage: '/banner1.png',
-        nftId: 'NFT987654321'
-    },
-    {
-        id: '3',
-        eventTitle: 'AI & Machine Learning Summit',
-        eventDate: '2024-03-16',
-        eventTime: '14:00',
-        ticketType: 'Student',
-        price: 12000,
-        status: 'attended',
-        qrCode: 'QR456789123',
-        venue: 'AI Innovation Center, Silicon Valley, CA',
-        eventImage: '/banner1.png',
-        nftId: 'NFT456789123'
-    }
-]
+const mockTickets: Array<{
+    id: string
+    eventTitle: string
+    eventDate: string
+    eventTime: string
+    ticketType: string
+    price: number
+    status: "purchased" | "attended"
+    qrCode: string
+    venue: string
+    eventImage: string
+    nftId: string
+}> = [
+        {
+            id: '1',
+            eventTitle: "Arcium's <encrypted> Side Track",
+            eventDate: '2024-03-15',
+            eventTime: '19:00',
+            ticketType: 'General Admission',
+            price: 20000,
+            status: 'purchased',
+            qrCode: 'QR123456789',
+            venue: 'Tech Conference Center, San Francisco, CA',
+            eventImage: '/banner1.png',
+            nftId: 'NFT123456789'
+        },
+        {
+            id: '2',
+            eventTitle: 'Blockchain Security Workshop',
+            eventDate: '2024-03-15',
+            eventTime: '21:30',
+            ticketType: 'VIP',
+            price: 8000,
+            status: 'purchased',
+            qrCode: 'QR987654321',
+            venue: 'Crypto Hub, New York, NY',
+            eventImage: '/banner1.png',
+            nftId: 'NFT987654321'
+        },
+        {
+            id: '3',
+            eventTitle: 'AI & Machine Learning Summit',
+            eventDate: '2024-03-16',
+            eventTime: '14:00',
+            ticketType: 'Student',
+            price: 12000,
+            status: 'attended',
+            qrCode: 'QR456789123',
+            venue: 'AI Innovation Center, Silicon Valley, CA',
+            eventImage: '/banner1.png',
+            nftId: 'NFT456789123'
+        }
+    ]
 
 export default function TicketsPage() {
     return (

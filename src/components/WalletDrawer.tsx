@@ -23,30 +23,30 @@ interface WalletDrawerProps {
 }
 
 // const POPULAR_WALLETS = [
-    {
-        name: "Phantom",
-        icon: "https://phantom.app/img/phantom-logo.svg",
-        description: "The friendly crypto wallet",
-        gradient: "from-purple-500 to-pink-500",
-    },
-    {
-        name: "Solflare",
-        icon: "https://solflare.com/favicon.svg",
-        description: "Secure Solana wallet",
-        gradient: "from-orange-500 to-red-500",
-    },
-    {
-        name: "Backpack",
-        icon: "https://backpack.app/favicon.ico",
-        description: "Your home for crypto",
-        gradient: "from-blue-500 to-cyan-500",
-    },
-    {
-        name: "Trust Wallet",
-        icon: "https://trustwallet.com/assets/images/favicon.ico",
-        description: "Multi-chain wallet",
-        gradient: "from-blue-600 to-blue-400",
-    },
+//     {
+//         name: "Phantom",
+//         icon: "https://phantom.app/img/phantom-logo.svg",
+//         description: "The friendly crypto wallet",
+//         gradient: "from-purple-500 to-pink-500",
+//     },
+//     {
+//         name: "Solflare",
+//         icon: "https://solflare.com/favicon.svg",
+//         description: "Secure Solana wallet",
+//         gradient: "from-orange-500 to-red-500",
+//     },
+//     {
+//         name: "Backpack",
+//         icon: "https://backpack.app/favicon.ico",
+//         description: "Your home for crypto",
+//         gradient: "from-blue-500 to-cyan-500",
+//     },
+//     {
+//         name: "Trust Wallet",
+//         icon: "https://trustwallet.com/assets/images/favicon.ico",
+//         description: "Multi-chain wallet",
+//         gradient: "from-blue-600 to-blue-400",
+//     },
 // ]
 
 const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChange }) => {
@@ -99,9 +99,11 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
                                     <div className="flex items-center gap-4">
                                         <div className="w-16 h-16 flex items-center justify-center">
                                             {wallet?.adapter.icon ? (
-                                                <img
+                                                <Image
                                                     src={wallet.adapter.icon || "/placeholder.svg"}
                                                     alt={wallet.adapter.name}
+                                                    width={64}
+                                                    height={64}
                                                     className="w-16 h-16 rounded-lg"
                                                 />
                                             ) : (
@@ -150,9 +152,11 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
                                                     <div className="flex items-center gap-4 p-4">
                                                         <div className="w-12 h-12 flex items-center justify-center">
                                                             {wallet.adapter.icon ? (
-                                                                <img
+                                                                <Image
                                                                     src={wallet.adapter.icon || "/placeholder.svg"}
                                                                     alt={wallet.adapter.name}
+                                                                    width={48}
+                                                                    height={48}
                                                                     className="w-12 h-12 rounded-lg"
                                                                 />
                                                             ) : (
@@ -184,9 +188,11 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
                                                     <div className="flex items-center gap-4 p-4">
                                                         <div className="w-12 h-12 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity">
                                                             {wallet.adapter.icon ? (
-                                                                <img
+                                                                <Image
                                                                     src={wallet.adapter.icon || "/placeholder.svg"}
                                                                     alt={wallet.adapter.name}
+                                                                    width={48}
+                                                                    height={48}
                                                                     className="w-12 h-12 rounded-lg"
                                                                 />
                                                             ) : (
