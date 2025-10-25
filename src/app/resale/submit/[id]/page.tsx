@@ -87,9 +87,9 @@ export default function ResaleSubmitPage() {
         <div className="min-h-screen bg-background">
             <MobileHeader />
             <div className="px-4 pt-24 pb-20">
-                <Link href={`/tickets/${ticket.id}`} className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4">
+                <Link href="/profile" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4">
                     <ArrowLeft className="w-4 h-4" />
-                    Back to Ticket
+                    Back to Profile
                 </Link>
 
                 <div className="bg-white rounded-xl overflow-hidden shadow-sm mb-6">

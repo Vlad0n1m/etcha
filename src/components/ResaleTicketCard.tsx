@@ -1,13 +1,11 @@
 import React from 'react'
 import Image from 'next/image'
-import Link from 'next/link'
 import { CardContent } from '@/components/ui/card'
 import { ArrowDownCircle, ArrowUpCircle, Equal } from 'lucide-react'
 import EventCardSkeleton from './EventCardSkeleton'
 import { motion } from 'framer-motion'
 
 interface ResaleTicketCardProps {
-    id: string
     title: string
     company: string
     price: number
@@ -22,7 +20,6 @@ interface ResaleTicketCardProps {
 }
 
 const ResaleTicketCard: React.FC<ResaleTicketCardProps> = ({
-    id,
     title,
     company,
     price,
@@ -71,7 +68,7 @@ const ResaleTicketCard: React.FC<ResaleTicketCardProps> = ({
     }
 
     return (
-        <Link href={`/event/${id}`} className="block">
+        <div className="block">
             <motion.div
                 className="w-full overflow-hidden border border-slate-200 rounded-lg bg-white shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer h-full flex flex-col"
                 whileHover={{
@@ -128,7 +125,7 @@ const ResaleTicketCard: React.FC<ResaleTicketCardProps> = ({
                     </div>
                 </CardContent>
             </motion.div>
-        </Link>
+        </div>
     )
 }
 

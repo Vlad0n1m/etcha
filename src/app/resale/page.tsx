@@ -293,7 +293,6 @@ function ResaleClient({ tickets }: { tickets: typeof mockResaleTickets }) {
                     {categoryFilteredTickets.map((ticket) => (
                         <ResaleTicketCard
                             key={ticket.id}
-                            id={ticket.id}
                             title={ticket.title}
                             company={ticket.company}
                             price={ticket.price}

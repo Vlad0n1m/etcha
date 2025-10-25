@@ -1,89 +1,95 @@
 "use client"
+
 import { useWallet } from "@solana/wallet-adapter-react"
-import { useState } from "react"
-import { Copy, Edit, Eye, TrendingUp, TrendingDown, MoreHorizontal } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import { Copy, Edit, Eye, MoreHorizontal, Save, X } from "lucide-react"
 import WalletDrawer from "@/components/WalletDrawer"
 import MobileHeader from "@/components/MobileHeader"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Image from "next/image"
 import Link from 'next/link'
-
-const mockTickets = [
-    {
-        id: "1",
-        eventTitle: "Arcium's <encrypted> Side Track",
-        eventImage: "/logo.png",
-        date: "2024-03-15",
-        time: "19:00",
-        location: "San Francisco, CA",
-        price: 0.5,
-        originalPrice: 0.4,
-        marketPrice: 0.6,
-        status: "bought" as const,
-        nftId: "A7x9K2mP4nQ8rT1vW5yZ3bC6dE9fH2jL",
-    },
-    {
-        id: "2",
-        eventTitle: "Blockchain Security Workshop",
-        eventImage: "/logo.png",
-        date: "2024-03-20",
-        time: "21:30",
-        location: "New York, NY",
-        price: 0.3,
-        originalPrice: 0.3,
-        marketPrice: 0.35,
-        status: "on_resale" as const,
-        nftId: "B3c5D7e9F1g3H5i7J9k1L3m5N7o9P1q3",
-    },
-    {
-        id: "3",
-        eventTitle: "Solana Dev Meetup",
-        eventImage: "/logo.png",
-        date: "2024-04-10",
-        time: "18:00",
-        location: "Miami, FL",
-        price: 0.7,
-        originalPrice: 0.5,
-        marketPrice: 0.8,
-        status: "passed" as const,
-        nftId: "C1d3E5f7G9h1I3j5K7l9M1n3O5p7Q9r1",
-    },
-    {
-        id: "4",
-        eventTitle: "Crypto Art Auction",
-        eventImage: "/logo.png",
-        date: "2024-05-05",
-        time: "20:00",
-        location: "Los Angeles, CA",
-        price: 1.2,
-        originalPrice: 1.0,
-        marketPrice: 1.5,
-        status: "nft" as const,
-        nftId: "D2e4F6g8H0i2J4k6L8m0N2o4P6q8R0s2",
-    },
-    {
-        id: "5",
-        eventTitle: "Web3 Conference",
-        eventImage: "/logo.png",
-        date: "2024-06-15",
-        time: "16:00",
-        location: "Berlin, Germany",
-        price: 0.4,
-        originalPrice: 0.35,
-        marketPrice: 0.45,
-        status: "bought" as const,
-        nftId: "E3f5G7h9I1j3K5l7M9n1O3p5Q7r9S1t3",
-    },
-]
+import { useAuth } from "@/components/AuthProvider"
 
 export default function ProfilePage() {
     const { connected, publicKey } = useWallet()
+    const { token, isLoading: authLoading, error: authError, refreshToken } = useAuth()
     const [activeTab, setActiveTab] = useState("bought")
     const [copied, setCopied] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
-    const [nickname, setNickname] = useState("User")
+    const [nickname, setNickname] = useState("")
+    const [tempNickname, setTempNickname] = useState("")
     const [showValue, setShowValue] = useState(true)
+    const [tickets, setTickets] = useState<Array<{
+        id: string
+        isValid: boolean
+        isUsed: boolean
+        event?: {
+            title: string
+            date: string
+            price: number
+            imageUrl: string
+        }
+    }>>([])
+    const [, setProfile] = useState<{
+        nickname?: string
+    } | null>(null)
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState("")
+
+    const fetchProfile = useCallback(async () => {
+        if (!token) return
+
+        try {
+            // Get profile using cached token
+            const profileResponse = await fetch('/api/profile', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            if (profileResponse.ok) {
+                const profileData = await profileResponse.json()
+                setProfile(profileData)
+                setNickname(profileData.profile?.nickname || "User")
+            } else if (profileResponse.status === 401) {
+                // Token expired, refresh it
+                await refreshToken()
+            }
+        } catch (err) {
+            console.error('Error fetching profile:', err)
+        }
+    }, [token, refreshToken])
+
+    const fetchTickets = useCallback(async () => {
+        if (!token) return
+
+        try {
+            // Get tickets using cached token
+            const ticketsResponse = await fetch('/api/tickets', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+
+            if (ticketsResponse.ok) {
+                const ticketsData = await ticketsResponse.json()
+                setTickets(ticketsData)
+            } else if (ticketsResponse.status === 401) {
+                // Token expired, refresh it
+                await refreshToken()
+            }
+        } catch (err) {
+            console.error('Error fetching tickets:', err)
+        }
+    }, [token, refreshToken])
+
+    useEffect(() => {
+        if (connected && publicKey && token) {
+            fetchProfile()
+            fetchTickets()
+        }
+    }, [connected, publicKey, token, fetchProfile, fetchTickets])
 
     const formatAddress = (address: string) => {
         return `${address.slice(0, 4)}...${address.slice(-4)}`
@@ -98,23 +104,74 @@ export default function ProfilePage() {
     }
 
     const handleEditNickname = () => {
-        if (isEditing && nickname.trim()) {
-            // Here you would update the nickname, for now just toggle
-            setIsEditing(false)
+        if (isEditing && tempNickname.trim()) {
+            saveNickname()
         } else {
+            setTempNickname(nickname)
             setIsEditing(true)
         }
     }
 
-    const ownedTickets = mockTickets.filter(ticket => ["bought", "on_resale", "nft"].includes(ticket.status))
-    const totalValue = ownedTickets.reduce((sum, ticket) => sum + ticket.price, 0)
+    const saveNickname = async () => {
+        if (!tempNickname.trim()) {
+            setError("Nickname cannot be empty")
+            return
+        }
+
+        if (!token) {
+            setError("Authentication required")
+            return
+        }
+
+        setIsLoading(true)
+        setError("")
+
+        try {
+            // Update profile using cached token
+            const response = await fetch('/api/profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    nickname: tempNickname
+                })
+            })
+
+            if (response.ok) {
+                const updatedProfile = await response.json()
+                setProfile(updatedProfile)
+                setNickname(updatedProfile.nickname)
+                setIsEditing(false)
+            } else if (response.status === 401) {
+                // Token expired, refresh it and retry
+                await refreshToken()
+                setError("Please try again")
+            } else {
+                const errorData = await response.json()
+                throw new Error(errorData.error || 'Failed to update nickname')
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to update nickname')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const cancelEdit = () => {
+        setTempNickname(nickname)
+        setIsEditing(false)
+        setError("")
+    }
+
+    const ownedTickets = tickets.filter(ticket => ticket.isValid)
+    const totalValue = ownedTickets.reduce((sum, ticket) => sum + (ticket.event?.price || 0) / 10000, 0) // Convert from USDC to SOL
     const totalTickets = ownedTickets.length
 
-    const filteredTickets = mockTickets.filter(ticket => {
-        if (activeTab === "bought") return ticket.status === "bought"
-        if (activeTab === "on_resale") return ticket.status === "on_resale"
-        if (activeTab === "passed") return ticket.status === "passed"
-        if (activeTab === "nft") return ticket.status === "nft"
+    const filteredTickets = tickets.filter(ticket => {
+        if (activeTab === "bought") return ticket.isValid && !ticket.isUsed
+        if (activeTab === "used") return ticket.isValid && ticket.isUsed
         return true
     })
 
@@ -129,6 +186,36 @@ export default function ProfilePage() {
                             Connect Wallet
                         </Button>
                     </WalletDrawer>
+                </div>
+            </div>
+        )
+    }
+
+    if (authLoading) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center p-4">
+                <div className="text-center max-w-md">
+                    <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                    <h2 className="text-2xl font-bold text-gray-900 mb-3">Authenticating...</h2>
+                    <p className="text-gray-600">Please sign the transaction to continue</p>
+                </div>
+            </div>
+        )
+    }
+
+    if (authError) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center p-4">
+                <div className="text-center max-w-md">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-3">Authentication Error</h2>
+                    <p className="text-gray-600 mb-8">{authError}</p>
+                    <Button
+                        onClick={refreshToken}
+                        size="lg"
+                        className="bg-blue-600 text-white hover:bg-blue-700 px-8"
+                    >
+                        Try Again
+                    </Button>
                 </div>
             </div>
         )
@@ -152,24 +239,51 @@ export default function ProfilePage() {
 
                     <div className="flex items-center gap-2 mb-2">
                         {isEditing ? (
-                            <Input
-                                value={nickname}
-                                onChange={(e) => setNickname(e.target.value)}
-                                onBlur={handleEditNickname}
-                                onKeyDown={(e) => e.key === "Enter" && handleEditNickname()}
-                                className="text-lg font-bold text-gray-900 max-w-48"
-                                autoFocus
-                            />
+                            <div className="flex items-center gap-2">
+                                <Input
+                                    value={tempNickname}
+                                    onChange={(e) => setTempNickname(e.target.value)}
+                                    onBlur={saveNickname}
+                                    onKeyDown={(e) => e.key === "Enter" && saveNickname()}
+                                    className="text-lg font-bold text-gray-900 max-w-48"
+                                    autoFocus
+                                    placeholder="Enter nickname"
+                                />
+                                <Button
+                                    size="sm"
+                                    onClick={saveNickname}
+                                    disabled={isLoading}
+                                    className="px-2 py-1"
+                                >
+                                    {isLoading ? 'Saving...' : <Save className="w-4 h-4" />}
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={cancelEdit}
+                                    className="px-2 py-1"
+                                >
+                                    <X className="w-4 h-4" />
+                                </Button>
+                            </div>
                         ) : (
-                            <h1 className="text-gray-900 text-xl font-bold">{nickname}</h1>
+                            <>
+                                <h1 className="text-gray-900 text-xl font-bold">{nickname}</h1>
+                                <button onClick={handleEditNickname} className="p-1 hover:bg-gray-100 rounded transition-colors">
+                                    <Edit className="w-4 h-4 text-gray-500" />
+                                </button>
+                            </>
                         )}
-                        <button onClick={handleEditNickname} className="p-1 hover:bg-gray-100 rounded transition-colors">
-                            <Edit className="w-4 h-4 text-gray-500" />
-                        </button>
                         <button onClick={handleCopy} className="p-1 hover:bg-gray-100 rounded transition-colors" title={copied ? "Copied!" : "Copy address"}>
                             <Copy className={`w-4 h-4 ${copied ? "text-green-500" : "text-gray-500"}`} />
                         </button>
                     </div>
+
+                    {error && (
+                        <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-sm">
+                            {error}
+                        </div>
+                    )}
 
                     <div className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-700 font-mono">
                         {formatAddress(publicKey?.toString() || "").toUpperCase()}
@@ -189,18 +303,18 @@ export default function ProfilePage() {
                     </div>
                     <div>
                         <div className="text-gray-500 text-xs mb-1">NFTS</div>
-                        <div className="text-gray-900 font-bold">{ownedTickets.filter(t => t.status === "nft").length}</div>
+                        <div className="text-gray-900 font-bold">{ownedTickets.length}</div>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-4 border-b border-gray-200 mb-3">
-                    {["bought", "on_resale", "passed", "nft"].map(tab => (
+                    {["bought", "used"].map(tab => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
                             className={`pb-2 text-sm font-medium transition-colors ${activeTab === tab ? "text-gray-900 border-b-2 border-gray-900" : "text-gray-500 hover:text-gray-700"}`}
                         >
-                            {tab.charAt(0).toUpperCase() + tab.slice(1).replace('_', ' ')}
+                            {tab.charAt(0).toUpperCase() + tab.slice(1)}
                         </button>
                     ))}
                 </div>
@@ -208,41 +322,38 @@ export default function ProfilePage() {
                 <div className="pb-20">
                     {filteredTickets.length > 0 ? (
                         <div className="grid grid-cols-2 gap-4">
-                            {filteredTickets.map((ticket) => {
-                                const priceChange = ((ticket.marketPrice - ticket.originalPrice) / ticket.originalPrice * 100)
-                                const isPositive = priceChange > 0
-                                return (
-                                    <Link key={ticket.id} href={`/tickets/${ticket.id}`} className="block">
-                                        <div
-                                            className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition-all duration-200 shadow-sm flex flex-col"
-                                        >
-                                            <div className="aspect-square bg-gray-50 relative flex-shrink-0">
-                                                <Image
-                                                    src={ticket.eventImage || "/placeholder.svg"}
-                                                    alt={ticket.eventTitle}
-                                                    fill
-                                                    className="object-cover"
-                                                />
+                            {filteredTickets.map((ticket) => (
+                                <div key={ticket.id} className="block">
+                                    <div
+                                        className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition-all duration-200 shadow-sm flex flex-col"
+                                    >
+                                        <div className="aspect-square bg-gray-50 relative shrink-0">
+                                            <Image
+                                                src={ticket.event?.imageUrl || "/placeholder.svg"}
+                                                alt={ticket.event?.title || "Event"}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                        </div>
+                                        <div className="flex-1 flex flex-col p-3 justify-between">
+                                            <div className="mb-auto">
+                                                <div className="text-gray-900 text-sm font-semibold line-clamp-2">{ticket.event?.title}</div>
                                             </div>
-                                            <div className="flex-1 flex flex-col p-3 justify-between">
-                                                <div className="mb-auto">
-                                                    <div className="text-gray-900 text-sm font-semibold line-clamp-2">{ticket.eventTitle}</div>
+                                            <div className="space-y-1">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-gray-600 text-xs">{ticket.event?.date}</span>
+                                                    <span className="text-gray-600 text-xs font-medium">{(ticket.event?.price || 0) / 10000} SOL</span>
                                                 </div>
-                                                <div className="space-y-1">
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="text-gray-600 text-xs">{ticket.date}</span>
-                                                        <span className="text-gray-600 text-xs font-medium">{ticket.price} SOL</span>
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
-                                                        {isPositive ? <TrendingUp className="w-3 h-3 text-green-600" /> : <TrendingDown className="w-3 h-3 text-red-600" />}
-                                                        <span className={`text-xs font-medium ${isPositive ? "text-green-600" : "text-red-600"}`}>{priceChange.toFixed(1)}%</span>
-                                                    </div>
+                                                <div className="flex items-center gap-1">
+                                                    <span className={`text-xs px-2 py-1 rounded-full ${ticket.isUsed ? "bg-gray-100 text-gray-600" : "bg-green-100 text-green-600"}`}>
+                                                        {ticket.isUsed ? "Used" : "Valid"}
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
-                                    </Link>
-                                )
-                            })}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     ) : (
                         <div className="flex flex-col items-center justify-center py-12">
@@ -256,6 +367,9 @@ export default function ProfilePage() {
                                 />
                             </div>
                             <h3 className="text-gray-900 text-xl font-bold mb-2">No {activeTab} tickets yet</h3>
+                            <Link href="/events" className="text-blue-600 hover:text-blue-700 font-medium">
+                                Browse Events
+                            </Link>
                         </div>
                     )}
                 </div>

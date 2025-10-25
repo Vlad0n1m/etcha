@@ -16,6 +16,10 @@ interface EventCardProps {
     ticketsAvailable: number
     imageUrl: string
     category: string
+    organizer?: {
+        name: string
+        avatar?: string
+    } | null
     isLoading?: boolean
 }
 
@@ -26,6 +30,7 @@ const EventCard: React.FC<EventCardProps> = ({
     price,
     time,
     imageUrl,
+    organizer,
     isLoading = false
 }) => {
     // Если загружается, показываем скелетон
@@ -33,6 +38,9 @@ const EventCard: React.FC<EventCardProps> = ({
         return <EventCardSkeleton />
     }
     const formatPrice = (price: number): string => {
+        if (price === 0) {
+            return 'Free'
+        }
         if (price >= 1000) {
             return `${(price / 1000).toFixed(0)}k USDC`
         }
@@ -85,10 +93,12 @@ const EventCard: React.FC<EventCardProps> = ({
                                 </motion.h3>
                             </div>
 
-                            {/* Company with verification badge and category */}
+                            {/* Organizer with verification badge and category */}
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center">
-                                    <span className="text-xs text-gray-600 mr-1">{company}</span>
+                                    <span className="text-xs text-gray-600 mr-1">
+                                        {organizer?.name || company}
+                                    </span>
                                     <motion.div
                                         className="w-2 h-2 bg-blue-500 rounded-full flex items-center justify-center"
                                         animate={{ scale: [1, 1.2, 1] }}
