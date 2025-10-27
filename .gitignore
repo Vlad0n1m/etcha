@@ -41,3 +41,12 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# uploaded images
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# diagnostic scripts (keep transfer script, ignore test scripts)
+scripts/debug-tickets.ts
+scripts/test-nft-fetch.ts
+scripts/check-nft-owner.ts

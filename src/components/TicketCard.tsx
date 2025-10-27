@@ -29,9 +29,9 @@ const TicketCard: React.FC<TicketCardProps> = ({
 }) => {
   const formatPrice = (price: number): string => {
     if (price >= 1000) {
-      return `${(price / 1000).toFixed(0)}k USDC`
+      return `${(price / 1000).toFixed(1)}k SOL`
     }
-    return `${price} USDC`
+    return `${price} SOL`
   }
 
   const formatDate = (dateString: string) => {
@@ -75,9 +75,8 @@ const TicketCard: React.FC<TicketCardProps> = ({
             <div className="flex items-start justify-between gap-2 mb-2">
               <h3 className="font-semibold text-base text-gray-900 leading-tight">{eventTitle}</h3>
               <span
-                className={`px-2 py-1 rounded-md text-xs font-medium shrink-0 ${
-                  status === "attended" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
-                }`}
+                className={`px-2 py-1 rounded-md text-xs font-medium shrink-0 ${status === "attended" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"
+                  }`}
               >
                 {status === "attended" ? "Attended" : "Purchased"}
               </span>

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import Image from "next/image"
 import Link from 'next/link'
 import { useAuth } from "@/components/AuthProvider"
+import ListingModal from "@/components/ListingModal"
 
 export default function ProfilePage() {
     const { connected, publicKey } = useWallet()
@@ -21,21 +22,21 @@ export default function ProfilePage() {
     const [tempNickname, setTempNickname] = useState("")
     const [showValue, setShowValue] = useState(true)
     const [tickets, setTickets] = useState<Array<{
-        id: string
-        isValid: boolean
-        isUsed: boolean
-        event?: {
-            title: string
-            date: string
-            price: number
-            imageUrl: string
-        }
+        nftAddress: string
+        name: string
+        symbol: string
+        collection?: string
+        uri?: string
+        image?: string | null
+        solscanUrl?: string
     }>>([])
     const [, setProfile] = useState<{
         nickname?: string
     } | null>(null)
     const [isLoading, setIsLoading] = useState(false)
+    const [isLoadingTickets, setIsLoadingTickets] = useState(false)
     const [error, setError] = useState("")
+    const [isListingModalOpen, setIsListingModalOpen] = useState(false)
 
     const fetchProfile = useCallback(async () => {
         if (!token) return
@@ -62,32 +63,42 @@ export default function ProfilePage() {
     }, [token, refreshToken])
 
     const fetchTickets = useCallback(async () => {
-        if (!token) return
+        if (!publicKey) return
 
+        setIsLoadingTickets(true)
         try {
-            // Get tickets using cached token
-            const ticketsResponse = await fetch('/api/tickets', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
+            console.log('🎫 Fetching NFTs from blockchain...')
+
+            // Fetch NFTs directly from the blockchain using user's wallet address
+            const ticketsResponse = await fetch(`/api/solana/tickets/user/${publicKey.toString()}`)
 
             if (ticketsResponse.ok) {
-                const ticketsData = await ticketsResponse.json()
-                setTickets(ticketsData)
-            } else if (ticketsResponse.status === 401) {
-                // Token expired, refresh it
-                await refreshToken()
+                const response = await ticketsResponse.json()
+                if (response.success && response.data) {
+                    console.log(`✅ Found ${response.data.tickets.length} NFTs in wallet`)
+                    setTickets(response.data.tickets)
+                } else {
+                    console.error('Failed to fetch NFTs:', response.error)
+                    setTickets([])
+                }
+            } else {
+                console.error('Failed to fetch NFTs:', ticketsResponse.status)
+                setTickets([])
             }
         } catch (err) {
-            console.error('Error fetching tickets:', err)
+            console.error('Error fetching NFTs:', err)
+            setTickets([])
+        } finally {
+            setIsLoadingTickets(false)
         }
-    }, [token, refreshToken])
+    }, [publicKey])
 
     useEffect(() => {
-        if (connected && publicKey && token) {
-            fetchProfile()
+        if (connected && publicKey) {
             fetchTickets()
+            if (token) {
+                fetchProfile()
+            }
         }
     }, [connected, publicKey, token, fetchProfile, fetchTickets])
 
@@ -165,15 +176,11 @@ export default function ProfilePage() {
         setError("")
     }
 
-    const ownedTickets = tickets.filter(ticket => ticket.isValid)
-    const totalValue = ownedTickets.reduce((sum, ticket) => sum + (ticket.event?.price || 0) / 10000, 0) // Convert from USDC to SOL
+    const ownedTickets = tickets
+    const totalValue = 0 // Will be calculated from NFT metadata
     const totalTickets = ownedTickets.length
 
-    const filteredTickets = tickets.filter(ticket => {
-        if (activeTab === "bought") return ticket.isValid && !ticket.isUsed
-        if (activeTab === "used") return ticket.isValid && ticket.isUsed
-        return true
-    })
+    const filteredTickets = tickets // All NFTs are shown for now
 
     if (!connected) {
         return (
@@ -320,38 +327,53 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="pb-20">
-                    {filteredTickets.length > 0 ? (
+                    {isLoadingTickets ? (
+                        <div className="flex flex-col items-center justify-center py-12">
+                            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
+                            <h3 className="text-gray-900 text-xl font-bold mb-2">Loading your tickets...</h3>
+                            <p className="text-gray-600 text-sm text-center px-4">Fetching NFTs from the blockchain</p>
+                        </div>
+                    ) : filteredTickets.length > 0 ? (
                         <div className="grid grid-cols-2 gap-4">
                             {filteredTickets.map((ticket) => (
-                                <div key={ticket.id} className="block">
-                                    <div
+                                <div key={ticket.nftAddress} className="block">
+                                    <Link
+                                        href={`/ticket/${ticket.nftAddress}`}
                                         className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition-all duration-200 shadow-sm flex flex-col"
                                     >
                                         <div className="aspect-square bg-gray-50 relative shrink-0">
-                                            <Image
-                                                src={ticket.event?.imageUrl || "/placeholder.svg"}
-                                                alt={ticket.event?.title || "Event"}
-                                                fill
-                                                className="object-cover"
-                                            />
+                                            {ticket.image ? (
+                                                <Image
+                                                    src={ticket.image}
+                                                    alt={ticket.name}
+                                                    fill
+                                                    className="object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-2xl">
+                                                    {ticket.symbol || 'NFT'}
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="flex-1 flex flex-col p-3 justify-between">
                                             <div className="mb-auto">
-                                                <div className="text-gray-900 text-sm font-semibold line-clamp-2">{ticket.event?.title}</div>
+                                                <div className="text-gray-900 text-sm font-semibold line-clamp-2">{ticket.name}</div>
                                             </div>
                                             <div className="space-y-1">
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-gray-600 text-xs">{ticket.event?.date}</span>
-                                                    <span className="text-gray-600 text-xs font-medium">{(ticket.event?.price || 0) / 10000} SOL</span>
+                                                    <span className="text-gray-600 text-xs font-mono">
+                                                        {ticket.nftAddress.slice(0, 4)}...{ticket.nftAddress.slice(-4)}
+                                                    </span>
+                                                    <span className="text-blue-600 text-xs font-medium">View Ticket →</span>
                                                 </div>
                                                 <div className="flex items-center gap-1">
-                                                    <span className={`text-xs px-2 py-1 rounded-full ${ticket.isUsed ? "bg-gray-100 text-gray-600" : "bg-green-100 text-green-600"}`}>
-                                                        {ticket.isUsed ? "Used" : "Valid"}
+                                                    <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-600">
+                                                        Owned
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    </Link>
                                 </div>
                             ))}
                         </div>
@@ -366,8 +388,9 @@ export default function ProfilePage() {
                                     className="w-64 h-48 object-contain"
                                 />
                             </div>
-                            <h3 className="text-gray-900 text-xl font-bold mb-2">No {activeTab} tickets yet</h3>
-                            <Link href="/events" className="text-blue-600 hover:text-blue-700 font-medium">
+                            <h3 className="text-gray-900 text-xl font-bold mb-2">No NFT tickets found</h3>
+                            <p className="text-gray-600 mb-4 text-sm text-center px-4">Purchase event tickets to see them here as NFTs in your wallet</p>
+                            <Link href="/" className="text-blue-600 hover:text-blue-700 font-medium">
                                 Browse Events
                             </Link>
                         </div>
@@ -377,7 +400,13 @@ export default function ProfilePage() {
 
             <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 p-3">
                 <div className="flex items-center gap-2">
-                    <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm">List items</Button>
+                    <Button
+                        onClick={() => setIsListingModalOpen(true)}
+                        disabled={tickets.length === 0}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm"
+                    >
+                        List items
+                    </Button>
                     <Button variant="outline" className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 bg-white text-sm">
                         Accept offers
                     </Button>
@@ -386,6 +415,16 @@ export default function ProfilePage() {
                     </button>
                 </div>
             </div>
+
+            {/* Listing Modal */}
+            <ListingModal
+                isOpen={isListingModalOpen}
+                onClose={() => setIsListingModalOpen(false)}
+                tickets={tickets}
+                onListingCreated={() => {
+                    fetchTickets();
+                }}
+            />
         </div>
     )
 }

@@ -17,6 +17,7 @@ interface ResaleTicketCardProps {
     category: string
     seats: string
     isLoading?: boolean
+    onBuy?: () => void
 }
 
 const ResaleTicketCard: React.FC<ResaleTicketCardProps> = ({
@@ -29,7 +30,8 @@ const ResaleTicketCard: React.FC<ResaleTicketCardProps> = ({
     imageUrl,
     category,
     seats,
-    isLoading = false
+    isLoading = false,
+    onBuy
 }) => {
     if (isLoading) {
         return <EventCardSkeleton />
@@ -113,14 +115,18 @@ const ResaleTicketCard: React.FC<ResaleTicketCardProps> = ({
                     <div className="mt-auto flex flex-col gap-2">
                         <div className="flex justify-between items-center text-xs sm:text-sm mb-2">
                             <span className="text-lg font-bold text-primary flex items-center">
-                                ${price}
+                                {price} SOL
                                 {getPriceBadge()}
                             </span>
                         </div>
 
                         {/* Buy Button - Compact on mobile */}
-                        <button className="w-full bg-primary text-primary-foreground py-1.5 sm:py-2 px-3 sm:px-4 rounded-md hover:bg-primary/90 transition-colors text-xs sm:text-sm font-medium">
-                            Buy Now
+                        <button
+                            onClick={onBuy}
+                            disabled={isLoading}
+                            className="w-full bg-primary text-primary-foreground py-1.5 sm:py-2 px-3 sm:px-4 rounded-md hover:bg-primary/90 transition-colors text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isLoading ? 'Processing...' : 'Buy Now'}
                         </button>
                     </div>
                 </CardContent>

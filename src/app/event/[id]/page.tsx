@@ -14,8 +14,10 @@ import {
     Users,
     Share2
 } from "lucide-react"
-import { useWallet } from "@solana/wallet-adapter-react"
+import { useWallet, useConnection } from "@solana/wallet-adapter-react"
+import { Transaction, VersionedTransaction } from "@solana/web3.js"
 import WalletDrawer from "@/components/WalletDrawer"
+import ResaleSection from "@/components/ResaleSection"
 
 interface Event {
     id: string
@@ -43,7 +45,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     const [isPurchasing, setIsPurchasing] = useState(false)
     const [error, setError] = useState('')
 
-    const { connected, publicKey, signMessage } = useWallet()
+    const { connected, publicKey, signMessage, sendTransaction } = useWallet()
+    const { connection } = useConnection()
     const router = useRouter()
     const resolvedParams = use(params)
 
@@ -77,7 +80,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
 
     const formatPrice = (price: number): string => {
         if (price >= 1000) {
-            return `${(price / 1000).toFixed(0)}k`
+            return `${(price / 1000).toFixed(1)}k`
         }
         return `${price}`
     }
@@ -99,12 +102,18 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     }
 
     const handleBuyClick = async () => {
+        // Prevent double-clicks and concurrent purchases
+        if (isPurchasing) {
+            console.log('⚠️ Purchase already in progress, ignoring click')
+            return
+        }
+
         if (!connected) {
             setIsWalletDrawerOpen(true)
             return
         }
 
-        if (!event || !publicKey) {
+        if (!event || !publicKey || !sendTransaction) {
             setError('Unable to process purchase')
             return
         }
@@ -113,14 +122,13 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         setError('')
 
         try {
-            // Create auth message and get signature
+            // Step 1: Get authentication token
             const message = `Purchase ${ticketQuantity} tickets for ${event.title} at ${new Date().toISOString()}`
             if (!signMessage) {
                 throw new Error('Wallet not properly connected')
             }
             const signature = await signMessage(new TextEncoder().encode(message))
 
-            // Get auth token
             const authResponse = await fetch('/api/auth/verify', {
                 method: 'POST',
                 headers: {
@@ -139,12 +147,12 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
 
             const { token } = await authResponse.json()
 
-            // Process purchase
-            const purchaseResponse = await fetch(`/api/events/${resolvedParams.id}/purchase`, {
+            // Step 2: Prepare purchase transaction
+            console.log('📝 Preparing purchase transaction...')
+            const prepareResponse = await fetch(`/api/events/${resolvedParams.id}/prepare-purchase`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     quantity: ticketQuantity,
@@ -152,12 +160,100 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 })
             })
 
-            if (!purchaseResponse.ok) {
-                const errorData = await purchaseResponse.json()
-                throw new Error(errorData.error || 'Purchase failed')
+            if (!prepareResponse.ok) {
+                const errorData = await prepareResponse.json()
+                throw new Error(errorData.error || 'Failed to prepare purchase')
             }
 
-            await purchaseResponse.json()
+            const { transaction: base64Transaction, totalPrice } = await prepareResponse.json()
+
+            // Step 3: Deserialize and send transaction
+            console.log('💳 Processing transaction...')
+            console.log(`💰 Total cost: ${totalPrice} SOL`)
+            console.log('🔏 Transaction is partially signed by backend (NFT mint + collection authority)')
+            console.log('✍️ User will sign and pay through wallet')
+
+            const transactionBuffer = Buffer.from(base64Transaction, 'base64')
+            let transaction: Transaction | VersionedTransaction
+
+            // Umi framework creates versioned transactions
+            try {
+                transaction = VersionedTransaction.deserialize(transactionBuffer)
+                console.log('🔍 Versioned transaction detected')
+                console.log('🔍 Backend signatures:', transaction.signatures.length)
+            } catch (error) {
+                console.error('❌ Failed to deserialize as versioned transaction:', error)
+                // If it fails, try as legacy transaction
+                try {
+                    transaction = Transaction.from(transactionBuffer)
+                    console.log('🔍 Legacy transaction detected')
+                } catch (legacyError) {
+                    console.error('❌ Failed to deserialize as legacy transaction:', legacyError)
+                    throw new Error('Failed to deserialize transaction. Invalid transaction format.')
+                }
+            }
+
+            console.log(`✍️ User wallet: ${publicKey?.toBase58()}`)
+            console.log('📤 Sending transaction (wallet will sign and submit)...')
+
+            // Use sendTransaction which handles both signing and sending
+            // It will work with partially-signed transactions
+            let transactionSignature: string
+            try {
+                transactionSignature = await sendTransaction(transaction, connection, {
+                    skipPreflight: false,
+                    preflightCommitment: 'confirmed',
+                })
+                console.log('✅ Transaction sent:', transactionSignature)
+            } catch (sendError: unknown) {
+                console.error('❌ Failed to send transaction:', sendError)
+                const errorMessage = sendError instanceof Error ? sendError.message : String(sendError)
+
+                // Better error messages
+                if (errorMessage.includes('User rejected') || errorMessage.includes('rejected') || errorMessage.includes('cancelled')) {
+                    throw new Error('Transaction cancelled by user')
+                } else if (errorMessage.includes('insufficient funds') || errorMessage.includes('Insufficient')) {
+                    throw new Error('Insufficient SOL balance for purchase')
+                } else if (errorMessage.includes('Unexpected error')) {
+                    throw new Error('Wallet error. Please try refreshing the page or using a different wallet.')
+                } else {
+                    throw new Error(`Transaction failed: ${errorMessage}`)
+                }
+            }
+
+            console.log('⏳ Waiting for confirmation...')
+
+            // Step 4: Wait for confirmation
+            const confirmation = await connection.confirmTransaction(transactionSignature, 'confirmed')
+
+            if (confirmation.value.err) {
+                throw new Error('Transaction failed on blockchain')
+            }
+
+            console.log('✅ Transaction confirmed on blockchain')
+
+            // Step 5: Confirm purchase on backend
+            console.log('📝 Recording purchase in database...')
+            const confirmResponse = await fetch(`/api/events/${resolvedParams.id}/confirm-purchase`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    transactionSignature,
+                    walletAddress: publicKey.toString(),
+                    quantity: ticketQuantity
+                })
+            })
+
+            if (!confirmResponse.ok) {
+                const errorData = await confirmResponse.json()
+                throw new Error(errorData.error || 'Failed to confirm purchase')
+            }
+
+            const confirmData = await confirmResponse.json()
+            console.log('🎉 Purchase confirmed!', confirmData)
 
             // Update event data to reflect new ticket count
             setEvent((prev: Event | null) => {
@@ -171,6 +267,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             // Redirect to profile page
             router.push('/profile')
         } catch (err) {
+            console.error('❌ Purchase error:', err)
             setError(err instanceof Error ? err.message : 'Purchase failed')
         } finally {
             setIsPurchasing(false)
@@ -275,7 +372,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                             <div className="bg-muted/50 rounded-xl p-4 mb-4">
                                 <div className="flex items-baseline gap-2 mb-1">
                                     <span className="text-3xl font-bold text-foreground">{formatPrice(event.price)}</span>
-                                    <span className="text-sm font-medium text-muted-foreground">USDC</span>
+                                    <span className="text-sm font-medium text-muted-foreground">SOL</span>
                                 </div>
                                 <div className="text-xs text-muted-foreground">per ticket</div>
                             </div>
@@ -315,9 +412,17 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                             disabled={isPurchasing}
                             className="w-full bg-primary text-primary-foreground font-semibold py-3.5 rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {isPurchasing ? 'Processing...' : event.price === 0 ? 'Get Ticket' : `Buy for ${formatPrice(totalPrice)} USDC`}
+                            {isPurchasing ? 'Processing...' : event.price === 0 ? 'Get Ticket' : `Buy for ${formatPrice(totalPrice)} SOL`}
                         </button>
                     </div>
+
+                    {/* Resale Marketplace Section */}
+                    <ResaleSection
+                        eventId={event.id}
+                        eventTitle={event.title}
+                        eventImage={event.imageUrl}
+                        originalPrice={event.price}
+                    />
 
                     <div className="bg-surface rounded-2xl p-5 mt-4 border border-border">
                         <h2 className="text-base font-bold text-foreground mb-3">About Event</h2>
@@ -350,7 +455,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                                 <Image
                                     src={event.organizerAvatar || "/placeholder.svg"}
-                                    alt={event.organizerName}
+                                    alt={event.organizerName || "Organizer Name"}
                                     width={48}
                                     height={48}
                                     className="w-full h-full object-cover"

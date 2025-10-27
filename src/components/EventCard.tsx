@@ -42,9 +42,9 @@ const EventCard: React.FC<EventCardProps> = ({
             return 'Free'
         }
         if (price >= 1000) {
-            return `${(price / 1000).toFixed(0)}k USDC`
+            return `${(price / 1000).toFixed(1)}k SOL`
         }
-        return `${price} USDC`
+        return `${price} SOL`
     }
 
 

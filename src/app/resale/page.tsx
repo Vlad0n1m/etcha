@@ -7,96 +7,49 @@ import React from 'react';
 import EventCardSkeleton from '@/components/EventCardSkeleton';
 import { Button } from '@/components/ui/button';
 import MobileHeader from '@/components/MobileHeader';
+import { useWallet, useConnection } from '@solana/wallet-adapter-react';
+import { Transaction, VersionedTransaction } from '@solana/web3.js';
 
-const mockResaleTickets = [
-    {
-        id: '1',
-        title: 'Concert: The Stars',
-        company: 'User123',
-        price: 150,
-        date: '2025-11-15',
-        location: 'Madison Square Garden',
-        ticketsAvailable: 1,
-        imageUrl: '/banner1.png',
-        category: 'Music',
-        originalPrice: 150,
-        seats: 'Section A, Row 5',
-    },
-    {
-        id: '2',
-        title: 'Tech Conference 2025',
-        company: 'TechFan456',
-        price: 180,
-        date: '2025-12-01',
-        location: 'San Francisco Convention Center',
-        ticketsAvailable: 1,
-        imageUrl: '/etcha.png',
-        category: 'Tech',
-        originalPrice: 200,
-        seats: 'VIP Lounge',
-    },
-    {
-        id: '3',
-        title: 'Sports Game: Lakers vs Warriors',
-        company: 'SportsLover789',
-        price: 150,
-        date: '2025-10-30',
-        location: 'Staples Center',
-        ticketsAvailable: 1,
-        imageUrl: '/logo.png',
-        category: 'Sports',
-        originalPrice: 100,
-        seats: 'Courtside',
-    },
-    {
-        id: '4',
-        title: 'Art Exhibition Opening',
-        company: 'ArtCollector101',
-        price: 50,
-        date: '2025-11-10',
-        location: 'Modern Art Museum',
-        ticketsAvailable: 1,
-        imageUrl: '/banner1.png',
-        category: 'Art',
-        originalPrice: 50,
-        seats: 'General Admission',
-    },
-    {
-        id: '5',
-        title: 'Music Festival Day 2',
-        company: 'FestivalGoer222',
-        price: 140,
-        date: '2025-12-05',
-        location: 'Central Park',
-        ticketsAvailable: 1,
-        imageUrl: '/etcha.png',
-        category: 'Music',
-        originalPrice: 120,
-        seats: 'Stage Front',
-    },
-    {
-        id: '6',
-        title: 'Theater Play: Hamlet',
-        company: 'TheaterBuff333',
-        price: 70,
-        date: '2025-11-20',
-        location: 'Broadway Theater',
-        ticketsAvailable: 1,
-        imageUrl: '/logo.png',
-        category: 'Theater',
-        originalPrice: 80,
-        seats: 'Orchestra Center',
-    },
-];
+interface ResaleListing {
+    id: string;
+    nftMintAddress: string;
+    price: number;
+    originalPrice: number;
+    priceComparison: 'cheaper' | 'same' | 'higher';
+    priceDifference: number;
+    sellerNickname: string;
+    seller: {
+        walletAddress: string;
+    };
+    createdAt: string;
+    event: {
+        id: string;
+        title: string;
+        imageUrl: string;
+        date: string;
+        time: string;
+        fullAddress: string;
+        category: {
+            name: string;
+            value: string;
+        };
+    };
+}
 
-function ResaleClient({ tickets }: { tickets: typeof mockResaleTickets }) {
+function ResaleClient() {
     "use client";
+
+    const { publicKey, signTransaction } = useWallet();
+    const { connection } = useConnection();
 
     const [activeFilter, setActiveFilter] = React.useState('all');
     const [searchQuery, setSearchQuery] = React.useState('');
     const [priceFilter, setPriceFilter] = React.useState('all');
     const [priceComparison, setPriceComparison] = React.useState('all');
     const [isLoading, setIsLoading] = React.useState(true);
+    const [listings, setListings] = React.useState<ResaleListing[]>([]);
+    const [buyingId, setBuyingId] = React.useState<string | null>(null);
+    const [error, setError] = React.useState('');
 
     const handleFilterChange = (filter: string) => {
         setActiveFilter(filter);
@@ -111,13 +64,24 @@ function ResaleClient({ tickets }: { tickets: typeof mockResaleTickets }) {
     };
 
     React.useEffect(() => {
-        setIsLoading(true);
-        const timer = setTimeout(() => {
-            setIsLoading(false);
-        }, 800);
+        fetchListings();
+    }, []);
 
-        return () => clearTimeout(timer);
-    }, [activeFilter, searchQuery, priceFilter, priceComparison]);
+    const fetchListings = async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('/api/marketplace/listings?status=active');
+            const data = await response.json();
+
+            if (data.success) {
+                setListings(data.data.listings);
+            }
+        } catch (err) {
+            console.error('Error fetching listings:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleResetFilters = () => {
         setSearchQuery('');
@@ -126,23 +90,182 @@ function ResaleClient({ tickets }: { tickets: typeof mockResaleTickets }) {
         setPriceComparison('all');
     };
 
-    const filteredTickets = tickets.filter(ticket =>
-        ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ticket.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ticket.company.toLowerCase().includes(searchQuery.toLowerCase())
+    const handleBuy = async (listing: ResaleListing) => {
+        // Prevent double-clicks and concurrent purchases
+        if (buyingId) {
+            console.log('⚠️ Purchase already in progress, ignoring click');
+            return;
+        }
+
+        if (!publicKey || !signTransaction) {
+            setError('Please connect your wallet to buy');
+            return;
+        }
+
+        if (listing.seller.walletAddress === publicKey.toString()) {
+            setError('You cannot buy your own listing');
+            return;
+        }
+
+        setBuyingId(listing.id);
+        setError('');
+
+        try {
+            // Step 1: Prepare purchase transaction
+            console.log('📝 Preparing purchase transaction...');
+            const prepareResponse = await fetch('/api/marketplace/prepare-buy', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    listingId: listing.id,
+                    buyerWallet: publicKey.toString(),
+                }),
+            });
+
+            if (!prepareResponse.ok) {
+                const errorData = await prepareResponse.json();
+                throw new Error(errorData.error || 'Failed to prepare purchase');
+            }
+
+            const { data: prepareData } = await prepareResponse.json();
+            const { transaction: base64Transaction, price } = prepareData;
+
+            // Step 2: Deserialize and sign transaction
+            console.log('💳 Preparing transaction for signature...');
+            console.log(`💰 Total cost: ${price} SOL`);
+
+            const transactionBuffer = Buffer.from(base64Transaction, 'base64');
+            let transaction: Transaction | VersionedTransaction;
+            let isVersioned = false;
+
+            // Check if it's a versioned transaction (starts with version byte)
+            if (transactionBuffer[0] > 127) {
+                // Versioned transaction
+                transaction = VersionedTransaction.deserialize(transactionBuffer);
+                isVersioned = true;
+            } else {
+                // Legacy transaction
+                transaction = Transaction.from(transactionBuffer);
+                isVersioned = false;
+            }
+
+            // Log transaction info based on type
+            if (isVersioned) {
+                console.log('🔍 Versioned transaction detected');
+                console.log('🔍 Transaction signatures before user sign:', (transaction as VersionedTransaction).signatures.length);
+            } else {
+                console.log('🔍 Legacy transaction detected');
+                console.log('🔍 Transaction signatures before user sign:', (transaction as Transaction).signatures.length);
+            }
+
+            // User signs the transaction (may be partially signed by platform)
+            console.log('✍️ Requesting user signature...');
+            const signedTransaction = await signTransaction(transaction);
+
+            console.log('✅ User signed transaction');
+
+            // Manually send the signed transaction
+            console.log('📤 Sending transaction to blockchain...');
+            const rawTransaction = signedTransaction.serialize();
+
+            let transactionSignature: string;
+            try {
+                transactionSignature = await connection.sendRawTransaction(rawTransaction, {
+                    skipPreflight: false,
+                    preflightCommitment: 'confirmed',
+                });
+                console.log('✅ Transaction sent:', transactionSignature);
+            } catch (sendError: unknown) {
+                // If transaction was already processed, extract signature and continue
+                const errorMessage = sendError instanceof Error ? sendError.message : String(sendError);
+                if (errorMessage.includes('already been processed')) {
+                    console.log('⚠️ Transaction already processed, extracting signature...');
+                    // Calculate transaction signature from the signed transaction
+                    let firstSignature: Uint8Array | null = null;
+
+                    if (isVersioned) {
+                        const vTx = signedTransaction as VersionedTransaction;
+                        firstSignature = vTx.signatures[0] || null;
+                    } else {
+                        const legacyTx = signedTransaction as Transaction;
+                        firstSignature = legacyTx.signatures[0]?.signature || null;
+                    }
+
+                    if (firstSignature) {
+                        const bs58 = await import('bs58');
+                        transactionSignature = bs58.default.encode(firstSignature);
+                        console.log('✅ Extracted signature:', transactionSignature);
+                    } else {
+                        throw new Error('Transaction already processed but signature not found');
+                    }
+                } else {
+                    throw sendError;
+                }
+            }
+
+            console.log('⏳ Waiting for confirmation...');
+
+            // Step 3: Wait for confirmation
+            const confirmation = await connection.confirmTransaction(transactionSignature, 'confirmed');
+
+            if (confirmation.value.err) {
+                throw new Error('Transaction failed on blockchain');
+            }
+
+            console.log('✅ Transaction confirmed on blockchain');
+
+            // Step 4: Confirm purchase on backend
+            console.log('📝 Recording purchase in database...');
+            const confirmResponse = await fetch('/api/marketplace/confirm-buy', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    listingId: listing.id,
+                    buyerWallet: publicKey.toString(),
+                    transactionSignature,
+                }),
+            });
+
+            if (!confirmResponse.ok) {
+                const errorData = await confirmResponse.json();
+                throw new Error(errorData.error || 'Failed to confirm purchase');
+            }
+
+            const { data: confirmData } = await confirmResponse.json();
+
+            console.log('🎉 Purchase completed successfully!');
+            console.log('Transaction:', transactionSignature);
+
+            // Refresh listings
+            await fetchListings();
+            alert(`Purchase successful! NFT: ${confirmData.nftAddress}\nTransaction: ${transactionSignature}`);
+        } catch (err) {
+            console.error('Error buying ticket:', err);
+            setError(err instanceof Error ? err.message : 'Failed to buy ticket');
+        } finally {
+            setBuyingId(null);
+        }
+    };
+
+    const filteredTickets = listings.filter(listing =>
+        listing.event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        listing.event.fullAddress.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        listing.sellerNickname.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const categoryFiltered = activeFilter !== 'all'
-        ? filteredTickets.filter(ticket => ticket.category.toLowerCase() === activeFilter.toLowerCase())
+        ? filteredTickets.filter(listing => listing.event.category.value.toLowerCase() === activeFilter.toLowerCase())
         : filteredTickets;
 
     const comparisonFiltered = priceComparison !== 'all'
-        ? categoryFiltered.filter((ticket) => {
-            const resalePrice = ticket.price;
-            const originalPrice = ticket.originalPrice;
-            if (priceComparison === 'cheaper') return resalePrice < originalPrice;
-            if (priceComparison === 'more') return resalePrice > originalPrice;
-            if (priceComparison === 'same') return resalePrice === originalPrice;
+        ? categoryFiltered.filter((listing) => {
+            if (priceComparison === 'cheaper') return listing.priceComparison === 'cheaper';
+            if (priceComparison === 'more') return listing.priceComparison === 'higher';
+            if (priceComparison === 'same') return listing.priceComparison === 'same';
             return false;
         })
         : categoryFiltered;
@@ -238,6 +361,12 @@ function ResaleClient({ tickets }: { tickets: typeof mockResaleTickets }) {
                     <p className="text-muted-foreground">Discover and buy resale tickets for your favorite events. Sellers set their own prices.</p>
                 </div>
 
+                {error && (
+                    <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                        {error}
+                    </div>
+                )}
+
                 <div className="flex flex-row flex-wrap gap-3 mb-6 items-center justify-start">
                     {/* Search Bar */}
                     <div className="flex-1 min-w-[250px] relative">
@@ -290,18 +419,21 @@ function ResaleClient({ tickets }: { tickets: typeof mockResaleTickets }) {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                    {categoryFilteredTickets.map((ticket) => (
+                    {categoryFilteredTickets.map((listing) => (
                         <ResaleTicketCard
-                            key={ticket.id}
-                            title={ticket.title}
-                            company={ticket.company}
-                            price={ticket.price}
-                            originalPrice={ticket.originalPrice}
-                            date={ticket.date}
-                            ticketsAvailable={ticket.ticketsAvailable}
-                            imageUrl={ticket.imageUrl}
-                            category={ticket.category}
-                            seats={ticket.seats}
+                            key={listing.id}
+                            title={listing.event.title}
+                            company={listing.sellerNickname}
+                            price={listing.price}
+                            originalPrice={listing.originalPrice}
+                            date={new Date(listing.event.date).toISOString().split('T')[0]}
+                            time={listing.event.time}
+                            ticketsAvailable={1}
+                            imageUrl={listing.event.imageUrl}
+                            category={listing.event.category.name}
+                            seats="General Admission"
+                            isLoading={buyingId === listing.id}
+                            onBuy={() => handleBuy(listing)}
                         />
                     ))}
                 </div>
@@ -317,5 +449,5 @@ function ResaleClient({ tickets }: { tickets: typeof mockResaleTickets }) {
 }
 
 export default function ResalePage() {
-    return <ResaleClient tickets={mockResaleTickets} />;
+    return <ResaleClient />;
 }

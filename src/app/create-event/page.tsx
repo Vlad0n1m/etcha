@@ -3,9 +3,18 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useWallet } from '@solana/wallet-adapter-react'
-import { Calendar, MapPin, Clock, Image as ImageIcon, DollarSign, Users, FileText } from 'lucide-react'
+import { Calendar, MapPin, Clock, DollarSign, Users, Upload, X } from 'lucide-react'
 import MobileHeader from '@/components/MobileHeader'
 import BottomNav from '@/components/BottomNav'
+import EventCreationProgress from '@/components/EventCreationProgress'
+
+interface ProgressStep {
+    id: string
+    label: string
+    status: 'pending' | 'in-progress' | 'completed' | 'error'
+    message?: string
+    progress?: number
+}
 
 export default function CreateEventPage() {
     const router = useRouter()
@@ -14,7 +23,7 @@ export default function CreateEventPage() {
     const [formData, setFormData] = useState({
         title: '',
         company: '',
-        price: 0,
+        price: 0 as number,
         date: '',
         time: '',
         ticketsAvailable: 1,
@@ -27,17 +36,60 @@ export default function CreateEventPage() {
         schedule: [''],
         categoryId: ''
     })
+    const [priceInput, setPriceInput] = useState<string>('')
+    const [ticketsInput, setTicketsInput] = useState<string>('')
 
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState('')
+    const [imagePreview, setImagePreview] = useState<string>('')
+    const [isUploadingImage, setIsUploadingImage] = useState(false)
+    const [avatarPreview, setAvatarPreview] = useState<string>('')
+    const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+    const [showProgress, setShowProgress] = useState(false)
+    const [currentMessage, setCurrentMessage] = useState('')
+    const [progressSteps, setProgressSteps] = useState<ProgressStep[]>([
+        { id: 'init', label: 'Initializing Services', status: 'pending' },
+        { id: 'collection-nft', label: 'Creating Collection NFT', status: 'pending' },
+        { id: 'database', label: 'Saving to Database', status: 'pending' },
+        { id: 'complete', label: 'Finalizing', status: 'pending' },
+    ])
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target
+
+        if (name === 'price') {
+            // Filter: allow only digits and one dot/comma
+            const filtered = value
+                .replace(/[^\d.,]/g, '') // Remove all except digits, dots, commas
+                .replace(/,/g, '.') // Replace comma with dot
+                .replace(/\./g, (match, offset, string) => {
+                    // Keep only first dot
+                    return string.indexOf('.') === offset ? '.' : ''
+                })
+
+            setPriceInput(filtered)
+            setFormData(prev => ({
+                ...prev,
+                [name]: filtered === '' ? 0 : parseFloat(filtered) || 0
+            }))
+            return
+        }
+
+        if (name === 'ticketsAvailable') {
+            // Filter: allow only digits
+            const filtered = value.replace(/[^\d]/g, '')
+
+            setTicketsInput(filtered)
+            setFormData(prev => ({
+                ...prev,
+                [name]: filtered === '' ? 0 : parseInt(filtered) || 0
+            }))
+            return
+        }
+
         setFormData(prev => ({
             ...prev,
-            [name]: name === 'price' || name === 'ticketsAvailable'
-                ? parseInt(value) || 0
-                : value
+            [name]: value
         }))
     }
 
@@ -62,6 +114,142 @@ export default function CreateEventPage() {
         }))
     }
 
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            setError('Please select an image file')
+            return
+        }
+
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            setError('Image size must be less than 10MB')
+            return
+        }
+
+        setIsUploadingImage(true)
+        setError('')
+
+        try {
+            // Create FormData
+            const formData = new FormData()
+            formData.append('image', file)
+
+            // Upload image
+            const response = await fetch('/api/upload/image', {
+                method: 'POST',
+                body: formData,
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || 'Failed to upload image')
+            }
+
+            const { imageUrl } = await response.json()
+
+            // Update form data with uploaded image URL
+            setFormData(prev => ({
+                ...prev,
+                imageUrl
+            }))
+
+            // Create preview
+            const reader = new FileReader()
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string)
+            }
+            reader.readAsDataURL(file)
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to upload image')
+        } finally {
+            setIsUploadingImage(false)
+        }
+    }
+
+    const removeImage = () => {
+        setFormData(prev => ({
+            ...prev,
+            imageUrl: ''
+        }))
+        setImagePreview('')
+    }
+
+    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            setError('Please select an image file')
+            return
+        }
+
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            setError('Image size must be less than 10MB')
+            return
+        }
+
+        setIsUploadingAvatar(true)
+        setError('')
+
+        try {
+            // Create FormData
+            const formData = new FormData()
+            formData.append('image', file)
+
+            // Upload image
+            const response = await fetch('/api/upload/image', {
+                method: 'POST',
+                body: formData,
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || 'Failed to upload avatar')
+            }
+
+            const { imageUrl } = await response.json()
+
+            // Update form data with uploaded image URL
+            setFormData(prev => ({
+                ...prev,
+                organizerAvatar: imageUrl
+            }))
+
+            // Create preview
+            const reader = new FileReader()
+            reader.onloadend = () => {
+                setAvatarPreview(reader.result as string)
+            }
+            reader.readAsDataURL(file)
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to upload avatar')
+        } finally {
+            setIsUploadingAvatar(false)
+        }
+    }
+
+    const removeAvatar = () => {
+        setFormData(prev => ({
+            ...prev,
+            organizerAvatar: ''
+        }))
+        setAvatarPreview('')
+    }
+
+    const updateStepStatus = (stepId: string, status: ProgressStep['status'], message?: string, progress?: number) => {
+        setProgressSteps(prev => prev.map(step =>
+            step.id === stepId
+                ? { ...step, status, message, progress }
+                : step
+        ))
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
@@ -72,9 +260,22 @@ export default function CreateEventPage() {
 
         setIsLoading(true)
         setError('')
+        setShowProgress(true)
+        setCurrentMessage('Starting event creation...')
+
+        // Reset progress steps
+        setProgressSteps([
+            { id: 'init', label: 'Initializing Services', status: 'pending' },
+            { id: 'collection-nft', label: 'Creating Collection NFT', status: 'pending' },
+            { id: 'candy-machine', label: 'Setting Up Candy Machine', status: 'pending' },
+            { id: 'items', label: 'Adding Ticket Items', status: 'pending' },
+            { id: 'database', label: 'Saving to Database', status: 'pending' },
+            { id: 'complete', label: 'Finalizing', status: 'pending' },
+        ])
 
         try {
             // Create auth message and get signature
+            setCurrentMessage('🔐 Authenticating your wallet...')
             const message = `Create event ${formData.title} at ${new Date().toISOString()}`
             const messageBytes = new TextEncoder().encode(message)
             const signature = await signMessage(messageBytes)
@@ -98,7 +299,8 @@ export default function CreateEventPage() {
 
             const { token } = await authResponse.json()
 
-            // Create event
+            // Create event with streaming progress
+            setCurrentMessage('🚀 Creating event on blockchain...')
             const response = await fetch('/api/events', {
                 method: 'POST',
                 headers: {
@@ -107,19 +309,85 @@ export default function CreateEventPage() {
                 },
                 body: JSON.stringify({
                     ...formData,
+                    walletAddress: publicKey.toString(),
                     date: new Date(formData.date).toISOString()
                 })
             })
 
             if (!response.ok) {
-                const errorData = await response.json()
-                throw new Error(errorData.error || 'Failed to create event')
+                throw new Error('Failed to create event')
             }
 
-            const event = await response.json()
-            router.push(`/event/${event.id}`)
+            // Read the stream
+            const reader = response.body?.getReader()
+            const decoder = new TextDecoder()
+            let eventData: { id: string; collectionNftAddress?: string; candyMachineAddress?: string } | null = null
+
+            if (reader) {
+                while (true) {
+                    const { done, value } = await reader.read()
+                    if (done) break
+
+                    const chunk = decoder.decode(value)
+                    const lines = chunk.split('\n\n')
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = JSON.parse(line.slice(6))
+
+                            if (data.type === 'error') {
+                                throw new Error(data.message)
+                            }
+
+                            if (data.type === 'result') {
+                                eventData = data.data
+                                continue
+                            }
+
+                            // Regular progress update
+                            const { message, step, progress } = data
+                            setCurrentMessage(message)
+
+                            if (step) {
+                                // Mark previous steps as completed
+                                const stepIndex = progressSteps.findIndex(s => s.id === step)
+                                if (stepIndex > 0) {
+                                    setProgressSteps(prev => prev.map((s, i) =>
+                                        i < stepIndex ? { ...s, status: 'completed' as const } : s
+                                    ))
+                                }
+
+                                // Update current step
+                                updateStepStatus(step, 'in-progress', message, progress)
+
+                                // If progress is 100, mark as completed
+                                if (progress === 100) {
+                                    updateStepStatus(step, 'completed', message, progress)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Mark all steps as completed
+            setProgressSteps(prev => prev.map(step => ({ ...step, status: 'completed' as const })))
+            setCurrentMessage('✅ Event created successfully! Redirecting...')
+
+            // Wait a bit to show success state
+            await new Promise(resolve => setTimeout(resolve, 1500))
+
+            if (eventData?.id) {
+                router.push(`/event/${eventData.id}`)
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to create event')
+            setShowProgress(false)
+
+            // Mark current step as error
+            setProgressSteps(prev => prev.map(step =>
+                step.status === 'in-progress' ? { ...step, status: 'error' as const } : step
+            ))
         } finally {
             setIsLoading(false)
         }
@@ -128,6 +396,14 @@ export default function CreateEventPage() {
     return (
         <div className="min-h-screen bg-background pb-24">
             <MobileHeader />
+
+            {/* Progress Modal */}
+            {showProgress && (
+                <EventCreationProgress
+                    steps={progressSteps}
+                    currentMessage={currentMessage}
+                />
+            )}
 
             <div className="container mx-auto px-4 py-6">
                 <div className="max-w-2xl mx-auto">
@@ -177,19 +453,27 @@ export default function CreateEventPage() {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-medium text-foreground mb-2">
-                                            Price (USDC)
+                                            Price (SOL)
                                         </label>
                                         <div className="relative">
                                             <DollarSign className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                                             <input
-                                                type="number"
+                                                type="text"
                                                 name="price"
-                                                value={formData.price}
+                                                inputMode="decimal"
+                                                value={priceInput}
                                                 onChange={handleInputChange}
+                                                onBlur={() => {
+                                                    // Format on blur if empty
+                                                    if (priceInput === '' && formData.price === 0) {
+                                                        setPriceInput('')
+                                                    } else if (priceInput === '' && formData.price > 0) {
+                                                        setPriceInput(formData.price.toString())
+                                                    }
+                                                }}
                                                 required
-                                                min="0"
                                                 className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                                                placeholder="0"
+                                                placeholder="0.1"
                                             />
                                         </div>
                                     </div>
@@ -201,14 +485,22 @@ export default function CreateEventPage() {
                                         <div className="relative">
                                             <Users className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                                             <input
-                                                type="number"
+                                                type="text"
                                                 name="ticketsAvailable"
-                                                value={formData.ticketsAvailable}
+                                                inputMode="numeric"
+                                                value={ticketsInput}
                                                 onChange={handleInputChange}
+                                                onBlur={() => {
+                                                    // Format on blur if empty
+                                                    if (ticketsInput === '' && formData.ticketsAvailable === 0) {
+                                                        setTicketsInput('')
+                                                    } else if (ticketsInput === '' && formData.ticketsAvailable > 0) {
+                                                        setTicketsInput(formData.ticketsAvailable.toString())
+                                                    }
+                                                }}
                                                 required
-                                                min="1"
                                                 className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                                                placeholder="1"
+                                                placeholder="100"
                                             />
                                         </div>
                                     </div>
@@ -251,20 +543,51 @@ export default function CreateEventPage() {
 
                                     <div>
                                         <label className="block text-sm font-medium text-foreground mb-2">
-                                            Event Image URL
+                                            Event Image
                                         </label>
-                                        <div className="relative">
-                                            <ImageIcon className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                                            <input
-                                                type="url"
-                                                name="imageUrl"
-                                                value={formData.imageUrl}
-                                                onChange={handleInputChange}
-                                                required
-                                                className="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                                                placeholder="https://example.com/image.jpg"
-                                            />
-                                        </div>
+
+                                        {imagePreview || formData.imageUrl ? (
+                                            <div className="relative w-64 h-64 mx-auto">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={imagePreview || formData.imageUrl}
+                                                    alt="Event preview"
+                                                    className="w-64 h-64 object-cover rounded-full border-4 border-border"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={removeImage}
+                                                    className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors z-10"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <label className="flex flex-col items-center justify-center w-64 h-64 mx-auto border-2 border-dashed border-border rounded-full cursor-pointer hover:border-primary transition-colors">
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <Upload className="w-10 h-10 mb-3 text-muted-foreground" />
+                                                    <p className="mb-2 text-sm text-foreground text-center px-4">
+                                                        <span className="font-semibold">Click to upload</span> or drag and drop
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        PNG, JPG, GIF up to 10MB
+                                                    </p>
+                                                </div>
+                                                <input
+                                                    type="file"
+                                                    className="hidden"
+                                                    accept="image/*"
+                                                    onChange={handleImageUpload}
+                                                    disabled={isUploadingImage}
+                                                />
+                                            </label>
+                                        )}
+
+                                        {isUploadingImage && (
+                                            <div className="mt-2 text-sm text-muted-foreground text-center">
+                                                Uploading and processing image...
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -350,17 +673,46 @@ export default function CreateEventPage() {
 
                                     <div>
                                         <label className="block text-sm font-medium text-foreground mb-2">
-                                            Organizer Avatar URL
+                                            Organizer Avatar
                                         </label>
-                                        <input
-                                            type="url"
-                                            name="organizerAvatar"
-                                            value={formData.organizerAvatar}
-                                            onChange={handleInputChange}
-                                            required
-                                            className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                                            placeholder="https://example.com/avatar.jpg"
-                                        />
+
+                                        {avatarPreview || formData.organizerAvatar ? (
+                                            <div className="relative w-32 h-32 mx-auto">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={avatarPreview || formData.organizerAvatar}
+                                                    alt="Organizer avatar"
+                                                    className="w-32 h-32 object-cover rounded-full border-2 border-border"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={removeAvatar}
+                                                    className="absolute top-0 right-0 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <label className="flex flex-col items-center justify-center w-32 h-32 mx-auto border-2 border-dashed border-border rounded-full cursor-pointer hover:border-primary transition-colors">
+                                                <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
+                                                <p className="text-xs text-muted-foreground text-center px-2">
+                                                    Upload Avatar
+                                                </p>
+                                                <input
+                                                    type="file"
+                                                    className="hidden"
+                                                    accept="image/*"
+                                                    onChange={handleAvatarUpload}
+                                                    disabled={isUploadingAvatar}
+                                                />
+                                            </label>
+                                        )}
+
+                                        {isUploadingAvatar && (
+                                            <div className="mt-2 text-sm text-muted-foreground text-center">
+                                                Uploading avatar...
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div>
