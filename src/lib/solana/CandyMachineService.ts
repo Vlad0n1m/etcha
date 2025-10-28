@@ -127,13 +127,26 @@ export class CandyMachineService {
                     TOKEN_METADATA_PROGRAM_ID
                 );
 
+                // Derive master edition PDA
+                const [masterEditionPda] = await PublicKey.findProgramAddress(
+                    [
+                        Buffer.from('metadata'),
+                        TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+                        collectionMintPublicKey.toBuffer(),
+                        Buffer.from('edition'),
+                    ],
+                    TOKEN_METADATA_PROGRAM_ID
+                );
+
                 const connection = this.solanaService.getConnection();
                 const metadataAccountInfo = await connection.getAccountInfo(metadataPda);
+                const masterEditionAccountInfo = await connection.getAccountInfo(masterEditionPda);
 
+                const expectedOwner = TOKEN_METADATA_PROGRAM_ID.toBase58();
+                
+                // Check metadata
                 if (metadataAccountInfo) {
-                    const expectedOwner = TOKEN_METADATA_PROGRAM_ID.toBase58();
                     const actualOwner = metadataAccountInfo.owner.toBase58();
-                    
                     if (actualOwner === expectedOwner) {
                         console.log('✅ Metadata owner is correct: metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
                     } else {
@@ -142,8 +155,20 @@ export class CandyMachineService {
                 } else {
                     console.log('⚠️ Metadata account not found (might be too early to query)');
                 }
+
+                // Check master edition
+                if (masterEditionAccountInfo) {
+                    const actualOwner = masterEditionAccountInfo.owner.toBase58();
+                    if (actualOwner === expectedOwner) {
+                        console.log('✅ Master Edition owner is correct: metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
+                    } else {
+                        console.warn(`⚠️ Master Edition owner mismatch! Expected: ${expectedOwner}, Got: ${actualOwner}`);
+                    }
+                } else {
+                    console.log('⚠️ Master Edition account not found - this might be the issue!');
+                }
             } catch (diagnosticError) {
-                console.warn('ℹ️ Could not verify metadata owner:', (diagnosticError as Error).message);
+                console.warn('ℹ️ Could not verify metadata/master edition owner:', (diagnosticError as Error).message);
             }
 
             this.emitProgress(`🎉 Collection NFT created successfully! Address: ${addressString}`, 'collection-nft', 100);
@@ -188,6 +213,50 @@ export class CandyMachineService {
             this.emitProgress('⚙️ Configuring Candy Machine settings...', 'candy-machine', 15);
 
             const priceInLamports = BigInt(Math.floor(collection.ticketPrice * 1e9));
+
+            // ✅ EXTENDED DIAGNOSTIC: Verify all accounts before Candy Machine creation
+            try {
+                this.emitProgress('🔍 Verifying Collection NFT state before Candy Machine creation...', 'candy-machine', 16);
+                
+                const collectionMintPublicKey = new PublicKey(collection.collectionNftAddress);
+                const TOKEN_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
+                const connection = this.solanaService.getConnection();
+
+                // Check mint account
+                const mintInfo = await connection.getAccountInfo(collectionMintPublicKey);
+                if (mintInfo) {
+                    console.log('✅ Mint account exists and is owned by:', mintInfo.owner.toBase58());
+                } else {
+                    console.warn('⚠️ Mint account not found');
+                }
+
+                // Check metadata PDA
+                const [metadataPda] = await PublicKey.findProgramAddress(
+                    [Buffer.from('metadata'), TOKEN_METADATA_PROGRAM_ID.toBuffer(), collectionMintPublicKey.toBuffer()],
+                    TOKEN_METADATA_PROGRAM_ID
+                );
+                const metadataInfo = await connection.getAccountInfo(metadataPda);
+                if (metadataInfo) {
+                    console.log('✅ Metadata account exists and is owned by:', metadataInfo.owner.toBase58());
+                } else {
+                    console.warn('⚠️ Metadata account not found');
+                }
+
+                // Check master edition PDA
+                const [masterEditionPda] = await PublicKey.findProgramAddress(
+                    [Buffer.from('metadata'), TOKEN_METADATA_PROGRAM_ID.toBuffer(), collectionMintPublicKey.toBuffer(), Buffer.from('edition')],
+                    TOKEN_METADATA_PROGRAM_ID
+                );
+                const masterEditionInfo = await connection.getAccountInfo(masterEditionPda);
+                if (masterEditionInfo) {
+                    console.log('✅ Master Edition account exists and is owned by:', masterEditionInfo.owner.toBase58());
+                } else {
+                    console.warn('❌ Master Edition account NOT FOUND - this is the issue!');
+                    console.warn('Collection NFT may not have been created as a proper collection NFT.');
+                }
+            } catch (diagError) {
+                console.warn('⚠️ Diagnostic error:', (diagError as Error).message);
+            }
 
             // Создаем Candy Machine с guards на оплату
             // ВАЖНО: collectionUpdateAuthority должна быть umi.identity так как именно она создала Collection NFT
