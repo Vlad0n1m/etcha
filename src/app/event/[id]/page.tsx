@@ -1,11 +1,14 @@
 "use client"
 
-import { useState, use } from "react"
+import { useState, use, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ChevronLeft, Calendar, MapPin, Clock, Plus, Minus, Users, Share2 } from "lucide-react"
 import { useWallet } from "@solana/wallet-adapter-react"
 import WalletDrawer from "@/components/WalletDrawer"
+import CollectionStatus from "@/components/CollectionStatus"
+import MintProgress, { MintStatus } from "@/components/MintProgress"
+import MintResultModal from "@/components/MintResultModal"
 
 // Extended event data structure
 interface EventData {
@@ -26,6 +29,8 @@ interface EventData {
         description: string
     }
     schedule?: string[]
+    candyMachineAddress?: string
+    collectionNftAddress?: string
 }
 
 // Mock detailed event data
@@ -79,11 +84,37 @@ const eventDetails: Record<string, EventData> = {
 export default function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const [ticketQuantity, setTicketQuantity] = useState(1)
     const [isWalletDrawerOpen, setIsWalletDrawerOpen] = useState(false)
-    const { connected } = useWallet()
+    const [candyMachineData, setCandyMachineData] = useState<any>(null)
+    const [isMinting, setIsMinting] = useState(false)
+    const [mintStatus, setMintStatus] = useState<MintStatus>("preparing")
+    const [mintProgress, setMintProgress] = useState<string>("")
+    const [mintResult, setMintResult] = useState<any>(null)
+    const [showMintModal, setShowMintModal] = useState(false)
+    const { connected, publicKey } = useWallet()
 
     const resolvedParams = use(params)
     const event = eventDetails[resolvedParams.id]
 
+    useEffect(() => {
+        if (event && event.candyMachineAddress) {
+            fetchCandyMachineData()
+        }
+    }, [event])
+
+    const fetchCandyMachineData = async () => {
+        if (!event.candyMachineAddress) return
+
+        try {
+            const response = await fetch(`/api/candy-machine/${event.candyMachineAddress}`)
+            const data = await response.json()
+
+            if (data.success) {
+                setCandyMachineData(data)
+            }
+        } catch (error) {
+            console.error("Failed to fetch Candy Machine data:", error)
+        }
+    }
 
     if (!event) {
         return (
@@ -121,12 +152,56 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         }
     }
 
-    const handleBuyClick = () => {
-        if (!connected) {
+    const handleBuyClick = async () => {
+        if (!connected || !publicKey) {
             setIsWalletDrawerOpen(true)
-        } else {
-            // Здесь будет логика покупки билетов
-            console.log("Processing purchase...", { eventId: event.id, quantity: ticketQuantity, totalPrice })
+            return
+        }
+
+        if (!event.candyMachineAddress) {
+            alert("This event does not have an active NFT collection")
+            return
+        }
+
+        setIsMinting(true)
+        setMintStatus("preparing")
+        setMintProgress("Preparing transaction...")
+
+        try {
+            setMintStatus("minting")
+            setMintProgress("Minting your NFT tickets...")
+
+            const response = await fetch("/api/mint", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    eventId: event.id,
+                    candyMachineAddress: event.candyMachineAddress,
+                    buyerWallet: publicKey.toBase58(),
+                    quantity: ticketQuantity,
+                }),
+            })
+
+            const result = await response.json()
+
+            if (result.success) {
+                setMintStatus("complete")
+                setMintProgress("Minted successfully!")
+                setMintResult(result)
+                setShowMintModal(true)
+
+                // Refresh Candy Machine data
+                await fetchCandyMachineData()
+            } else {
+                setMintStatus("error")
+                setMintProgress(result.message || "Mint failed")
+                setTimeout(() => setIsMinting(false), 3000)
+            }
+        } catch (error: any) {
+            console.error("Mint error:", error)
+            setMintStatus("error")
+            setMintProgress(error.message || "Failed to mint NFT tickets")
+            setTimeout(() => setIsMinting(false), 3000)
         }
     }
 
@@ -158,6 +233,16 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             </div>
 
             <div className="px-4 max-w-2xl mx-auto">
+                {/* Collection Status */}
+                {event.candyMachineAddress && candyMachineData && (
+                    <div className="bg-surface rounded-2xl p-4 -mt-4 mb-4 relative z-10 border border-border shadow-lg">
+                        <CollectionStatus
+                            candyMachineAddress={event.candyMachineAddress}
+                            showDetails={false}
+                        />
+                    </div>
+                )}
+
                 <div className="bg-surface rounded-2xl p-5 -mt-8 relative z-10 border border-border shadow-lg">
                     <div className="flex items-start justify-between gap-3 mb-4">
                         <div className="flex-1">
@@ -233,11 +318,19 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                         </div>
                     </div>
 
+                    {/* Mint Progress */}
+                    {isMinting && (
+                        <div className="mb-4">
+                            <MintProgress status={mintStatus} message={mintProgress} />
+                        </div>
+                    )}
+
                     <button
                         onClick={handleBuyClick}
-                        className="w-full bg-primary text-primary-foreground font-semibold py-3.5 rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98]"
+                        disabled={isMinting}
+                        className="w-full bg-primary text-primary-foreground font-semibold py-3.5 rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Buy for {formatPrice(totalPrice)} USDC
+                        {isMinting ? "Minting..." : `Buy for ${formatPrice(totalPrice)} ${event.candyMachineAddress ? "SOL" : "USDC"}`}
                     </button>
                 </div>
 
@@ -308,6 +401,17 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             >
                 <div />
             </WalletDrawer>
+
+            {/* Mint Result Modal */}
+            <MintResultModal
+                open={showMintModal}
+                onClose={() => {
+                    setShowMintModal(false)
+                    setIsMinting(false)
+                    setMintResult(null)
+                }}
+                result={mintResult}
+            />
         </div>
     )
 }

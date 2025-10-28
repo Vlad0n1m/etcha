@@ -1,0 +1,199 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  walletAddress String   @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  profile   Profile?
+  organizer Organizer?
+  orders    Order[]
+  tickets   Ticket[]
+  listings  Listing[]
+
+  @@map("users")
+}
+
+model Profile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  nickname  String?
+  avatar    String?
+  bio       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model Organizer {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  companyName String
+  description String?
+  avatar      String?
+  website     String?
+  email       String?
+  phone       String?
+  address     String?
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  events Event[]
+
+  @@map("organizers")
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  value     String   @unique
+  icon      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  events Event[]
+
+  @@map("categories")
+}
+
+model Event {
+  id               String   @id @default(cuid())
+  title            String
+  price            Float // Price in SOL (replaced USDC)
+  date             DateTime
+  time             String
+  ticketsAvailable Int
+  ticketsSold      Int      @default(0)
+  imageUrl         String
+  description      String
+  fullAddress      String
+  schedule         String[] // JSON array of schedule items
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Solana blockchain fields
+  collectionNftAddress String? @unique // Collection NFT address on Solana
+  candyMachineAddress  String? @unique // Candy Machine address
+
+  categoryId  String
+  organizerId String?
+  category    Category   @relation(fields: [categoryId], references: [id])
+  organizer   Organizer? @relation(fields: [organizerId], references: [id])
+  orders      Order[]
+  tickets     Ticket[]
+  listings    Listing[]
+
+  @@map("events")
+}
+
+model Order {
+  id              String   @id @default(cuid())
+  eventId         String
+  userId          String
+  quantity        Int
+  totalPrice      Float // Total price in SOL (replaced USDC)
+  status          String   @default("pending") // pending, confirmed, failed, cancelled
+  transactionHash String? // Solana transaction hash
+  nftMintAddress  String? // NFT mint address for tickets (deprecated, use Ticket.nftMintAddress)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  event               Event                @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tickets             Ticket[]
+  paymentDistribution PaymentDistribution?
+
+  @@map("orders")
+}
+
+model Ticket {
+  id             String   @id @default(cuid())
+  eventId        String
+  orderId        String
+  userId         String
+  nftMintAddress String   @unique
+  tokenId        Int
+  metadataUri    String?
+  isValid        Boolean  @default(true)
+  isUsed         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("tickets")
+}
+
+model Listing {
+  id                  String    @id @default(cuid())
+  nftMintAddress      String    @unique
+  eventId             String
+  sellerId            String
+  listingAddress      String    @unique // Trade state address on Auction House
+  auctionHouseAddress String
+  price               Float // Price in SOL
+  originalPrice       Float // Original ticket price for comparison
+  status              String    @default("active") // active, sold, cancelled
+  transactionHash     String?
+  soldTo              String? // Buyer wallet address
+  soldAt              DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  event  Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  seller User  @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, status])
+  @@index([sellerId, status])
+  @@map("listings")
+}
+
+model PlatformConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("platform_configs")
+}
+
+model PaymentDistribution {
+  id              String   @id @default(cuid())
+  orderId         String   @unique
+  totalAmount     Float // Total amount in SOL
+  organizerShare  Float // 97.5% in SOL
+  platformShare   Float // 2.5% in SOL
+  organizerWallet String // Organizer's wallet address
+  platformWallet  String // Platform's wallet address
+  transactionHash String // Transaction hash of the distribution
+  status          String   @default("completed") // completed, failed, pending
+  createdAt       DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("payment_distributions")
+}
