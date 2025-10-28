@@ -35,8 +35,6 @@ interface Event {
     organizerAvatar: string
     organizerDescription: string
     schedule: string[]
-    candyMachineAddress: string | null
-    collectionNftAddress: string | null
 }
 
 export default function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -369,21 +367,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                                 <span>{event.ticketsAvailable} available</span>
                             </div>
                         </div>
-
-                        {/* Blockchain Info - for debugging/verification */}
-                        {event.candyMachineAddress && event.collectionNftAddress && (
-                            <div className="mb-4 p-3 bg-background/50 rounded-lg border border-border">
-                                <div className="text-xs font-semibold text-foreground mb-2">Blockchain Info</div>
-                                <div className="space-y-1 text-xs text-muted-foreground font-mono">
-                                    <div className="truncate">
-                                        <span className="text-foreground">Candy Machine:</span> {event.candyMachineAddress}
-                                    </div>
-                                    <div className="truncate">
-                                        <span className="text-foreground">Collection NFT:</span> {event.collectionNftAddress}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
 
                         {event.price > 0 && (
                             <div className="bg-muted/50 rounded-xl p-4 mb-4">

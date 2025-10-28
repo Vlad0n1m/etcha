@@ -141,7 +141,7 @@ export class CandyMachineService {
             this.emitProgress('⚙️ Configuring Candy Machine settings...', 'candy-machine', 15);
 
             // ✅ ТОЧНО КАК В РАБОЧЕМ КОДЕ из etcha-candy
-            const candyMachine = await metaplex.candyMachines().create({
+            const createResult = await metaplex.candyMachines().create({
                 itemsAvailable: collection.maxTickets,
                 sellerFeeBasisPoints: 250, // 2.5% royalty
                 symbol: collection.name.substring(0, 4).toUpperCase(),
@@ -170,10 +170,14 @@ export class CandyMachineService {
                 },
             });
 
+            console.log('🔍 Debug: createResult structure:', JSON.stringify(createResult, null, 2));
+            console.log('🔍 Debug: createResult keys:', Object.keys(createResult));
+            console.log('🔍 Debug: createResult.candyMachine:', createResult.candyMachine);
+
             this.emitProgress('✅ Candy Machine created!', 'candy-machine', 25);
 
-            // ✅ Правильное извлечение адреса
-            const candyMachineAddress = this.asBase58Address(candyMachine.candyMachine);
+            // ✅ Правильное извлечение адреса - используем createResult вместо candyMachine
+            const candyMachineAddress = this.asBase58Address(createResult.candyMachine);
 
             // Runtime проверка что адрес валидный base58
             if (!(typeof candyMachineAddress === 'string' && /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(candyMachineAddress))) {
@@ -192,6 +196,8 @@ export class CandyMachineService {
             } else {
                 this.emitProgress('✅ Candy Machine created! Items can be loaded later.', 'candy-machine', 100);
             }
+
+            console.log('🎉 Candy Machine creation completed. Returning address:', candyMachineAddress);
 
             return candyMachineAddress;
         } catch (error) {
