@@ -107,9 +107,44 @@ export class CandyMachineService {
                 uri: metadataUri,
                 sellerFeeBasisPoints: percentAmount(2.5),
                 isCollection: true,
+                updateAuthority: umi.identity, // Explicitly set update authority to backend wallet
             }).sendAndConfirm(umi);
 
             const addressString = collectionMint.publicKey as string;
+
+            // ✅ DIAGNOSTIC: Verify metadata account owner
+            try {
+                const collectionMintPublicKey = new PublicKey(addressString);
+                const TOKEN_METADATA_PROGRAM_ID = new PublicKey('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
+                
+                // Derive metadata PDA
+                const [metadataPda] = await PublicKey.findProgramAddress(
+                    [
+                        Buffer.from('metadata'),
+                        TOKEN_METADATA_PROGRAM_ID.toBuffer(),
+                        collectionMintPublicKey.toBuffer(),
+                    ],
+                    TOKEN_METADATA_PROGRAM_ID
+                );
+
+                const connection = this.solanaService.getConnection();
+                const metadataAccountInfo = await connection.getAccountInfo(metadataPda);
+
+                if (metadataAccountInfo) {
+                    const expectedOwner = TOKEN_METADATA_PROGRAM_ID.toBase58();
+                    const actualOwner = metadataAccountInfo.owner.toBase58();
+                    
+                    if (actualOwner === expectedOwner) {
+                        console.log('✅ Metadata owner is correct: metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s');
+                    } else {
+                        console.warn(`⚠️ Metadata owner mismatch! Expected: ${expectedOwner}, Got: ${actualOwner}`);
+                    }
+                } else {
+                    console.log('⚠️ Metadata account not found (might be too early to query)');
+                }
+            } catch (diagnosticError) {
+                console.warn('ℹ️ Could not verify metadata owner:', (diagnosticError as Error).message);
+            }
 
             this.emitProgress(`🎉 Collection NFT created successfully! Address: ${addressString}`, 'collection-nft', 100);
 
@@ -162,8 +197,8 @@ export class CandyMachineService {
                 collectionUpdateAuthority: umi.identity, // Backend wallet который создал Collection NFT
                 sellerFeeBasisPoints: percentAmount(2.5),
                 itemsAvailable: BigInt(collection.maxTickets),
-                tokenStandard: TokenStandard.NonFungible, // 0 = NonFungible
-                creators: [],  // Empty creators for now
+                tokenStandard: TokenStandard.NonFungible,
+                creators: [],
                 configLineSettings: some({
                     prefixName: 'Ticket #',
                     nameLength: 10,
