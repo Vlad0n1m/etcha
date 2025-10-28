@@ -1,4 +1,5 @@
-import { Connection, Keypair, PublicKey } from '@solana/web3.js';
+import { Connection, Keypair, PublicKey, Commitment } from '@solana/web3.js';
+import { Metaplex, keypairIdentity } from '@metaplex-foundation/js';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import { createSignerFromKeypair, signerIdentity, Umi } from '@metaplex-foundation/umi';
 import { mplCandyMachine } from '@metaplex-foundation/mpl-candy-machine';
@@ -8,6 +9,7 @@ import { PlatformConfig, getPlatformConfig } from './config';
 export class SolanaService {
     private connection: Connection;
     private umi: Umi;
+    private metaplex: Metaplex;
     private keypair: Keypair;
     private config: PlatformConfig;
 
@@ -15,7 +17,7 @@ export class SolanaService {
         this.config = config || getPlatformConfig();
 
         this.connection = new Connection(this.config.solana.rpcUrl, {
-            commitment: this.config.solana.commitment as any,
+            commitment: this.config.solana.commitment as Commitment,
         });
 
         // Initialize keypair from environment variable
@@ -28,7 +30,11 @@ export class SolanaService {
         const privateKeyArray = JSON.parse(privateKey);
         this.keypair = Keypair.fromSecretKey(new Uint8Array(privateKeyArray));
 
-        // Initialize Umi with plugins
+        // Initialize OLD Metaplex SDK (working version)
+        this.metaplex = Metaplex.make(this.connection)
+            .use(keypairIdentity(this.keypair));
+
+        // Initialize Umi with plugins (for backwards compatibility)
         this.umi = createUmi(this.config.solana.rpcUrl)
             .use(mplCandyMachine())
             .use(mplTokenMetadata());
@@ -47,6 +53,15 @@ export class SolanaService {
 
     getUmi(): Umi {
         return this.umi;
+    }
+
+    getMetaplex(): Metaplex {
+        return this.metaplex;
+    }
+
+    createMetaplexForUser(userKeypair: Keypair): Metaplex {
+        return Metaplex.make(this.connection)
+            .use(keypairIdentity(userKeypair));
     }
 
     getKeypair(): Keypair {

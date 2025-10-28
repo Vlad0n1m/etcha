@@ -40,7 +40,10 @@ export async function GET(
                 avatar: event.organizer?.avatar,
                 description: event.organizer?.description
             },
-            schedule: event.schedule
+            schedule: event.schedule,
+            // Blockchain addresses for frontend minting
+            candyMachineAddress: event.candyMachineAddress,
+            collectionNftAddress: event.collectionNftAddress
         })
     } catch (error) {
         console.error('Error fetching event:', error)
