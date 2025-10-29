@@ -61,7 +61,7 @@ export async function GET(
                 avatar: event.organizer.avatar || "/logo.png",
                 description: event.organizer.description || "Event organizer",
             },
-            schedule: event.schedule ? JSON.parse(event.schedule) : [],
+            schedule: [], // Schedule disabled for MVP
             candyMachineAddress: event.candyMachineAddress,
             collectionNftAddress: event.collectionNftAddress,
         }

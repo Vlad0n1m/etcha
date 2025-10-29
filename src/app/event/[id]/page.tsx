@@ -30,7 +30,7 @@ interface EventData {
         avatar: string
         description: string
     }
-    schedule?: string[]
+    // schedule?: string[] // Disabled for MVP
     candyMachineAddress?: string
     collectionNftAddress?: string
 }
@@ -203,26 +203,28 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             setMintStatus("minting")
             setMintProgress(`Minting ${ticketQuantity} ticket${ticketQuantity > 1 ? 's' : ''}... Please approve the transaction in your wallet.`)
 
-            console.log('Starting client-side mint...')
+            console.log('Starting mint via API route...')
 
-            // Dynamic import to avoid bundling Metaplex (with Node.js modules) on client
-            const { mintFromCandyMachine } = await import("@/lib/utils/candy-machine-client")
+            // Use API route directly to avoid bundling Metaplex on client
+            const mintResponse = await fetch('/api/mint', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    eventId: event.id,
+                    candyMachineAddress: event.candyMachineAddress,
+                    buyerWallet: publicKey.toBase58(),
+                    quantity: ticketQuantity,
+                }),
+            })
 
-            // Create wallet context for minting
-            const walletContext = {
-                publicKey,
-                signTransaction,
-                signAllTransactions,
-                connected,
-                wallet,
+            const mintResult = await mintResponse.json()
+
+            if (!mintResult.success) {
+                throw new Error(mintResult.message || 'Failed to mint NFT tickets')
             }
 
-            const { nftMintAddresses, signature } = await mintFromCandyMachine(
-                event.candyMachineAddress!,
-                walletContext as any, // WalletContextState type compatibility
-                ticketQuantity,
-                event.collectionNftAddress ? new PublicKey(event.collectionNftAddress) : undefined
-            )
+            const nftMintAddresses = mintResult.nftMintAddresses || []
+            const signature = mintResult.transactionSignature || ''
 
             console.log('Mint successful!', { nftMintAddresses, signature })
 
@@ -414,19 +416,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     <h2 className="text-base font-bold text-foreground mb-3">About Event</h2>
                     <p className="text-sm text-muted-foreground leading-relaxed">{event.description}</p>
 
-                    {event.schedule && (
-                        <div className="mt-5 pt-5 border-t border-border">
-                            <h3 className="text-sm font-semibold text-foreground mb-3">Schedule</h3>
-                            <ul className="space-y-2">
-                                {event.schedule.map((item, index) => (
-                                    <li key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
-                                        <span className="w-1 h-1 rounded-full bg-primary mt-2 flex-shrink-0" />
-                                        <span>{item}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
+                    {/* Schedule disabled for MVP */}
                 </div>
 
                 <div className="bg-surface rounded-2xl p-5 mt-4 border border-border">

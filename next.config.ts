@@ -43,13 +43,19 @@ const nextConfig: NextConfig = {
         '@bundlr-network/client': false,
         'avsc': false,
         'arbundles': false,
+        'fs': false,
+        'util': false,
+        'stream': false,
+        'buffer': false,
+        'process': false,
       };
       
       // Ignore bundlr storage driver completely on client
       config.resolve.alias['@metaplex-foundation/js/dist/esm/plugins/bundlrStorage'] = false;
       
-      // Ignore additional Node.js modules used by bundlr dependencies
-      config.resolve.alias['util'] = false;
+      // Ignore Metaplex JS SDK from client bundle completely
+      // Only use it on server (API routes)
+      config.resolve.alias['@metaplex-foundation/js'] = false;
       
       // Ignore native modules that cause issues
       config.externals = config.externals || [];
