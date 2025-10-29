@@ -71,7 +71,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     const [mintProgress, setMintProgress] = useState<string>("")
     const [mintResult, setMintResult] = useState<EventMintResult | null>(null)
     const [showMintModal, setShowMintModal] = useState(false)
-    const { connected, publicKey, signTransaction, signAllTransactions, wallet } = useWallet()
+    const { connected, publicKey, signTransaction, signAllTransactions, wallet, signMessage } = useWallet()
 
     const resolvedParams = use(params)
 
@@ -184,7 +184,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     }
 
     const handleBuyClick = async () => {
-        if (!connected || !publicKey) {
+        if (!connected || !publicKey || !wallet || !signTransaction) {
             setIsWalletDrawerOpen(true)
             return
         }
@@ -196,14 +196,54 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
 
         setIsMinting(true)
         setMintStatus("preparing")
-        setMintProgress("Preparing transaction...")
+        setMintProgress("Requesting signature...")
 
         try {
-            // Step 1: Client-side mint (user pays with wallet)
+            // Step 1: Get user signature for key derivation
+            console.log('Requesting signature from wallet...')
+            
+            const message = new TextEncoder().encode("etcha-mint-auth-v1")
+            
+            // Check if signMessage is available from useWallet hook or wallet adapter
+            if (!signMessage && (!wallet || !wallet.adapter || !wallet.adapter.signMessage)) {
+                throw new Error('Wallet does not support message signing. Please use a compatible wallet like Phantom.')
+            }
+
+            setMintProgress("Please sign the authentication message in your wallet...")
+            
+            // Try signMessage from useWallet hook first, then fallback to wallet.adapter
+            let signature: Uint8Array
+            if (signMessage) {
+                signature = await signMessage(message)
+            } else if (wallet?.adapter?.signMessage) {
+                signature = await wallet.adapter.signMessage(message)
+            } else {
+                throw new Error('No signing method available')
+            }
+            
+            console.log('Signature received:', signature)
+            
+            // Step 2: Derive seed (temporarily show in alert)
+            const { deriveSeedFromSignature, seedToBase58 } = await import('@/lib/utils/keyDerivation')
+            
+            // For testing, we'll use a placeholder salt (will come from server later)
+            const testSalt = 'etcha-salt-placeholder' // TODO: Get from server
+            const seed = await deriveSeedFromSignature(signature, publicKey.toBase58(), testSalt)
+            const seedHex = seedToBase58(seed)
+            
+            // Temporary: Show seed in alert
+            alert(`Seed derived successfully!\n\nSeed (hex): ${seedHex}\n\n(Signature: ${Array.from(signature).map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 32)}...)`)
+            
             setMintStatus("minting")
             setMintProgress(`Minting ${ticketQuantity} ticket${ticketQuantity > 1 ? 's' : ''}... Please approve the transaction in your wallet.`)
 
             console.log('Starting mint via API route...')
+
+            // Step 3: Send signature to server for minting
+            // Convert signature to hex string for transmission
+            const signatureHex = Array.from(signature)
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join('')
 
             // Use API route directly to avoid bundling Metaplex on client
             const mintResponse = await fetch('/api/mint', {
@@ -214,6 +254,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     candyMachineAddress: event.candyMachineAddress,
                     buyerWallet: publicKey.toBase58(),
                     quantity: ticketQuantity,
+                    signature: signatureHex, // Send signature for key derivation
                 }),
             })
 
@@ -224,9 +265,9 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             }
 
             const nftMintAddresses = mintResult.nftMintAddresses || []
-            const signature = mintResult.transactionSignature || ''
+            const txSignature = mintResult.transactionSignature || ''
 
-            console.log('Mint successful!', { nftMintAddresses, signature })
+            console.log('Mint successful!', { nftMintAddresses, txSignature })
 
             // Step 2: Save to database
             setMintProgress("Saving ticket information...")
@@ -240,7 +281,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     buyerWallet: publicKey.toBase58(),
                     quantity: ticketQuantity,
                     nftMintAddresses,
-                    transactionSignature: signature,
+                    transactionSignature: txSignature,
                 }),
             })
 
@@ -252,7 +293,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 setMintResult({
                     ...result,
                     nftMintAddresses,
-                    transactionSignature: signature,
+                    transactionSignature: txSignature,
                 })
                 setShowMintModal(true)
 

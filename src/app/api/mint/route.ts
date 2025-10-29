@@ -25,11 +25,12 @@ export async function POST(request: NextRequest) {
             candyMachineAddress,
             buyerWallet,
             quantity,
+            signature, // User signature for key derivation
         } = body
 
-        if (!eventId || !candyMachineAddress || !buyerWallet || !quantity) {
+        if (!eventId || !candyMachineAddress || !buyerWallet || !quantity || !signature) {
             return NextResponse.json(
-                { success: false, message: 'Missing required fields' },
+                { success: false, message: 'Missing required fields (signature required for minting)' },
                 { status: 400 }
             )
         }
@@ -117,8 +118,21 @@ export async function POST(request: NextRequest) {
             })
         }
 
-        // Step 3: Mint NFTs
-        console.log('Step 3: Minting NFTs...')
+        // Step 3: Derive user keypair from signature
+        console.log('Step 3: Deriving user keypair from signature...')
+        const { deriveKeypairFromSignature, getDerivationSalt } = await import('@/lib/utils/keyDerivation.server')
+        
+        const salt = getDerivationSalt()
+        const userKeypair = deriveKeypairFromSignature(signature, buyerWallet, salt)
+        
+        console.log('User keypair derived:', userKeypair.publicKey.toString())
+        
+        // Temporary: Show seed in console (will be removed later)
+        const seedHex = Buffer.from(userKeypair.secretKey.slice(0, 32)).toString('hex')
+        console.log('Derived seed (hex):', seedHex)
+
+        // Step 4: Mint NFTs
+        console.log('Step 4: Minting NFTs...')
         const platformSigner = loadPlatformWallet()
 
         const {
@@ -130,6 +144,7 @@ export async function POST(request: NextRequest) {
             buyerWallet,
             quantity,
             platformSigner,
+            userKeypair, // Pass derived keypair
         })
 
         console.log(`Minted ${nftMintAddresses.length} NFT(s)`)

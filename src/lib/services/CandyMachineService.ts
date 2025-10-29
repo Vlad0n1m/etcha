@@ -244,6 +244,7 @@ export async function mintNFT(params: {
     buyerWallet: string
     quantity: number
     platformSigner?: Keypair
+    userKeypair?: Keypair // Derived keypair from signature
 }): Promise<{
     nftMintAddresses: string[]
     transactionSignature: string
@@ -256,10 +257,15 @@ export async function mintNFT(params: {
         // Parse buyer wallet
         const buyerPublicKey = new PublicKey(params.buyerWallet)
         
-        // Create Metaplex instance for buyer (they will sign)
-        // Note: In real scenario, buyer should sign through wallet adapter
-        // This function assumes the transaction will be signed by the caller
+        // Use derived keypair if provided, otherwise create guest Metaplex instance
+        const userKeypair = params.userKeypair
+        if (!userKeypair) {
+            throw new Error('User keypair is required for minting. Please provide signature.')
+        }
+        
+        // Create Metaplex instance with derived user keypair
         const buyerMetaplex = Metaplex.make(connection)
+            .use(keypairIdentity(userKeypair))
 
         console.log(`Minting ${params.quantity} NFT(s) from Candy Machine...`)
         console.log('Candy Machine:', params.candyMachineAddress)
