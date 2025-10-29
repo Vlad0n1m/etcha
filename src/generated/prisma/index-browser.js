@@ -234,6 +234,19 @@ exports.Prisma.PlatformConfigScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.PaymentDistributionScalarFieldEnum = {
+  id: 'id',
+  orderId: 'orderId',
+  totalAmount: 'totalAmount',
+  organizerShare: 'organizerShare',
+  platformShare: 'platformShare',
+  organizerWallet: 'organizerWallet',
+  platformWallet: 'platformWallet',
+  transactionHash: 'transactionHash',
+  status: 'status',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -259,7 +272,8 @@ exports.Prisma.ModelName = {
   Order: 'Order',
   Ticket: 'Ticket',
   Listing: 'Listing',
-  PlatformConfig: 'PlatformConfig'
+  PlatformConfig: 'PlatformConfig',
+  PaymentDistribution: 'PaymentDistribution'
 };
 
 /**

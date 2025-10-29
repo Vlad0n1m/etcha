@@ -26,12 +26,13 @@ interface EventOption {
 }
 
 export default function CreateCollectionPage() {
-    const { connected, publicKey } = useWallet()
+    const { connected, connecting, publicKey } = useWallet()
     const router = useRouter()
 
     const [selectedEventId, setSelectedEventId] = useState<string>("")
     const [events, setEvents] = useState<EventOption[]>([])
     const [loadingEvents, setLoadingEvents] = useState(true)
+    const [isCheckingWallet, setIsCheckingWallet] = useState(true)
 
     // Form fields
     const [collectionName, setCollectionName] = useState("")
@@ -47,7 +48,21 @@ export default function CreateCollectionPage() {
     const [progress, setProgress] = useState<string>("")
     const [error, setError] = useState<string>("")
 
+    // Wait for wallet to initialize before checking connection
     useEffect(() => {
+        const timer = setTimeout(() => {
+            setIsCheckingWallet(false)
+        }, 1000)
+
+        return () => clearTimeout(timer)
+    }, [])
+
+    useEffect(() => {
+        // Don't redirect while wallet is connecting or we're checking
+        if (isCheckingWallet || connecting) {
+            return
+        }
+
         if (!connected) {
             router.push("/")
         } else {
@@ -77,7 +92,7 @@ export default function CreateCollectionPage() {
                 setLoadingEvents(false)
             }, 1000)
         }
-    }, [connected, router])
+    }, [connected, connecting, isCheckingWallet, router])
 
     const handleEventSelect = (eventId: string) => {
         setSelectedEventId(eventId)
@@ -156,15 +171,27 @@ export default function CreateCollectionPage() {
             } else {
                 throw new Error(result.message || "Failed to create collection")
             }
-        } catch (err: any) {
+        } catch (err) {
             console.error("Error creating collection:", err)
-            setError(err.message || "Failed to create collection")
+            setError(err instanceof Error ? err.message : "Failed to create collection")
             setCreating(false)
         }
     }
 
     const isFormValid =
         selectedEventId && collectionName && symbol && description && totalSupply > 0 && priceInSol > 0
+
+    // Show loading while checking wallet
+    if (isCheckingWallet || connecting) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="text-center space-y-4">
+                    <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
+                    <p className="text-sm text-muted-foreground">Checking wallet connection...</p>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="min-h-screen bg-background pb-24">
@@ -203,8 +230,8 @@ export default function CreateCollectionPage() {
                                     key={event.id}
                                     onClick={() => handleEventSelect(event.id)}
                                     className={`w-full text-left p-4 rounded-xl border-2 transition-all ${selectedEventId === event.id
-                                            ? "border-primary bg-primary/5"
-                                            : "border-border hover:border-primary/50 bg-background"
+                                        ? "border-primary bg-primary/5"
+                                        : "border-border hover:border-primary/50 bg-background"
                                         }`}
                                 >
                                     <div className="flex items-center gap-3">
@@ -224,7 +251,7 @@ export default function CreateCollectionPage() {
                                             </p>
                                         </div>
                                         {selectedEventId === event.id && (
-                                            <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
+                                            <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
                                         )}
                                     </div>
                                 </button>

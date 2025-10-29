@@ -1,0 +1,15 @@
+{
+  "name": "sdfs",
+  "symbol": "TICKET",
+  "description": "sdf",
+  "image": "http://localhost:3000/uploads/event-1761665450658-y34rxgy.jpg",
+  "properties": {
+    "category": "event-collection",
+    "creators": [
+      {
+        "address": "8FzRarb7UAqpuV4cBDNrqQUU6Kuhez6uNVEisMSD6JEE",
+        "share": 100
+      }
+    ]
+  }
+}

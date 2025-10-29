@@ -6,9 +6,9 @@ import {
     initializeUmiWithSigner,
 } from '@/lib/services/CandyMachineService'
 import {
-    initializeUmi,
     uploadCollectionAssets,
     uploadTicketMetadataBatched,
+    uploadMetadata,
     base64ToBuffer,
 } from '@/lib/services/MetadataUploadService'
 import {
@@ -99,30 +99,44 @@ export async function POST(request: NextRequest) {
 
         console.log(`Creating collection for event: ${eventId}`)
 
-        // Initialize UMI
-        const umi = initializeUmi()
+        // Load authority
         const authority = loadCandyMachineAuthority()
 
-        // Step 1: Upload collection image and metadata
-        console.log('Step 1: Uploading collection assets...')
-        const imageBuffer = image.startsWith('data:')
-            ? base64ToBuffer(image)
-            : Buffer.from(image, 'base64')
+        // Step 1: Save collection image and metadata locally
+        console.log('Step 1: Saving collection assets...')
+
+        let imageUri: string
+
+        // Check if image is already a URL (uploaded file)
+        if (image.startsWith('http://') || image.startsWith('https://') || image.startsWith('/')) {
+            // Image is already a URL, use it directly
+            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+            imageUri = image.startsWith('/') ? `${baseUrl}${image}` : image
+            console.log('Using existing image URL:', imageUri)
+        } else {
+            // Image is base64, need to save it
+            const imageBuffer = image.startsWith('data:')
+                ? base64ToBuffer(image)
+                : Buffer.from(image, 'base64')
+
+            const { imageUri: uploadedImageUri } = await uploadCollectionAssets(
+                imageBuffer,
+                `${symbol.toLowerCase()}-collection.png`,
+                { name, symbol, description } as any
+            )
+            imageUri = uploadedImageUri
+        }
 
         const collectionMetadata = createCollectionMetadata({
             name,
             symbol,
             description,
-            image: '', // Will be set after upload
+            image: imageUri,
             organizerWallet,
         })
 
-        const { imageUri, metadataUri } = await uploadCollectionAssets(
-            umi,
-            imageBuffer,
-            `${symbol.toLowerCase()}-collection.png`,
-            collectionMetadata
-        )
+        // Upload metadata JSON
+        const metadataUri = await uploadMetadata(collectionMetadata)
 
         console.log('Collection assets uploaded:', { imageUri, metadataUri })
 
@@ -155,8 +169,8 @@ export async function POST(request: NextRequest) {
 
         const allTicketMetadata = generateAllTicketMetadata(baseTicketInput, totalSupply)
 
-        console.log('Uploading ticket metadata...')
-        const ticketMetadataUris = await uploadTicketMetadataBatched(umi, allTicketMetadata, 5)
+        console.log('Saving ticket metadata...')
+        const ticketMetadataUris = await uploadTicketMetadataBatched(allTicketMetadata, 5)
 
         console.log(`Uploaded ${ticketMetadataUris.length} ticket metadata`)
 

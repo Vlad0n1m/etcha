@@ -1,14 +1,23 @@
 "use client"
 
-import { useState, use, useEffect } from "react"
+import { useState, use, useEffect, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, Calendar, MapPin, Clock, Plus, Minus, Users, Share2 } from "lucide-react"
+import { ChevronLeft, Calendar, MapPin, Clock, Plus, Minus, Users, Share2, Loader2 } from "lucide-react"
 import { useWallet } from "@solana/wallet-adapter-react"
 import WalletDrawer from "@/components/WalletDrawer"
 import CollectionStatus from "@/components/CollectionStatus"
 import MintProgress, { MintStatus } from "@/components/MintProgress"
 import MintResultModal from "@/components/MintResultModal"
+import { mintFromCandyMachine } from "@/lib/utils/candy-machine-client"
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
+import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters'
+import { fetchCandyMachine, fetchCandyGuard } from "@metaplex-foundation/mpl-candy-machine"
+
+
+import { Connection, Keypair, PublicKey } from "@solana/web3.js";
+import { Metaplex, keypairIdentity, bundlrStorage, toMetaplexFile, toBigNumber, CreateCandyMachineInput, DefaultCandyGuardSettings, CandyMachineItem, toDateTime, sol, TransactionBuilder, CreateCandyMachineBuilderContext } from "@metaplex-foundation/js";
+
 
 // Extended event data structure
 interface EventData {
@@ -33,94 +42,123 @@ interface EventData {
     collectionNftAddress?: string
 }
 
-// Mock detailed event data
-const eventDetails: Record<string, EventData> = {
-    "1": {
-        id: "1",
-        title: "Arcium's <encrypted> Side Track",
-        company: "Arcium",
-        price: 20000,
-        date: "2024-03-15",
-        time: "19:00",
-        ticketsAvailable: 150,
-        imageUrl: "/logo.png",
-        category: "Blockchain",
-        description:
-            "Join us for an exclusive deep dive into Arcium's innovative encrypted side track technology. This event will cover the latest developments in privacy-preserving blockchain solutions and their practical applications in DeFi.",
-        fullAddress: "Tech Conference Center, 123 Innovation Street, San Francisco, CA 94105",
-        organizer: {
-            name: "Arcium Team",
-            avatar: "/logo.png",
-            description: "Leading blockchain privacy solutions provider",
-        },
-        schedule: [
-            "19:00 - Welcome & Introduction",
-            "19:15 - Technical Deep Dive",
-            "20:30 - Q&A Session",
-            "21:00 - Networking",
-        ],
-    },
-    "2": {
-        id: "2",
-        title: "Blockchain Security Workshop",
-        company: "Crypto Ventures",
-        price: 8000,
-        date: "2024-03-15",
-        time: "21:30",
-        ticketsAvailable: 75,
-        imageUrl: "/logo.png",
-        category: "Blockchain",
-        description:
-            "Comprehensive workshop covering the latest blockchain security best practices, smart contract auditing, and vulnerability assessment techniques.",
-        fullAddress: "Crypto Hub, 456 Blockchain Avenue, New York, NY 10001",
-        organizer: {
-            name: "Crypto Ventures",
-            avatar: "/logo.png",
-            description: "Blockchain security experts and consultants",
-        },
-    },
+interface CandyMachineData {
+    success: boolean
+    itemsAvailable: number
+    itemsRedeemed: number
+    itemsRemaining: number
+    price: number
+}
+
+interface EventMintResult {
+    success: boolean
+    nftMintAddresses: string[]
+    transactionSignature: string
+    totalPaid: number
+    message?: string
+    organizerPayment: {
+        amount: number
+        transactionHash: string
+    }
+    platformFee: {
+        amount: number
+    }
+    orderId: string
 }
 
 export default function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const [event, setEvent] = useState<EventData | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [ticketQuantity, setTicketQuantity] = useState(1)
     const [isWalletDrawerOpen, setIsWalletDrawerOpen] = useState(false)
-    const [candyMachineData, setCandyMachineData] = useState<any>(null)
+    const [candyMachineData, setCandyMachineData] = useState(null)
     const [isMinting, setIsMinting] = useState(false)
     const [mintStatus, setMintStatus] = useState<MintStatus>("preparing")
     const [mintProgress, setMintProgress] = useState<string>("")
-    const [mintResult, setMintResult] = useState<any>(null)
+    const [mintResult, setMintResult] = useState<EventMintResult | null>(null)
     const [showMintModal, setShowMintModal] = useState(false)
-    const { connected, publicKey } = useWallet()
+    const { connected, publicKey, signTransaction, signAllTransactions, wallet } = useWallet()
 
     const resolvedParams = use(params)
-    const event = eventDetails[resolvedParams.id]
+
+
+    // const walletAdapter = useWallet()
+    // const umi = createUmi('https://api.devnet.solana.com')
+    // // const METAPLEX = Metaplex.make(SOLANA_CONNECTION)
+    // // .use(keypairIdentity(WALLET));
+    // // const candyMachine = await fetchCandyMachine(umi, CMAddress as PublicKey);
+    // // console.log(candyMachine)
+    // // // setCandyMachineData(candyMachine);
+    // // const { transaction: builtTx } = await umi.builders().mintV2({
+    // //     candyMachine: candyMachine.publicKey,
+    // //     // payer: walletPubKey, // в Umi это может называться иначе
+    // // });
+
+    // umi.use(walletAdapterIdentity(walletAdapter))
+    // async function mint(CMAddress: string) {
+    //     const METAPLEX = Metaplex.make(SOLANA_CONNECTION));
+    // }
+
+
+    // useEffect(() => {
+    //     if (!event?.candyMachineAddress) return;
+    //     mint(event.candyMachineAddress)
+        
+    // }, [event])
+
+
+
 
     useEffect(() => {
-        if (event && event.candyMachineAddress) {
-            fetchCandyMachineData()
-        }
-    }, [event])
+        const fetchEvent = async () => {
+            try {
+                setIsLoading(true)
+                const response = await fetch(`/api/events/${resolvedParams.id}`)
+                const data = await response.json()
 
-    const fetchCandyMachineData = async () => {
-        if (!event.candyMachineAddress) return
-
-        try {
-            const response = await fetch(`/api/candy-machine/${event.candyMachineAddress}`)
-            const data = await response.json()
-
-            if (data.success) {
-                setCandyMachineData(data)
+                if (data.success) {
+                    setEvent(data.event)
+                } else {
+                    setError(data.message || "Event not found")
+                }
+            } catch (err) {
+                console.error("Failed to fetch event:", err)
+                setError("Failed to load event")
+            } finally {
+                setIsLoading(false)
             }
-        } catch (error) {
-            console.error("Failed to fetch Candy Machine data:", error)
         }
-    }
 
-    if (!event) {
+        fetchEvent()
+    }, [resolvedParams.id])
+
+    // useEffect(() => {
+    //     if (event && event.candyMachineAddress) {
+
+    //     }
+    // }, [event, fetchCandyMachineData])
+
+    // Loading state
+    if (isLoading) {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center p-4">
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold text-foreground mb-4">Event Not Found</h1>
+                    <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading event...</p>
+                </div>
+            </div>
+        )
+    }
+
+    // Error or not found state
+    if (error || !event) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center p-4">
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold text-foreground mb-4">
+                        {error || "Event Not Found"}
+                    </h1>
                     <Link href="/" className="text-primary hover:text-primary/80 font-medium">
                         ← Back to Events
                     </Link>
@@ -168,10 +206,34 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         setMintProgress("Preparing transaction...")
 
         try {
+            // Step 1: Client-side mint (user pays with wallet)
             setMintStatus("minting")
-            setMintProgress("Minting your NFT tickets...")
+            setMintProgress(`Minting ${ticketQuantity} ticket${ticketQuantity > 1 ? 's' : ''}... Please approve the transaction in your wallet.`)
 
-            const response = await fetch("/api/mint", {
+            console.log('Starting client-side mint...')
+
+            // Create wallet context for minting
+            const walletContext = {
+                publicKey,
+                signTransaction,
+                signAllTransactions,
+                connected,
+                wallet,
+            }
+
+            // const { nftMintAddresses, signature } = await mintFromCandyMachine(
+            //     event.candyMachineAddress,
+            //     walletContext as any, // WalletContextState type compatibility
+            //     ticketQuantity
+            // )
+            const candy = await metaplex.candyMachines().findByAddress({ address: event.candyMachineAddress });
+
+            console.log('Mint successful!', { nftMintAddresses, signature })
+
+            // Step 2: Save to database
+            setMintProgress("Saving ticket information...")
+
+            const response = await fetch("/api/mint/confirm", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -179,6 +241,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     candyMachineAddress: event.candyMachineAddress,
                     buyerWallet: publicKey.toBase58(),
                     quantity: ticketQuantity,
+                    nftMintAddresses,
+                    transactionSignature: signature,
                 }),
             })
 
@@ -187,20 +251,36 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             if (result.success) {
                 setMintStatus("complete")
                 setMintProgress("Minted successfully!")
-                setMintResult(result)
+                setMintResult({
+                    ...result,
+                    nftMintAddresses,
+                    transactionSignature: signature,
+                })
                 setShowMintModal(true)
 
                 // Refresh Candy Machine data
                 await fetchCandyMachineData()
             } else {
                 setMintStatus("error")
-                setMintProgress(result.message || "Mint failed")
+                setMintProgress(result.message || "Failed to save ticket information")
                 setTimeout(() => setIsMinting(false), 3000)
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Mint error:", error)
             setMintStatus("error")
-            setMintProgress(error.message || "Failed to mint NFT tickets")
+            let errorMessage = "Failed to mint NFT tickets"
+
+            if (error instanceof Error) {
+                errorMessage = error.message
+                // Handle specific error cases
+                if (errorMessage.includes('User rejected')) {
+                    errorMessage = "Transaction cancelled by user"
+                } else if (errorMessage.includes('insufficient funds')) {
+                    errorMessage = "Insufficient SOL balance"
+                }
+            }
+
+            setMintProgress(errorMessage)
             setTimeout(() => setIsMinting(false), 3000)
         }
     }

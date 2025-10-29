@@ -58,6 +58,11 @@ export type Listing = $Result.DefaultSelection<Prisma.$ListingPayload>
  * 
  */
 export type PlatformConfig = $Result.DefaultSelection<Prisma.$PlatformConfigPayload>
+/**
+ * Model PaymentDistribution
+ * 
+ */
+export type PaymentDistribution = $Result.DefaultSelection<Prisma.$PaymentDistributionPayload>
 
 /**
  * ##  Prisma Client ʲˢ
@@ -266,6 +271,16 @@ export class PrismaClient<
     * ```
     */
   get platformConfig(): Prisma.PlatformConfigDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.paymentDistribution`: Exposes CRUD operations for the **PaymentDistribution** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PaymentDistributions
+    * const paymentDistributions = await prisma.paymentDistribution.findMany()
+    * ```
+    */
+  get paymentDistribution(): Prisma.PaymentDistributionDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -715,7 +730,8 @@ export namespace Prisma {
     Order: 'Order',
     Ticket: 'Ticket',
     Listing: 'Listing',
-    PlatformConfig: 'PlatformConfig'
+    PlatformConfig: 'PlatformConfig',
+    PaymentDistribution: 'PaymentDistribution'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -734,7 +750,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "profile" | "organizer" | "category" | "event" | "order" | "ticket" | "listing" | "platformConfig"
+      modelProps: "user" | "profile" | "organizer" | "category" | "event" | "order" | "ticket" | "listing" | "platformConfig" | "paymentDistribution"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1404,6 +1420,80 @@ export namespace Prisma {
           }
         }
       }
+      PaymentDistribution: {
+        payload: Prisma.$PaymentDistributionPayload<ExtArgs>
+        fields: Prisma.PaymentDistributionFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PaymentDistributionFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PaymentDistributionPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PaymentDistributionFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PaymentDistributionPayload>
+          }
+          findFirst: {
+            args: Prisma.PaymentDistributionFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PaymentDistributionPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PaymentDistributionFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PaymentDistributionPayload>
+          }
+          findMany: {
+            args: Prisma.PaymentDistributionFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PaymentDistributionPayload>[]
+          }
+          create: {
+            args: Prisma.PaymentDistributionCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PaymentDistributionPayload>
+          }
+          createMany: {
+            args: Prisma.PaymentDistributionCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.PaymentDistributionCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PaymentDistributionPayload>[]
+          }
+          delete: {
+            args: Prisma.PaymentDistributionDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PaymentDistributionPayload>
+          }
+          update: {
+            args: Prisma.PaymentDistributionUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PaymentDistributionPayload>
+          }
+          deleteMany: {
+            args: Prisma.PaymentDistributionDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PaymentDistributionUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.PaymentDistributionUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PaymentDistributionPayload>[]
+          }
+          upsert: {
+            args: Prisma.PaymentDistributionUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PaymentDistributionPayload>
+          }
+          aggregate: {
+            args: Prisma.PaymentDistributionAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePaymentDistribution>
+          }
+          groupBy: {
+            args: Prisma.PaymentDistributionGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PaymentDistributionGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PaymentDistributionCountArgs<ExtArgs>
+            result: $Utils.Optional<PaymentDistributionCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1509,6 +1599,7 @@ export namespace Prisma {
     ticket?: TicketOmit
     listing?: ListingOmit
     platformConfig?: PlatformConfigOmit
+    paymentDistribution?: PaymentDistributionOmit
   }
 
   /* Types for Logging */
@@ -7907,6 +7998,7 @@ export namespace Prisma {
     event?: boolean | EventDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
     tickets?: boolean | Order$ticketsArgs<ExtArgs>
+    paymentDistribution?: boolean | Order$paymentDistributionArgs<ExtArgs>
     _count?: boolean | OrderCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["order"]>
 
@@ -7958,6 +8050,7 @@ export namespace Prisma {
     event?: boolean | EventDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
     tickets?: boolean | Order$ticketsArgs<ExtArgs>
+    paymentDistribution?: boolean | Order$paymentDistributionArgs<ExtArgs>
     _count?: boolean | OrderCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type OrderIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -7975,6 +8068,7 @@ export namespace Prisma {
       event: Prisma.$EventPayload<ExtArgs>
       user: Prisma.$UserPayload<ExtArgs>
       tickets: Prisma.$TicketPayload<ExtArgs>[]
+      paymentDistribution: Prisma.$PaymentDistributionPayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -8384,6 +8478,7 @@ export namespace Prisma {
     event<T extends EventDefaultArgs<ExtArgs> = {}>(args?: Subset<T, EventDefaultArgs<ExtArgs>>): Prisma__EventClient<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     tickets<T extends Order$ticketsArgs<ExtArgs> = {}>(args?: Subset<T, Order$ticketsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TicketPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    paymentDistribution<T extends Order$paymentDistributionArgs<ExtArgs> = {}>(args?: Subset<T, Order$paymentDistributionArgs<ExtArgs>>): Prisma__PaymentDistributionClient<$Result.GetResult<Prisma.$PaymentDistributionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -8840,6 +8935,25 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: TicketScalarFieldEnum | TicketScalarFieldEnum[]
+  }
+
+  /**
+   * Order.paymentDistribution
+   */
+  export type Order$paymentDistributionArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PaymentDistribution
+     */
+    select?: PaymentDistributionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PaymentDistribution
+     */
+    omit?: PaymentDistributionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PaymentDistributionInclude<ExtArgs> | null
+    where?: PaymentDistributionWhereInput
   }
 
   /**
@@ -12264,6 +12378,1171 @@ export namespace Prisma {
 
 
   /**
+   * Model PaymentDistribution
+   */
+
+  export type AggregatePaymentDistribution = {
+    _count: PaymentDistributionCountAggregateOutputType | null
+    _avg: PaymentDistributionAvgAggregateOutputType | null
+    _sum: PaymentDistributionSumAggregateOutputType | null
+    _min: PaymentDistributionMinAggregateOutputType | null
+    _max: PaymentDistributionMaxAggregateOutputType | null
+  }
+
+  export type PaymentDistributionAvgAggregateOutputType = {
+    totalAmount: number | null
+    organizerShare: number | null
+    platformShare: number | null
+  }
+
+  export type PaymentDistributionSumAggregateOutputType = {
+    totalAmount: number | null
+    organizerShare: number | null
+    platformShare: number | null
+  }
+
+  export type PaymentDistributionMinAggregateOutputType = {
+    id: string | null
+    orderId: string | null
+    totalAmount: number | null
+    organizerShare: number | null
+    platformShare: number | null
+    organizerWallet: string | null
+    platformWallet: string | null
+    transactionHash: string | null
+    status: string | null
+    createdAt: Date | null
+  }
+
+  export type PaymentDistributionMaxAggregateOutputType = {
+    id: string | null
+    orderId: string | null
+    totalAmount: number | null
+    organizerShare: number | null
+    platformShare: number | null
+    organizerWallet: string | null
+    platformWallet: string | null
+    transactionHash: string | null
+    status: string | null
+    createdAt: Date | null
+  }
+
+  export type PaymentDistributionCountAggregateOutputType = {
+    id: number
+    orderId: number
+    totalAmount: number
+    organizerShare: number
+    platformShare: number
+    organizerWallet: number
+    platformWallet: number
+    transactionHash: number
+    status: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type PaymentDistributionAvgAggregateInputType = {
+    totalAmount?: true
+    organizerShare?: true
+    platformShare?: true
+  }
+
+  export type PaymentDistributionSumAggregateInputType = {
+    totalAmount?: true
+    organizerShare?: true
+    platformShare?: true
+  }
+
+  export type PaymentDistributionMinAggregateInputType = {
+    id?: true
+    orderId?: true
+    totalAmount?: true
+    organizerShare?: true
+    platformShare?: true
+    organizerWallet?: true
+    platformWallet?: true
+    transactionHash?: true
+    status?: true
+    createdAt?: true
+  }
+
+  export type PaymentDistributionMaxAggregateInputType = {
+    id?: true
+    orderId?: true
+    totalAmount?: true
+    organizerShare?: true
+    platformShare?: true
+    organizerWallet?: true
+    platformWallet?: true
+    transactionHash?: true
+    status?: true
+    createdAt?: true
+  }
+
+  export type PaymentDistributionCountAggregateInputType = {
+    id?: true
+    orderId?: true
+    totalAmount?: true
+    organizerShare?: true
+    platformShare?: true
+    organizerWallet?: true
+    platformWallet?: true
+    transactionHash?: true
+    status?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type PaymentDistributionAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PaymentDistribution to aggregate.
+     */
+    where?: PaymentDistributionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PaymentDistributions to fetch.
+     */
+    orderBy?: PaymentDistributionOrderByWithRelationInput | PaymentDistributionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PaymentDistributionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PaymentDistributions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PaymentDistributions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PaymentDistributions
+    **/
+    _count?: true | PaymentDistributionCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: PaymentDistributionAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PaymentDistributionSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PaymentDistributionMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PaymentDistributionMaxAggregateInputType
+  }
+
+  export type GetPaymentDistributionAggregateType<T extends PaymentDistributionAggregateArgs> = {
+        [P in keyof T & keyof AggregatePaymentDistribution]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePaymentDistribution[P]>
+      : GetScalarType<T[P], AggregatePaymentDistribution[P]>
+  }
+
+
+
+
+  export type PaymentDistributionGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PaymentDistributionWhereInput
+    orderBy?: PaymentDistributionOrderByWithAggregationInput | PaymentDistributionOrderByWithAggregationInput[]
+    by: PaymentDistributionScalarFieldEnum[] | PaymentDistributionScalarFieldEnum
+    having?: PaymentDistributionScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PaymentDistributionCountAggregateInputType | true
+    _avg?: PaymentDistributionAvgAggregateInputType
+    _sum?: PaymentDistributionSumAggregateInputType
+    _min?: PaymentDistributionMinAggregateInputType
+    _max?: PaymentDistributionMaxAggregateInputType
+  }
+
+  export type PaymentDistributionGroupByOutputType = {
+    id: string
+    orderId: string
+    totalAmount: number
+    organizerShare: number
+    platformShare: number
+    organizerWallet: string
+    platformWallet: string
+    transactionHash: string
+    status: string
+    createdAt: Date
+    _count: PaymentDistributionCountAggregateOutputType | null
+    _avg: PaymentDistributionAvgAggregateOutputType | null
+    _sum: PaymentDistributionSumAggregateOutputType | null
+    _min: PaymentDistributionMinAggregateOutputType | null
+    _max: PaymentDistributionMaxAggregateOutputType | null
+  }
+
+  type GetPaymentDistributionGroupByPayload<T extends PaymentDistributionGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PaymentDistributionGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PaymentDistributionGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PaymentDistributionGroupByOutputType[P]>
+            : GetScalarType<T[P], PaymentDistributionGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PaymentDistributionSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    orderId?: boolean
+    totalAmount?: boolean
+    organizerShare?: boolean
+    platformShare?: boolean
+    organizerWallet?: boolean
+    platformWallet?: boolean
+    transactionHash?: boolean
+    status?: boolean
+    createdAt?: boolean
+    order?: boolean | OrderDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["paymentDistribution"]>
+
+  export type PaymentDistributionSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    orderId?: boolean
+    totalAmount?: boolean
+    organizerShare?: boolean
+    platformShare?: boolean
+    organizerWallet?: boolean
+    platformWallet?: boolean
+    transactionHash?: boolean
+    status?: boolean
+    createdAt?: boolean
+    order?: boolean | OrderDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["paymentDistribution"]>
+
+  export type PaymentDistributionSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    orderId?: boolean
+    totalAmount?: boolean
+    organizerShare?: boolean
+    platformShare?: boolean
+    organizerWallet?: boolean
+    platformWallet?: boolean
+    transactionHash?: boolean
+    status?: boolean
+    createdAt?: boolean
+    order?: boolean | OrderDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["paymentDistribution"]>
+
+  export type PaymentDistributionSelectScalar = {
+    id?: boolean
+    orderId?: boolean
+    totalAmount?: boolean
+    organizerShare?: boolean
+    platformShare?: boolean
+    organizerWallet?: boolean
+    platformWallet?: boolean
+    transactionHash?: boolean
+    status?: boolean
+    createdAt?: boolean
+  }
+
+  export type PaymentDistributionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "orderId" | "totalAmount" | "organizerShare" | "platformShare" | "organizerWallet" | "platformWallet" | "transactionHash" | "status" | "createdAt", ExtArgs["result"]["paymentDistribution"]>
+  export type PaymentDistributionInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    order?: boolean | OrderDefaultArgs<ExtArgs>
+  }
+  export type PaymentDistributionIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    order?: boolean | OrderDefaultArgs<ExtArgs>
+  }
+  export type PaymentDistributionIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    order?: boolean | OrderDefaultArgs<ExtArgs>
+  }
+
+  export type $PaymentDistributionPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PaymentDistribution"
+    objects: {
+      order: Prisma.$OrderPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      orderId: string
+      totalAmount: number
+      organizerShare: number
+      platformShare: number
+      organizerWallet: string
+      platformWallet: string
+      transactionHash: string
+      status: string
+      createdAt: Date
+    }, ExtArgs["result"]["paymentDistribution"]>
+    composites: {}
+  }
+
+  type PaymentDistributionGetPayload<S extends boolean | null | undefined | PaymentDistributionDefaultArgs> = $Result.GetResult<Prisma.$PaymentDistributionPayload, S>
+
+  type PaymentDistributionCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PaymentDistributionFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PaymentDistributionCountAggregateInputType | true
+    }
+
+  export interface PaymentDistributionDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PaymentDistribution'], meta: { name: 'PaymentDistribution' } }
+    /**
+     * Find zero or one PaymentDistribution that matches the filter.
+     * @param {PaymentDistributionFindUniqueArgs} args - Arguments to find a PaymentDistribution
+     * @example
+     * // Get one PaymentDistribution
+     * const paymentDistribution = await prisma.paymentDistribution.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PaymentDistributionFindUniqueArgs>(args: SelectSubset<T, PaymentDistributionFindUniqueArgs<ExtArgs>>): Prisma__PaymentDistributionClient<$Result.GetResult<Prisma.$PaymentDistributionPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PaymentDistribution that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PaymentDistributionFindUniqueOrThrowArgs} args - Arguments to find a PaymentDistribution
+     * @example
+     * // Get one PaymentDistribution
+     * const paymentDistribution = await prisma.paymentDistribution.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PaymentDistributionFindUniqueOrThrowArgs>(args: SelectSubset<T, PaymentDistributionFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PaymentDistributionClient<$Result.GetResult<Prisma.$PaymentDistributionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PaymentDistribution that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PaymentDistributionFindFirstArgs} args - Arguments to find a PaymentDistribution
+     * @example
+     * // Get one PaymentDistribution
+     * const paymentDistribution = await prisma.paymentDistribution.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PaymentDistributionFindFirstArgs>(args?: SelectSubset<T, PaymentDistributionFindFirstArgs<ExtArgs>>): Prisma__PaymentDistributionClient<$Result.GetResult<Prisma.$PaymentDistributionPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PaymentDistribution that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PaymentDistributionFindFirstOrThrowArgs} args - Arguments to find a PaymentDistribution
+     * @example
+     * // Get one PaymentDistribution
+     * const paymentDistribution = await prisma.paymentDistribution.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PaymentDistributionFindFirstOrThrowArgs>(args?: SelectSubset<T, PaymentDistributionFindFirstOrThrowArgs<ExtArgs>>): Prisma__PaymentDistributionClient<$Result.GetResult<Prisma.$PaymentDistributionPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PaymentDistributions that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PaymentDistributionFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PaymentDistributions
+     * const paymentDistributions = await prisma.paymentDistribution.findMany()
+     * 
+     * // Get first 10 PaymentDistributions
+     * const paymentDistributions = await prisma.paymentDistribution.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const paymentDistributionWithIdOnly = await prisma.paymentDistribution.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PaymentDistributionFindManyArgs>(args?: SelectSubset<T, PaymentDistributionFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PaymentDistributionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PaymentDistribution.
+     * @param {PaymentDistributionCreateArgs} args - Arguments to create a PaymentDistribution.
+     * @example
+     * // Create one PaymentDistribution
+     * const PaymentDistribution = await prisma.paymentDistribution.create({
+     *   data: {
+     *     // ... data to create a PaymentDistribution
+     *   }
+     * })
+     * 
+     */
+    create<T extends PaymentDistributionCreateArgs>(args: SelectSubset<T, PaymentDistributionCreateArgs<ExtArgs>>): Prisma__PaymentDistributionClient<$Result.GetResult<Prisma.$PaymentDistributionPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PaymentDistributions.
+     * @param {PaymentDistributionCreateManyArgs} args - Arguments to create many PaymentDistributions.
+     * @example
+     * // Create many PaymentDistributions
+     * const paymentDistribution = await prisma.paymentDistribution.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PaymentDistributionCreateManyArgs>(args?: SelectSubset<T, PaymentDistributionCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many PaymentDistributions and returns the data saved in the database.
+     * @param {PaymentDistributionCreateManyAndReturnArgs} args - Arguments to create many PaymentDistributions.
+     * @example
+     * // Create many PaymentDistributions
+     * const paymentDistribution = await prisma.paymentDistribution.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many PaymentDistributions and only return the `id`
+     * const paymentDistributionWithIdOnly = await prisma.paymentDistribution.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends PaymentDistributionCreateManyAndReturnArgs>(args?: SelectSubset<T, PaymentDistributionCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PaymentDistributionPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a PaymentDistribution.
+     * @param {PaymentDistributionDeleteArgs} args - Arguments to delete one PaymentDistribution.
+     * @example
+     * // Delete one PaymentDistribution
+     * const PaymentDistribution = await prisma.paymentDistribution.delete({
+     *   where: {
+     *     // ... filter to delete one PaymentDistribution
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PaymentDistributionDeleteArgs>(args: SelectSubset<T, PaymentDistributionDeleteArgs<ExtArgs>>): Prisma__PaymentDistributionClient<$Result.GetResult<Prisma.$PaymentDistributionPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PaymentDistribution.
+     * @param {PaymentDistributionUpdateArgs} args - Arguments to update one PaymentDistribution.
+     * @example
+     * // Update one PaymentDistribution
+     * const paymentDistribution = await prisma.paymentDistribution.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PaymentDistributionUpdateArgs>(args: SelectSubset<T, PaymentDistributionUpdateArgs<ExtArgs>>): Prisma__PaymentDistributionClient<$Result.GetResult<Prisma.$PaymentDistributionPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PaymentDistributions.
+     * @param {PaymentDistributionDeleteManyArgs} args - Arguments to filter PaymentDistributions to delete.
+     * @example
+     * // Delete a few PaymentDistributions
+     * const { count } = await prisma.paymentDistribution.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PaymentDistributionDeleteManyArgs>(args?: SelectSubset<T, PaymentDistributionDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PaymentDistributions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PaymentDistributionUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PaymentDistributions
+     * const paymentDistribution = await prisma.paymentDistribution.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PaymentDistributionUpdateManyArgs>(args: SelectSubset<T, PaymentDistributionUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PaymentDistributions and returns the data updated in the database.
+     * @param {PaymentDistributionUpdateManyAndReturnArgs} args - Arguments to update many PaymentDistributions.
+     * @example
+     * // Update many PaymentDistributions
+     * const paymentDistribution = await prisma.paymentDistribution.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more PaymentDistributions and only return the `id`
+     * const paymentDistributionWithIdOnly = await prisma.paymentDistribution.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends PaymentDistributionUpdateManyAndReturnArgs>(args: SelectSubset<T, PaymentDistributionUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PaymentDistributionPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one PaymentDistribution.
+     * @param {PaymentDistributionUpsertArgs} args - Arguments to update or create a PaymentDistribution.
+     * @example
+     * // Update or create a PaymentDistribution
+     * const paymentDistribution = await prisma.paymentDistribution.upsert({
+     *   create: {
+     *     // ... data to create a PaymentDistribution
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PaymentDistribution we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PaymentDistributionUpsertArgs>(args: SelectSubset<T, PaymentDistributionUpsertArgs<ExtArgs>>): Prisma__PaymentDistributionClient<$Result.GetResult<Prisma.$PaymentDistributionPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PaymentDistributions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PaymentDistributionCountArgs} args - Arguments to filter PaymentDistributions to count.
+     * @example
+     * // Count the number of PaymentDistributions
+     * const count = await prisma.paymentDistribution.count({
+     *   where: {
+     *     // ... the filter for the PaymentDistributions we want to count
+     *   }
+     * })
+    **/
+    count<T extends PaymentDistributionCountArgs>(
+      args?: Subset<T, PaymentDistributionCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PaymentDistributionCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PaymentDistribution.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PaymentDistributionAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PaymentDistributionAggregateArgs>(args: Subset<T, PaymentDistributionAggregateArgs>): Prisma.PrismaPromise<GetPaymentDistributionAggregateType<T>>
+
+    /**
+     * Group by PaymentDistribution.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PaymentDistributionGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PaymentDistributionGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PaymentDistributionGroupByArgs['orderBy'] }
+        : { orderBy?: PaymentDistributionGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PaymentDistributionGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPaymentDistributionGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PaymentDistribution model
+   */
+  readonly fields: PaymentDistributionFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PaymentDistribution.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PaymentDistributionClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    order<T extends OrderDefaultArgs<ExtArgs> = {}>(args?: Subset<T, OrderDefaultArgs<ExtArgs>>): Prisma__OrderClient<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PaymentDistribution model
+   */
+  interface PaymentDistributionFieldRefs {
+    readonly id: FieldRef<"PaymentDistribution", 'String'>
+    readonly orderId: FieldRef<"PaymentDistribution", 'String'>
+    readonly totalAmount: FieldRef<"PaymentDistribution", 'Float'>
+    readonly organizerShare: FieldRef<"PaymentDistribution", 'Float'>
+    readonly platformShare: FieldRef<"PaymentDistribution", 'Float'>
+    readonly organizerWallet: FieldRef<"PaymentDistribution", 'String'>
+    readonly platformWallet: FieldRef<"PaymentDistribution", 'String'>
+    readonly transactionHash: FieldRef<"PaymentDistribution", 'String'>
+    readonly status: FieldRef<"PaymentDistribution", 'String'>
+    readonly createdAt: FieldRef<"PaymentDistribution", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PaymentDistribution findUnique
+   */
+  export type PaymentDistributionFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PaymentDistribution
+     */
+    select?: PaymentDistributionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PaymentDistribution
+     */
+    omit?: PaymentDistributionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PaymentDistributionInclude<ExtArgs> | null
+    /**
+     * Filter, which PaymentDistribution to fetch.
+     */
+    where: PaymentDistributionWhereUniqueInput
+  }
+
+  /**
+   * PaymentDistribution findUniqueOrThrow
+   */
+  export type PaymentDistributionFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PaymentDistribution
+     */
+    select?: PaymentDistributionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PaymentDistribution
+     */
+    omit?: PaymentDistributionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PaymentDistributionInclude<ExtArgs> | null
+    /**
+     * Filter, which PaymentDistribution to fetch.
+     */
+    where: PaymentDistributionWhereUniqueInput
+  }
+
+  /**
+   * PaymentDistribution findFirst
+   */
+  export type PaymentDistributionFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PaymentDistribution
+     */
+    select?: PaymentDistributionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PaymentDistribution
+     */
+    omit?: PaymentDistributionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PaymentDistributionInclude<ExtArgs> | null
+    /**
+     * Filter, which PaymentDistribution to fetch.
+     */
+    where?: PaymentDistributionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PaymentDistributions to fetch.
+     */
+    orderBy?: PaymentDistributionOrderByWithRelationInput | PaymentDistributionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PaymentDistributions.
+     */
+    cursor?: PaymentDistributionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PaymentDistributions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PaymentDistributions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PaymentDistributions.
+     */
+    distinct?: PaymentDistributionScalarFieldEnum | PaymentDistributionScalarFieldEnum[]
+  }
+
+  /**
+   * PaymentDistribution findFirstOrThrow
+   */
+  export type PaymentDistributionFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PaymentDistribution
+     */
+    select?: PaymentDistributionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PaymentDistribution
+     */
+    omit?: PaymentDistributionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PaymentDistributionInclude<ExtArgs> | null
+    /**
+     * Filter, which PaymentDistribution to fetch.
+     */
+    where?: PaymentDistributionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PaymentDistributions to fetch.
+     */
+    orderBy?: PaymentDistributionOrderByWithRelationInput | PaymentDistributionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PaymentDistributions.
+     */
+    cursor?: PaymentDistributionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PaymentDistributions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PaymentDistributions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PaymentDistributions.
+     */
+    distinct?: PaymentDistributionScalarFieldEnum | PaymentDistributionScalarFieldEnum[]
+  }
+
+  /**
+   * PaymentDistribution findMany
+   */
+  export type PaymentDistributionFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PaymentDistribution
+     */
+    select?: PaymentDistributionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PaymentDistribution
+     */
+    omit?: PaymentDistributionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PaymentDistributionInclude<ExtArgs> | null
+    /**
+     * Filter, which PaymentDistributions to fetch.
+     */
+    where?: PaymentDistributionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PaymentDistributions to fetch.
+     */
+    orderBy?: PaymentDistributionOrderByWithRelationInput | PaymentDistributionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PaymentDistributions.
+     */
+    cursor?: PaymentDistributionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PaymentDistributions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PaymentDistributions.
+     */
+    skip?: number
+    distinct?: PaymentDistributionScalarFieldEnum | PaymentDistributionScalarFieldEnum[]
+  }
+
+  /**
+   * PaymentDistribution create
+   */
+  export type PaymentDistributionCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PaymentDistribution
+     */
+    select?: PaymentDistributionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PaymentDistribution
+     */
+    omit?: PaymentDistributionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PaymentDistributionInclude<ExtArgs> | null
+    /**
+     * The data needed to create a PaymentDistribution.
+     */
+    data: XOR<PaymentDistributionCreateInput, PaymentDistributionUncheckedCreateInput>
+  }
+
+  /**
+   * PaymentDistribution createMany
+   */
+  export type PaymentDistributionCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PaymentDistributions.
+     */
+    data: PaymentDistributionCreateManyInput | PaymentDistributionCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PaymentDistribution createManyAndReturn
+   */
+  export type PaymentDistributionCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PaymentDistribution
+     */
+    select?: PaymentDistributionSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the PaymentDistribution
+     */
+    omit?: PaymentDistributionOmit<ExtArgs> | null
+    /**
+     * The data used to create many PaymentDistributions.
+     */
+    data: PaymentDistributionCreateManyInput | PaymentDistributionCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PaymentDistributionIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * PaymentDistribution update
+   */
+  export type PaymentDistributionUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PaymentDistribution
+     */
+    select?: PaymentDistributionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PaymentDistribution
+     */
+    omit?: PaymentDistributionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PaymentDistributionInclude<ExtArgs> | null
+    /**
+     * The data needed to update a PaymentDistribution.
+     */
+    data: XOR<PaymentDistributionUpdateInput, PaymentDistributionUncheckedUpdateInput>
+    /**
+     * Choose, which PaymentDistribution to update.
+     */
+    where: PaymentDistributionWhereUniqueInput
+  }
+
+  /**
+   * PaymentDistribution updateMany
+   */
+  export type PaymentDistributionUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PaymentDistributions.
+     */
+    data: XOR<PaymentDistributionUpdateManyMutationInput, PaymentDistributionUncheckedUpdateManyInput>
+    /**
+     * Filter which PaymentDistributions to update
+     */
+    where?: PaymentDistributionWhereInput
+    /**
+     * Limit how many PaymentDistributions to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PaymentDistribution updateManyAndReturn
+   */
+  export type PaymentDistributionUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PaymentDistribution
+     */
+    select?: PaymentDistributionSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the PaymentDistribution
+     */
+    omit?: PaymentDistributionOmit<ExtArgs> | null
+    /**
+     * The data used to update PaymentDistributions.
+     */
+    data: XOR<PaymentDistributionUpdateManyMutationInput, PaymentDistributionUncheckedUpdateManyInput>
+    /**
+     * Filter which PaymentDistributions to update
+     */
+    where?: PaymentDistributionWhereInput
+    /**
+     * Limit how many PaymentDistributions to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PaymentDistributionIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * PaymentDistribution upsert
+   */
+  export type PaymentDistributionUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PaymentDistribution
+     */
+    select?: PaymentDistributionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PaymentDistribution
+     */
+    omit?: PaymentDistributionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PaymentDistributionInclude<ExtArgs> | null
+    /**
+     * The filter to search for the PaymentDistribution to update in case it exists.
+     */
+    where: PaymentDistributionWhereUniqueInput
+    /**
+     * In case the PaymentDistribution found by the `where` argument doesn't exist, create a new PaymentDistribution with this data.
+     */
+    create: XOR<PaymentDistributionCreateInput, PaymentDistributionUncheckedCreateInput>
+    /**
+     * In case the PaymentDistribution was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PaymentDistributionUpdateInput, PaymentDistributionUncheckedUpdateInput>
+  }
+
+  /**
+   * PaymentDistribution delete
+   */
+  export type PaymentDistributionDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PaymentDistribution
+     */
+    select?: PaymentDistributionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PaymentDistribution
+     */
+    omit?: PaymentDistributionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PaymentDistributionInclude<ExtArgs> | null
+    /**
+     * Filter which PaymentDistribution to delete.
+     */
+    where: PaymentDistributionWhereUniqueInput
+  }
+
+  /**
+   * PaymentDistribution deleteMany
+   */
+  export type PaymentDistributionDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PaymentDistributions to delete
+     */
+    where?: PaymentDistributionWhereInput
+    /**
+     * Limit how many PaymentDistributions to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PaymentDistribution without action
+   */
+  export type PaymentDistributionDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PaymentDistribution
+     */
+    select?: PaymentDistributionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PaymentDistribution
+     */
+    omit?: PaymentDistributionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: PaymentDistributionInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -12416,6 +13695,22 @@ export namespace Prisma {
   };
 
   export type PlatformConfigScalarFieldEnum = (typeof PlatformConfigScalarFieldEnum)[keyof typeof PlatformConfigScalarFieldEnum]
+
+
+  export const PaymentDistributionScalarFieldEnum: {
+    id: 'id',
+    orderId: 'orderId',
+    totalAmount: 'totalAmount',
+    organizerShare: 'organizerShare',
+    platformShare: 'platformShare',
+    organizerWallet: 'organizerWallet',
+    platformWallet: 'platformWallet',
+    transactionHash: 'transactionHash',
+    status: 'status',
+    createdAt: 'createdAt'
+  };
+
+  export type PaymentDistributionScalarFieldEnum = (typeof PaymentDistributionScalarFieldEnum)[keyof typeof PaymentDistributionScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -12944,6 +14239,7 @@ export namespace Prisma {
     event?: XOR<EventScalarRelationFilter, EventWhereInput>
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
     tickets?: TicketListRelationFilter
+    paymentDistribution?: XOR<PaymentDistributionNullableScalarRelationFilter, PaymentDistributionWhereInput> | null
   }
 
   export type OrderOrderByWithRelationInput = {
@@ -12960,6 +14256,7 @@ export namespace Prisma {
     event?: EventOrderByWithRelationInput
     user?: UserOrderByWithRelationInput
     tickets?: TicketOrderByRelationAggregateInput
+    paymentDistribution?: PaymentDistributionOrderByWithRelationInput
   }
 
   export type OrderWhereUniqueInput = Prisma.AtLeast<{
@@ -12979,6 +14276,7 @@ export namespace Prisma {
     event?: XOR<EventScalarRelationFilter, EventWhereInput>
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
     tickets?: TicketListRelationFilter
+    paymentDistribution?: XOR<PaymentDistributionNullableScalarRelationFilter, PaymentDistributionWhereInput> | null
   }, "id">
 
   export type OrderOrderByWithAggregationInput = {
@@ -13263,6 +14561,88 @@ export namespace Prisma {
     value?: StringWithAggregatesFilter<"PlatformConfig"> | string
     createdAt?: DateTimeWithAggregatesFilter<"PlatformConfig"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"PlatformConfig"> | Date | string
+  }
+
+  export type PaymentDistributionWhereInput = {
+    AND?: PaymentDistributionWhereInput | PaymentDistributionWhereInput[]
+    OR?: PaymentDistributionWhereInput[]
+    NOT?: PaymentDistributionWhereInput | PaymentDistributionWhereInput[]
+    id?: StringFilter<"PaymentDistribution"> | string
+    orderId?: StringFilter<"PaymentDistribution"> | string
+    totalAmount?: FloatFilter<"PaymentDistribution"> | number
+    organizerShare?: FloatFilter<"PaymentDistribution"> | number
+    platformShare?: FloatFilter<"PaymentDistribution"> | number
+    organizerWallet?: StringFilter<"PaymentDistribution"> | string
+    platformWallet?: StringFilter<"PaymentDistribution"> | string
+    transactionHash?: StringFilter<"PaymentDistribution"> | string
+    status?: StringFilter<"PaymentDistribution"> | string
+    createdAt?: DateTimeFilter<"PaymentDistribution"> | Date | string
+    order?: XOR<OrderScalarRelationFilter, OrderWhereInput>
+  }
+
+  export type PaymentDistributionOrderByWithRelationInput = {
+    id?: SortOrder
+    orderId?: SortOrder
+    totalAmount?: SortOrder
+    organizerShare?: SortOrder
+    platformShare?: SortOrder
+    organizerWallet?: SortOrder
+    platformWallet?: SortOrder
+    transactionHash?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+    order?: OrderOrderByWithRelationInput
+  }
+
+  export type PaymentDistributionWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    orderId?: string
+    AND?: PaymentDistributionWhereInput | PaymentDistributionWhereInput[]
+    OR?: PaymentDistributionWhereInput[]
+    NOT?: PaymentDistributionWhereInput | PaymentDistributionWhereInput[]
+    totalAmount?: FloatFilter<"PaymentDistribution"> | number
+    organizerShare?: FloatFilter<"PaymentDistribution"> | number
+    platformShare?: FloatFilter<"PaymentDistribution"> | number
+    organizerWallet?: StringFilter<"PaymentDistribution"> | string
+    platformWallet?: StringFilter<"PaymentDistribution"> | string
+    transactionHash?: StringFilter<"PaymentDistribution"> | string
+    status?: StringFilter<"PaymentDistribution"> | string
+    createdAt?: DateTimeFilter<"PaymentDistribution"> | Date | string
+    order?: XOR<OrderScalarRelationFilter, OrderWhereInput>
+  }, "id" | "orderId">
+
+  export type PaymentDistributionOrderByWithAggregationInput = {
+    id?: SortOrder
+    orderId?: SortOrder
+    totalAmount?: SortOrder
+    organizerShare?: SortOrder
+    platformShare?: SortOrder
+    organizerWallet?: SortOrder
+    platformWallet?: SortOrder
+    transactionHash?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+    _count?: PaymentDistributionCountOrderByAggregateInput
+    _avg?: PaymentDistributionAvgOrderByAggregateInput
+    _max?: PaymentDistributionMaxOrderByAggregateInput
+    _min?: PaymentDistributionMinOrderByAggregateInput
+    _sum?: PaymentDistributionSumOrderByAggregateInput
+  }
+
+  export type PaymentDistributionScalarWhereWithAggregatesInput = {
+    AND?: PaymentDistributionScalarWhereWithAggregatesInput | PaymentDistributionScalarWhereWithAggregatesInput[]
+    OR?: PaymentDistributionScalarWhereWithAggregatesInput[]
+    NOT?: PaymentDistributionScalarWhereWithAggregatesInput | PaymentDistributionScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PaymentDistribution"> | string
+    orderId?: StringWithAggregatesFilter<"PaymentDistribution"> | string
+    totalAmount?: FloatWithAggregatesFilter<"PaymentDistribution"> | number
+    organizerShare?: FloatWithAggregatesFilter<"PaymentDistribution"> | number
+    platformShare?: FloatWithAggregatesFilter<"PaymentDistribution"> | number
+    organizerWallet?: StringWithAggregatesFilter<"PaymentDistribution"> | string
+    platformWallet?: StringWithAggregatesFilter<"PaymentDistribution"> | string
+    transactionHash?: StringWithAggregatesFilter<"PaymentDistribution"> | string
+    status?: StringWithAggregatesFilter<"PaymentDistribution"> | string
+    createdAt?: DateTimeWithAggregatesFilter<"PaymentDistribution"> | Date | string
   }
 
   export type UserCreateInput = {
@@ -13747,6 +15127,7 @@ export namespace Prisma {
     event: EventCreateNestedOneWithoutOrdersInput
     user: UserCreateNestedOneWithoutOrdersInput
     tickets?: TicketCreateNestedManyWithoutOrderInput
+    paymentDistribution?: PaymentDistributionCreateNestedOneWithoutOrderInput
   }
 
   export type OrderUncheckedCreateInput = {
@@ -13761,6 +15142,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     tickets?: TicketUncheckedCreateNestedManyWithoutOrderInput
+    paymentDistribution?: PaymentDistributionUncheckedCreateNestedOneWithoutOrderInput
   }
 
   export type OrderUpdateInput = {
@@ -13775,6 +15157,7 @@ export namespace Prisma {
     event?: EventUpdateOneRequiredWithoutOrdersNestedInput
     user?: UserUpdateOneRequiredWithoutOrdersNestedInput
     tickets?: TicketUpdateManyWithoutOrderNestedInput
+    paymentDistribution?: PaymentDistributionUpdateOneWithoutOrderNestedInput
   }
 
   export type OrderUncheckedUpdateInput = {
@@ -13789,6 +15172,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     tickets?: TicketUncheckedUpdateManyWithoutOrderNestedInput
+    paymentDistribution?: PaymentDistributionUncheckedUpdateOneWithoutOrderNestedInput
   }
 
   export type OrderCreateManyInput = {
@@ -14094,6 +15478,96 @@ export namespace Prisma {
     value?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PaymentDistributionCreateInput = {
+    id?: string
+    totalAmount: number
+    organizerShare: number
+    platformShare: number
+    organizerWallet: string
+    platformWallet: string
+    transactionHash: string
+    status?: string
+    createdAt?: Date | string
+    order: OrderCreateNestedOneWithoutPaymentDistributionInput
+  }
+
+  export type PaymentDistributionUncheckedCreateInput = {
+    id?: string
+    orderId: string
+    totalAmount: number
+    organizerShare: number
+    platformShare: number
+    organizerWallet: string
+    platformWallet: string
+    transactionHash: string
+    status?: string
+    createdAt?: Date | string
+  }
+
+  export type PaymentDistributionUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    totalAmount?: FloatFieldUpdateOperationsInput | number
+    organizerShare?: FloatFieldUpdateOperationsInput | number
+    platformShare?: FloatFieldUpdateOperationsInput | number
+    organizerWallet?: StringFieldUpdateOperationsInput | string
+    platformWallet?: StringFieldUpdateOperationsInput | string
+    transactionHash?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    order?: OrderUpdateOneRequiredWithoutPaymentDistributionNestedInput
+  }
+
+  export type PaymentDistributionUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orderId?: StringFieldUpdateOperationsInput | string
+    totalAmount?: FloatFieldUpdateOperationsInput | number
+    organizerShare?: FloatFieldUpdateOperationsInput | number
+    platformShare?: FloatFieldUpdateOperationsInput | number
+    organizerWallet?: StringFieldUpdateOperationsInput | string
+    platformWallet?: StringFieldUpdateOperationsInput | string
+    transactionHash?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PaymentDistributionCreateManyInput = {
+    id?: string
+    orderId: string
+    totalAmount: number
+    organizerShare: number
+    platformShare: number
+    organizerWallet: string
+    platformWallet: string
+    transactionHash: string
+    status?: string
+    createdAt?: Date | string
+  }
+
+  export type PaymentDistributionUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    totalAmount?: FloatFieldUpdateOperationsInput | number
+    organizerShare?: FloatFieldUpdateOperationsInput | number
+    platformShare?: FloatFieldUpdateOperationsInput | number
+    organizerWallet?: StringFieldUpdateOperationsInput | string
+    platformWallet?: StringFieldUpdateOperationsInput | string
+    transactionHash?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PaymentDistributionUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    orderId?: StringFieldUpdateOperationsInput | string
+    totalAmount?: FloatFieldUpdateOperationsInput | number
+    organizerShare?: FloatFieldUpdateOperationsInput | number
+    platformShare?: FloatFieldUpdateOperationsInput | number
+    organizerWallet?: StringFieldUpdateOperationsInput | string
+    platformWallet?: StringFieldUpdateOperationsInput | string
+    transactionHash?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type StringFilter<$PrismaModel = never> = {
@@ -14528,6 +16002,11 @@ export namespace Prisma {
     isNot?: EventWhereInput
   }
 
+  export type PaymentDistributionNullableScalarRelationFilter = {
+    is?: PaymentDistributionWhereInput | null
+    isNot?: PaymentDistributionWhereInput | null
+  }
+
   export type OrderCountOrderByAggregateInput = {
     id?: SortOrder
     eventId?: SortOrder
@@ -14740,6 +16219,57 @@ export namespace Prisma {
     value?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type PaymentDistributionCountOrderByAggregateInput = {
+    id?: SortOrder
+    orderId?: SortOrder
+    totalAmount?: SortOrder
+    organizerShare?: SortOrder
+    platformShare?: SortOrder
+    organizerWallet?: SortOrder
+    platformWallet?: SortOrder
+    transactionHash?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type PaymentDistributionAvgOrderByAggregateInput = {
+    totalAmount?: SortOrder
+    organizerShare?: SortOrder
+    platformShare?: SortOrder
+  }
+
+  export type PaymentDistributionMaxOrderByAggregateInput = {
+    id?: SortOrder
+    orderId?: SortOrder
+    totalAmount?: SortOrder
+    organizerShare?: SortOrder
+    platformShare?: SortOrder
+    organizerWallet?: SortOrder
+    platformWallet?: SortOrder
+    transactionHash?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type PaymentDistributionMinOrderByAggregateInput = {
+    id?: SortOrder
+    orderId?: SortOrder
+    totalAmount?: SortOrder
+    organizerShare?: SortOrder
+    platformShare?: SortOrder
+    organizerWallet?: SortOrder
+    platformWallet?: SortOrder
+    transactionHash?: SortOrder
+    status?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type PaymentDistributionSumOrderByAggregateInput = {
+    totalAmount?: SortOrder
+    organizerShare?: SortOrder
+    platformShare?: SortOrder
   }
 
   export type ProfileCreateNestedOneWithoutUserInput = {
@@ -15260,11 +16790,23 @@ export namespace Prisma {
     connect?: TicketWhereUniqueInput | TicketWhereUniqueInput[]
   }
 
+  export type PaymentDistributionCreateNestedOneWithoutOrderInput = {
+    create?: XOR<PaymentDistributionCreateWithoutOrderInput, PaymentDistributionUncheckedCreateWithoutOrderInput>
+    connectOrCreate?: PaymentDistributionCreateOrConnectWithoutOrderInput
+    connect?: PaymentDistributionWhereUniqueInput
+  }
+
   export type TicketUncheckedCreateNestedManyWithoutOrderInput = {
     create?: XOR<TicketCreateWithoutOrderInput, TicketUncheckedCreateWithoutOrderInput> | TicketCreateWithoutOrderInput[] | TicketUncheckedCreateWithoutOrderInput[]
     connectOrCreate?: TicketCreateOrConnectWithoutOrderInput | TicketCreateOrConnectWithoutOrderInput[]
     createMany?: TicketCreateManyOrderInputEnvelope
     connect?: TicketWhereUniqueInput | TicketWhereUniqueInput[]
+  }
+
+  export type PaymentDistributionUncheckedCreateNestedOneWithoutOrderInput = {
+    create?: XOR<PaymentDistributionCreateWithoutOrderInput, PaymentDistributionUncheckedCreateWithoutOrderInput>
+    connectOrCreate?: PaymentDistributionCreateOrConnectWithoutOrderInput
+    connect?: PaymentDistributionWhereUniqueInput
   }
 
   export type EventUpdateOneRequiredWithoutOrdersNestedInput = {
@@ -15297,6 +16839,16 @@ export namespace Prisma {
     deleteMany?: TicketScalarWhereInput | TicketScalarWhereInput[]
   }
 
+  export type PaymentDistributionUpdateOneWithoutOrderNestedInput = {
+    create?: XOR<PaymentDistributionCreateWithoutOrderInput, PaymentDistributionUncheckedCreateWithoutOrderInput>
+    connectOrCreate?: PaymentDistributionCreateOrConnectWithoutOrderInput
+    upsert?: PaymentDistributionUpsertWithoutOrderInput
+    disconnect?: PaymentDistributionWhereInput | boolean
+    delete?: PaymentDistributionWhereInput | boolean
+    connect?: PaymentDistributionWhereUniqueInput
+    update?: XOR<XOR<PaymentDistributionUpdateToOneWithWhereWithoutOrderInput, PaymentDistributionUpdateWithoutOrderInput>, PaymentDistributionUncheckedUpdateWithoutOrderInput>
+  }
+
   export type TicketUncheckedUpdateManyWithoutOrderNestedInput = {
     create?: XOR<TicketCreateWithoutOrderInput, TicketUncheckedCreateWithoutOrderInput> | TicketCreateWithoutOrderInput[] | TicketUncheckedCreateWithoutOrderInput[]
     connectOrCreate?: TicketCreateOrConnectWithoutOrderInput | TicketCreateOrConnectWithoutOrderInput[]
@@ -15309,6 +16861,16 @@ export namespace Prisma {
     update?: TicketUpdateWithWhereUniqueWithoutOrderInput | TicketUpdateWithWhereUniqueWithoutOrderInput[]
     updateMany?: TicketUpdateManyWithWhereWithoutOrderInput | TicketUpdateManyWithWhereWithoutOrderInput[]
     deleteMany?: TicketScalarWhereInput | TicketScalarWhereInput[]
+  }
+
+  export type PaymentDistributionUncheckedUpdateOneWithoutOrderNestedInput = {
+    create?: XOR<PaymentDistributionCreateWithoutOrderInput, PaymentDistributionUncheckedCreateWithoutOrderInput>
+    connectOrCreate?: PaymentDistributionCreateOrConnectWithoutOrderInput
+    upsert?: PaymentDistributionUpsertWithoutOrderInput
+    disconnect?: PaymentDistributionWhereInput | boolean
+    delete?: PaymentDistributionWhereInput | boolean
+    connect?: PaymentDistributionWhereUniqueInput
+    update?: XOR<XOR<PaymentDistributionUpdateToOneWithWhereWithoutOrderInput, PaymentDistributionUpdateWithoutOrderInput>, PaymentDistributionUncheckedUpdateWithoutOrderInput>
   }
 
   export type EventCreateNestedOneWithoutTicketsInput = {
@@ -15383,6 +16945,20 @@ export namespace Prisma {
     upsert?: UserUpsertWithoutListingsInput
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutListingsInput, UserUpdateWithoutListingsInput>, UserUncheckedUpdateWithoutListingsInput>
+  }
+
+  export type OrderCreateNestedOneWithoutPaymentDistributionInput = {
+    create?: XOR<OrderCreateWithoutPaymentDistributionInput, OrderUncheckedCreateWithoutPaymentDistributionInput>
+    connectOrCreate?: OrderCreateOrConnectWithoutPaymentDistributionInput
+    connect?: OrderWhereUniqueInput
+  }
+
+  export type OrderUpdateOneRequiredWithoutPaymentDistributionNestedInput = {
+    create?: XOR<OrderCreateWithoutPaymentDistributionInput, OrderUncheckedCreateWithoutPaymentDistributionInput>
+    connectOrCreate?: OrderCreateOrConnectWithoutPaymentDistributionInput
+    upsert?: OrderUpsertWithoutPaymentDistributionInput
+    connect?: OrderWhereUniqueInput
+    update?: XOR<XOR<OrderUpdateToOneWithWhereWithoutPaymentDistributionInput, OrderUpdateWithoutPaymentDistributionInput>, OrderUncheckedUpdateWithoutPaymentDistributionInput>
   }
 
   export type NestedStringFilter<$PrismaModel = never> = {
@@ -15644,6 +17220,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     event: EventCreateNestedOneWithoutOrdersInput
     tickets?: TicketCreateNestedManyWithoutOrderInput
+    paymentDistribution?: PaymentDistributionCreateNestedOneWithoutOrderInput
   }
 
   export type OrderUncheckedCreateWithoutUserInput = {
@@ -15657,6 +17234,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     tickets?: TicketUncheckedCreateNestedManyWithoutOrderInput
+    paymentDistribution?: PaymentDistributionUncheckedCreateNestedOneWithoutOrderInput
   }
 
   export type OrderCreateOrConnectWithoutUserInput = {
@@ -16275,6 +17853,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     user: UserCreateNestedOneWithoutOrdersInput
     tickets?: TicketCreateNestedManyWithoutOrderInput
+    paymentDistribution?: PaymentDistributionCreateNestedOneWithoutOrderInput
   }
 
   export type OrderUncheckedCreateWithoutEventInput = {
@@ -16288,6 +17867,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     tickets?: TicketUncheckedCreateNestedManyWithoutOrderInput
+    paymentDistribution?: PaymentDistributionUncheckedCreateNestedOneWithoutOrderInput
   }
 
   export type OrderCreateOrConnectWithoutEventInput = {
@@ -16610,6 +18190,35 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type PaymentDistributionCreateWithoutOrderInput = {
+    id?: string
+    totalAmount: number
+    organizerShare: number
+    platformShare: number
+    organizerWallet: string
+    platformWallet: string
+    transactionHash: string
+    status?: string
+    createdAt?: Date | string
+  }
+
+  export type PaymentDistributionUncheckedCreateWithoutOrderInput = {
+    id?: string
+    totalAmount: number
+    organizerShare: number
+    platformShare: number
+    organizerWallet: string
+    platformWallet: string
+    transactionHash: string
+    status?: string
+    createdAt?: Date | string
+  }
+
+  export type PaymentDistributionCreateOrConnectWithoutOrderInput = {
+    where: PaymentDistributionWhereUniqueInput
+    create: XOR<PaymentDistributionCreateWithoutOrderInput, PaymentDistributionUncheckedCreateWithoutOrderInput>
+  }
+
   export type EventUpsertWithoutOrdersInput = {
     update: XOR<EventUpdateWithoutOrdersInput, EventUncheckedUpdateWithoutOrdersInput>
     create: XOR<EventCreateWithoutOrdersInput, EventUncheckedCreateWithoutOrdersInput>
@@ -16716,6 +18325,41 @@ export namespace Prisma {
     data: XOR<TicketUpdateManyMutationInput, TicketUncheckedUpdateManyWithoutOrderInput>
   }
 
+  export type PaymentDistributionUpsertWithoutOrderInput = {
+    update: XOR<PaymentDistributionUpdateWithoutOrderInput, PaymentDistributionUncheckedUpdateWithoutOrderInput>
+    create: XOR<PaymentDistributionCreateWithoutOrderInput, PaymentDistributionUncheckedCreateWithoutOrderInput>
+    where?: PaymentDistributionWhereInput
+  }
+
+  export type PaymentDistributionUpdateToOneWithWhereWithoutOrderInput = {
+    where?: PaymentDistributionWhereInput
+    data: XOR<PaymentDistributionUpdateWithoutOrderInput, PaymentDistributionUncheckedUpdateWithoutOrderInput>
+  }
+
+  export type PaymentDistributionUpdateWithoutOrderInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    totalAmount?: FloatFieldUpdateOperationsInput | number
+    organizerShare?: FloatFieldUpdateOperationsInput | number
+    platformShare?: FloatFieldUpdateOperationsInput | number
+    organizerWallet?: StringFieldUpdateOperationsInput | string
+    platformWallet?: StringFieldUpdateOperationsInput | string
+    transactionHash?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type PaymentDistributionUncheckedUpdateWithoutOrderInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    totalAmount?: FloatFieldUpdateOperationsInput | number
+    organizerShare?: FloatFieldUpdateOperationsInput | number
+    platformShare?: FloatFieldUpdateOperationsInput | number
+    organizerWallet?: StringFieldUpdateOperationsInput | string
+    platformWallet?: StringFieldUpdateOperationsInput | string
+    transactionHash?: StringFieldUpdateOperationsInput | string
+    status?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type EventCreateWithoutTicketsInput = {
     id?: string
     title: string
@@ -16778,6 +18422,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     event: EventCreateNestedOneWithoutOrdersInput
     user: UserCreateNestedOneWithoutOrdersInput
+    paymentDistribution?: PaymentDistributionCreateNestedOneWithoutOrderInput
   }
 
   export type OrderUncheckedCreateWithoutTicketsInput = {
@@ -16791,6 +18436,7 @@ export namespace Prisma {
     nftMintAddress?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    paymentDistribution?: PaymentDistributionUncheckedCreateNestedOneWithoutOrderInput
   }
 
   export type OrderCreateOrConnectWithoutTicketsInput = {
@@ -16904,6 +18550,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     event?: EventUpdateOneRequiredWithoutOrdersNestedInput
     user?: UserUpdateOneRequiredWithoutOrdersNestedInput
+    paymentDistribution?: PaymentDistributionUpdateOneWithoutOrderNestedInput
   }
 
   export type OrderUncheckedUpdateWithoutTicketsInput = {
@@ -16917,6 +18564,7 @@ export namespace Prisma {
     nftMintAddress?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    paymentDistribution?: PaymentDistributionUncheckedUpdateOneWithoutOrderNestedInput
   }
 
   export type UserUpsertWithoutTicketsInput = {
@@ -17120,6 +18768,78 @@ export namespace Prisma {
     tickets?: TicketUncheckedUpdateManyWithoutUserNestedInput
   }
 
+  export type OrderCreateWithoutPaymentDistributionInput = {
+    id?: string
+    quantity: number
+    totalPrice: number
+    status?: string
+    transactionHash?: string | null
+    nftMintAddress?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    event: EventCreateNestedOneWithoutOrdersInput
+    user: UserCreateNestedOneWithoutOrdersInput
+    tickets?: TicketCreateNestedManyWithoutOrderInput
+  }
+
+  export type OrderUncheckedCreateWithoutPaymentDistributionInput = {
+    id?: string
+    eventId: string
+    userId: string
+    quantity: number
+    totalPrice: number
+    status?: string
+    transactionHash?: string | null
+    nftMintAddress?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    tickets?: TicketUncheckedCreateNestedManyWithoutOrderInput
+  }
+
+  export type OrderCreateOrConnectWithoutPaymentDistributionInput = {
+    where: OrderWhereUniqueInput
+    create: XOR<OrderCreateWithoutPaymentDistributionInput, OrderUncheckedCreateWithoutPaymentDistributionInput>
+  }
+
+  export type OrderUpsertWithoutPaymentDistributionInput = {
+    update: XOR<OrderUpdateWithoutPaymentDistributionInput, OrderUncheckedUpdateWithoutPaymentDistributionInput>
+    create: XOR<OrderCreateWithoutPaymentDistributionInput, OrderUncheckedCreateWithoutPaymentDistributionInput>
+    where?: OrderWhereInput
+  }
+
+  export type OrderUpdateToOneWithWhereWithoutPaymentDistributionInput = {
+    where?: OrderWhereInput
+    data: XOR<OrderUpdateWithoutPaymentDistributionInput, OrderUncheckedUpdateWithoutPaymentDistributionInput>
+  }
+
+  export type OrderUpdateWithoutPaymentDistributionInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    quantity?: IntFieldUpdateOperationsInput | number
+    totalPrice?: FloatFieldUpdateOperationsInput | number
+    status?: StringFieldUpdateOperationsInput | string
+    transactionHash?: NullableStringFieldUpdateOperationsInput | string | null
+    nftMintAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    event?: EventUpdateOneRequiredWithoutOrdersNestedInput
+    user?: UserUpdateOneRequiredWithoutOrdersNestedInput
+    tickets?: TicketUpdateManyWithoutOrderNestedInput
+  }
+
+  export type OrderUncheckedUpdateWithoutPaymentDistributionInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    eventId?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    quantity?: IntFieldUpdateOperationsInput | number
+    totalPrice?: FloatFieldUpdateOperationsInput | number
+    status?: StringFieldUpdateOperationsInput | string
+    transactionHash?: NullableStringFieldUpdateOperationsInput | string | null
+    nftMintAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    tickets?: TicketUncheckedUpdateManyWithoutOrderNestedInput
+  }
+
   export type OrderCreateManyUserInput = {
     id?: string
     eventId: string
@@ -17172,6 +18892,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     event?: EventUpdateOneRequiredWithoutOrdersNestedInput
     tickets?: TicketUpdateManyWithoutOrderNestedInput
+    paymentDistribution?: PaymentDistributionUpdateOneWithoutOrderNestedInput
   }
 
   export type OrderUncheckedUpdateWithoutUserInput = {
@@ -17185,6 +18906,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     tickets?: TicketUncheckedUpdateManyWithoutOrderNestedInput
+    paymentDistribution?: PaymentDistributionUncheckedUpdateOneWithoutOrderNestedInput
   }
 
   export type OrderUncheckedUpdateManyWithoutUserInput = {
@@ -17510,6 +19232,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     user?: UserUpdateOneRequiredWithoutOrdersNestedInput
     tickets?: TicketUpdateManyWithoutOrderNestedInput
+    paymentDistribution?: PaymentDistributionUpdateOneWithoutOrderNestedInput
   }
 
   export type OrderUncheckedUpdateWithoutEventInput = {
@@ -17523,6 +19246,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     tickets?: TicketUncheckedUpdateManyWithoutOrderNestedInput
+    paymentDistribution?: PaymentDistributionUncheckedUpdateOneWithoutOrderNestedInput
   }
 
   export type OrderUncheckedUpdateManyWithoutEventInput = {

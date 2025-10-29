@@ -1,0 +1,53 @@
+{
+  "name": "sdfs - Ticket #2",
+  "symbol": "TICKET",
+  "description": "sdf",
+  "image": "http://localhost:3000/uploads/event-1761665739126-l5w0ed1.jpg",
+  "attributes": [
+    {
+      "trait_type": "Event Date",
+      "value": "2222-12-12"
+    },
+    {
+      "trait_type": "Event Time",
+      "value": "12:12"
+    },
+    {
+      "trait_type": "Location",
+      "value": "121"
+    },
+    {
+      "trait_type": "Category",
+      "value": "cmhap8k1t00013q178ng9wvyd"
+    },
+    {
+      "trait_type": "Organizer Name",
+      "value": "Event Organizer"
+    },
+    {
+      "trait_type": "Organizer Avatar",
+      "value": "/logo.png"
+    },
+    {
+      "trait_type": "Ticket Number",
+      "value": 2
+    },
+    {
+      "trait_type": "Ticket Type",
+      "value": "NFT Event Ticket"
+    },
+    {
+      "trait_type": "Organizer",
+      "value": "Professional event organizer"
+    }
+  ],
+  "properties": {
+    "category": "event-ticket",
+    "creators": [
+      {
+        "address": "8FzRarb7UAqpuV4cBDNrqQUU6Kuhez6uNVEisMSD6JEE",
+        "share": 100
+      }
+    ]
+  }
+}
