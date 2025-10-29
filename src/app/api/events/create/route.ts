@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
                 ticketsAvailable,
                 ticketsSold: 0,
                 price,
-                schedule: ['1', '2', 'пока не работает, не обращай внимания']
+                schedule: ['1', '2', 'пока не работает, не обращай внимания'],
                 categoryId,
                 organizerId: organizer.id,
                 isActive: true,
