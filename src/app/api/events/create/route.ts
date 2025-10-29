@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
                 ticketsAvailable,
                 ticketsSold: 0,
                 price,
-                schedule: [], // Empty schedule for now
+                schedule: JSON.stringify([]), // Empty schedule for now (stored as JSON string)
                 categoryId,
                 organizerId: organizer.id,
                 isActive: true,

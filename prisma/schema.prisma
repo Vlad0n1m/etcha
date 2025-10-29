@@ -10,8 +10,8 @@ generator client {
 }
 
 datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
+    provider = "sqlite"
+    url      = "file:./dev.db"
 }
 
 model User {
@@ -87,7 +87,7 @@ model Event {
     imageUrl         String
     description      String
     fullAddress      String
-    schedule         String[] // JSON array of schedule items
+    schedule         String // JSON string of schedule items
     isActive         Boolean  @default(true)
     createdAt        DateTime @default(now())
     updatedAt        DateTime @updatedAt
