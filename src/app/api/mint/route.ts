@@ -92,6 +92,16 @@ export async function POST(request: NextRequest) {
         console.log('Step 1: Checking Candy Machine availability...')
         const candyMachineData = await getCandyMachineData(candyMachineAddress)
 
+        if (!candyMachineData.isFullyLoaded) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: `Candy Machine is not fully loaded. Please wait for all items to be added.`,
+                },
+                { status: 400 }
+            )
+        }
+
         if (candyMachineData.itemsRemaining < quantity) {
             return NextResponse.json(
                 {
@@ -103,6 +113,7 @@ export async function POST(request: NextRequest) {
         }
 
         console.log(`Available tickets: ${candyMachineData.itemsRemaining}`)
+        console.log(`Candy Machine is fully loaded and ready for minting`)
 
         // Step 2: Get or create user
         console.log('Step 2: Getting/creating user...')
@@ -145,6 +156,7 @@ export async function POST(request: NextRequest) {
             quantity,
             platformSigner,
             userKeypair, // Pass derived keypair
+            pricePerNFT: event.price, // Pass price from database as fallback
         })
 
         console.log(`Minted ${nftMintAddresses.length} NFT(s)`)

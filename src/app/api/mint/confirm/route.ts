@@ -146,19 +146,52 @@ export async function POST(request: NextRequest) {
 
         // Create ticket records
         console.log('Creating ticket records...')
-        const ticketData = nftMintAddresses.map((nftMintAddress: string, index: number) => ({
-            eventId,
-            orderId: order.id,
-            userId: user.id,
-            nftMintAddress,
-            tokenId: index + 1,
-            isValid: true,
-            isUsed: false,
-        }))
-
-        await prisma.ticket.createMany({
-            data: ticketData,
+        
+        // Check which tickets already exist to avoid duplicates
+        const existingTickets = await prisma.ticket.findMany({
+            where: {
+                nftMintAddress: {
+                    in: nftMintAddresses,
+                },
+            },
+            select: {
+                nftMintAddress: true,
+            },
         })
+        
+        const existingAddresses = new Set(existingTickets.map(t => t.nftMintAddress))
+        const newNftAddresses = nftMintAddresses.filter(
+            (addr: string) => !existingAddresses.has(addr)
+        )
+        
+        if (existingTickets.length > 0) {
+            console.log(`Warning: ${existingTickets.length} ticket(s) already exist, skipping duplicates`)
+        }
+        
+        if (newNftAddresses.length > 0) {
+            const ticketData = newNftAddresses.map((nftMintAddress: string, index: number) => {
+                // Find the original index in nftMintAddresses array
+                const originalIndex = nftMintAddresses.indexOf(nftMintAddress)
+                return {
+                    eventId,
+                    orderId: order.id,
+                    userId: user.id,
+                    nftMintAddress,
+                    tokenId: originalIndex + 1,
+                    isValid: true,
+                    isUsed: false,
+                }
+            })
+
+            await prisma.ticket.createMany({
+                data: ticketData,
+                skipDuplicates: true, // Additional safety
+            })
+            
+            console.log(`Created ${newNftAddresses.length} new ticket record(s)`)
+        } else {
+            console.log('All tickets already exist in database, skipping creation')
+        }
 
         // Create payment distribution record (note: actual payment happened through Candy Guard)
         console.log('Creating payment distribution record...')

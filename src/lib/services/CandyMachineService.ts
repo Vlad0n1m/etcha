@@ -203,33 +203,65 @@ async function addItemsToCandyMachine(
     items: Array<{ name: string; uri: string }>
 ): Promise<void> {
     try {
-        // Get Candy Machine
-        const candyMachine = await metaplex.candyMachines().findByAddress({
-            address: new PublicKey(candyMachineAddress),
-        })
-
-        console.log('Adding items to Candy Machine...')
+        console.log(`Adding ${items.length} items to Candy Machine...`)
 
         // Add items in batches of 5 to avoid "Transaction too large" errors
         const batchSize = 5
         for (let i = 0; i < items.length; i += batchSize) {
             const batch = items.slice(i, i + batchSize)
-            console.log(`Adding batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(items.length / batchSize)} (${batch.length} items)...`)
+            const batchNumber = Math.floor(i / batchSize) + 1
+            const totalBatches = Math.ceil(items.length / batchSize)
+            
+            console.log(`Adding batch ${batchNumber}/${totalBatches} (${batch.length} items)...`)
+
+            // Get fresh Candy Machine state before each batch (as per etcha-candy pattern)
+            const candyMachine = await metaplex.candyMachines().findByAddress({
+                address: new PublicKey(candyMachineAddress),
+            })
 
             await metaplex.candyMachines().insertItems({
                 candyMachine,
                 items: batch,
             })
 
-            console.log(`Batch ${Math.floor(i / batchSize) + 1} added successfully!`)
+            console.log(`✅ Batch ${batchNumber} added successfully!`)
 
-            // Small delay between batches
+            // Small delay between batches to allow blockchain to process
             if (i + batchSize < items.length) {
-                    await new Promise(resolve => setTimeout(resolve, 500))
+                await new Promise(resolve => setTimeout(resolve, 1000))
             }
         }
 
         console.log('All items added to Candy Machine successfully!')
+
+        // Wait a bit for blockchain to update
+        console.log('Waiting for blockchain to update...')
+        await new Promise(resolve => setTimeout(resolve, 2000))
+
+        // Verify that all items were added (optional - as per etcha-candy, they don't check this)
+        try {
+            const updatedCandyMachine = await metaplex.candyMachines().findByAddress({
+                address: new PublicKey(candyMachineAddress),
+            })
+            
+            console.log(`Candy Machine verification:`)
+            console.log(`  Items available: ${updatedCandyMachine.itemsAvailable.toNumber()}`)
+            console.log(`  Items minted: ${updatedCandyMachine.itemsMinted.toNumber()}`)
+            console.log(`  Is fully loaded: ${updatedCandyMachine.isFullyLoaded}`)
+            
+            // Note: isFullyLoaded may be false immediately after adding items
+            // The blockchain needs time to process. We'll check this on mint instead.
+            if (updatedCandyMachine.itemsAvailable.toNumber() !== items.length) {
+                console.warn(
+                    `Warning: Items available (${updatedCandyMachine.itemsAvailable.toNumber()}) ` +
+                    `does not match expected (${items.length}). ` +
+                    `This may resolve after blockchain confirmation.`
+                )
+            }
+        } catch (verifyError) {
+            console.warn('Could not verify Candy Machine status:', verifyError)
+            // Don't throw - items were added, verification is optional
+        }
     } catch (error) {
         console.error('Failed to add items to Candy Machine:', error)
         throw new Error(`Failed to add items: ${error instanceof Error ? error.message : String(error)}`)
@@ -245,6 +277,7 @@ export async function mintNFT(params: {
     quantity: number
     platformSigner?: Keypair
     userKeypair?: Keypair // Derived keypair from signature
+    pricePerNFT?: number // Optional price from database (fallback if guards don't have price)
 }): Promise<{
     nftMintAddresses: string[]
     transactionSignature: string
@@ -253,9 +286,6 @@ export async function mintNFT(params: {
     try {
         const platformSigner = params.platformSigner || loadPlatformWallet()
         const connection = getConnection()
-        
-        // Parse buyer wallet
-        const buyerPublicKey = new PublicKey(params.buyerWallet)
         
         // Use derived keypair if provided, otherwise create guest Metaplex instance
         const userKeypair = params.userKeypair
@@ -269,12 +299,92 @@ export async function mintNFT(params: {
 
         console.log(`Minting ${params.quantity} NFT(s) from Candy Machine...`)
         console.log('Candy Machine:', params.candyMachineAddress)
-        console.log('Buyer wallet:', params.buyerWallet)
+        console.log('Buyer wallet (Phantom):', params.buyerWallet)
+        console.log('Derived wallet (for minting):', userKeypair.publicKey.toString())
+
+        // Check balance of derived wallet before minting
+        const derivedBalance = await connection.getBalance(userKeypair.publicKey)
+        const derivedBalanceSOL = derivedBalance / LAMPORTS_PER_SOL
+        console.log(`Derived wallet balance: ${derivedBalanceSOL} SOL (${derivedBalance} lamports)`)
+
+        // Get price from guards - try to extract from candy machine guards
+        // Note: We'll get the actual price from the guards after fetching the candy machine
+        let pricePerNFT = 0
+        let totalPrice = 0
+        const estimatedFees = 0.001 * params.quantity // Rough estimate for transaction fees
 
         // Get Candy Machine
         const candyMachine = await buyerMetaplex.candyMachines().findByAddress({
             address: new PublicKey(params.candyMachineAddress),
         })
+
+        // Verify Candy Machine is fully loaded before minting
+        if (!candyMachine.isFullyLoaded) {
+            throw new Error(
+                `Candy Machine is not fully loaded. ` +
+                `Items available: ${candyMachine.itemsAvailable.toNumber()}, ` +
+                `but not all config lines were added. ` +
+                `Please complete item insertion before minting.`
+            )
+        }
+
+        console.log(`Candy Machine is fully loaded: ${candyMachine.itemsAvailable.toNumber()} items ready for minting`)
+        console.log(`Items already minted: ${candyMachine.itemsMinted.toNumber()}`)
+
+        // Extract price from guards (solPayment guard)
+        try {
+            // In JS SDK v0.19.0, guards are stored in candyMachine.guards
+            // Type assertion for guards that may not be in type definitions
+            const candyMachineWithGuards = candyMachine as typeof candyMachine & {
+                guards?: {
+                    solPayment?: {
+                        amount?: number | bigint | { basisPoints?: number | bigint } | { basisPoints: { toNumber?: () => number } }
+                    }
+                }
+            }
+            
+            const guards = candyMachineWithGuards.guards
+            if (guards && guards.solPayment) {
+                // solPayment.amount may be in different formats
+                const solPaymentAmount = guards.solPayment.amount
+                if (solPaymentAmount !== undefined) {
+                    if (typeof solPaymentAmount === 'number' || typeof solPaymentAmount === 'bigint') {
+                        pricePerNFT = Number(solPaymentAmount) / LAMPORTS_PER_SOL
+                    } else if (typeof solPaymentAmount === 'object' && solPaymentAmount !== null) {
+                        // Try basisPoints property
+                        const amountObj = solPaymentAmount as { basisPoints?: number | bigint | { toNumber?: () => number } }
+                        if (amountObj.basisPoints !== undefined) {
+                            if (typeof amountObj.basisPoints === 'number' || typeof amountObj.basisPoints === 'bigint') {
+                                pricePerNFT = Number(amountObj.basisPoints) / LAMPORTS_PER_SOL
+                            } else if (typeof amountObj.basisPoints === 'object' && 'toNumber' in amountObj.basisPoints) {
+                                pricePerNFT = (amountObj.basisPoints.toNumber?.() || 0) / LAMPORTS_PER_SOL
+                            }
+                        }
+                    }
+                    console.log(`Price from guards: ${pricePerNFT} SOL`)
+                }
+            }
+        } catch (guardError) {
+            console.warn('Could not extract price from guards:', guardError)
+        }
+
+        // Fallback to database price if guards don't have price
+        if (pricePerNFT === 0 && params.pricePerNFT) {
+            pricePerNFT = params.pricePerNFT
+            console.log(`Using price from database: ${pricePerNFT} SOL`)
+        }
+
+        totalPrice = pricePerNFT * params.quantity
+        
+        // Final balance check before minting
+        if (derivedBalanceSOL < totalPrice + estimatedFees) {
+            throw new Error(
+                `Insufficient balance in derived wallet. ` +
+                `Required: ${(totalPrice + estimatedFees).toFixed(4)} SOL, ` +
+                `Available: ${derivedBalanceSOL.toFixed(4)} SOL. ` +
+                `Please send SOL to: ${userKeypair.publicKey.toString()}`
+            )
+        }
 
         const nftMintAddresses: string[] = []
         let lastSignature = ''
@@ -297,11 +407,11 @@ export async function mintNFT(params: {
             console.log(`Minted NFT ${i + 1}/${params.quantity}:`, nft.address.toString())
         }
 
-        // Get price from guards (if available)
-        const pricePerNFT = params.quantity > 0 ? await getCandyMachinePrice(params.candyMachineAddress) : 0
+        // Calculate total paid (price already fetched above for balance check)
         const totalPaid = pricePerNFT * params.quantity
 
         console.log(`Minting complete. Total paid: ${totalPaid} SOL`)
+        console.log(`Remaining balance: ${((derivedBalance / LAMPORTS_PER_SOL) - totalPaid - estimatedFees).toFixed(4)} SOL`)
 
         return {
             nftMintAddresses,
@@ -348,6 +458,7 @@ export async function getCandyMachineData(
     priceInLamports: string
     authority: string
     collectionAddress: string
+    isFullyLoaded: boolean
 }> {
     try {
         const metaplex = initializeMetaplex()
@@ -361,6 +472,10 @@ export async function getCandyMachineData(
         const itemsAvailable = candyMachine.itemsAvailable.toNumber()
         const itemsRedeemed = candyMachine.itemsMinted.toNumber()
         const itemsRemaining = itemsAvailable - itemsRedeemed
+        const isFullyLoaded = candyMachine.isFullyLoaded
+
+        console.log(`Candy Machine status: ${itemsAvailable} available, ${itemsRedeemed} minted, ${itemsRemaining} remaining`)
+        console.log(`Is fully loaded: ${isFullyLoaded}`)
 
         // Get price from guards (simplified - may need adjustment)
         const price = 0 // Placeholder - extract from guards if needed
@@ -373,6 +488,7 @@ export async function getCandyMachineData(
             priceInLamports: '0', // Placeholder
             authority: candyMachine.authorityAddress.toString(),
             collectionAddress: candyMachine.collectionMintAddress?.toString() || '',
+            isFullyLoaded,
         }
     } catch (error) {
         console.error('Failed to get Candy Machine data:', error)
