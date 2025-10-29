@@ -313,13 +313,16 @@ export async function createCandyMachineV3(params: {
         })
 
         const createResult = await createTx.sendAndConfirm(umi, {
-            confirm: { commitment: 'confirmed' },
+            confirm: { commitment: 'finalized' },
         })
 
         const createSignature = Buffer.from(createResult.signature).toString('base64')
 
         console.log('✓ Candy Machine created:', candyMachine.publicKey.toString())
         console.log('Transaction signature:', createSignature)
+
+        // Give the network a moment to propagate
+        await new Promise(resolve => setTimeout(resolve, 1000))
 
         // Step 2: Create Candy Guard with guards
         console.log('\n=== Creating Candy Guard ===')
@@ -351,23 +354,52 @@ export async function createCandyMachineV3(params: {
             hasStartDate: !!params.startDate,
         })
 
+        // Derive Candy Guard PDA from Candy Machine (must be done before creation)
+        const [candyGuardPda] = findCandyGuardPda(umi, { base: candyMachine.publicKey })
+        console.log('Candy Guard PDA:', candyGuardPda.toString())
+
         // Create Candy Guard (using Candy Machine as base)
         const guardTx = await createCandyGuard(umi, {
             base: candyMachine,
             guards,
         })
 
+        // Use finalized commitment for stronger guarantee
         const guardResult = await guardTx.sendAndConfirm(umi, {
-            confirm: { commitment: 'confirmed' },
+            confirm: { commitment: 'finalized' },
         })
 
         const guardSignature = Buffer.from(guardResult.signature).toString('base64')
 
-        // Derive Candy Guard PDA from Candy Machine
-        const [candyGuardPda] = findCandyGuardPda(umi, { base: candyMachine.publicKey })
-
         console.log('✓ Candy Guard created:', candyGuardPda.toString())
         console.log('Guard transaction signature:', guardSignature)
+
+        // Give the network a moment to propagate the account data
+        console.log('Waiting for account propagation...')
+        await new Promise(resolve => setTimeout(resolve, 2000))
+
+        // Verify Candy Guard is readable before wrapping
+        console.log('Verifying Candy Guard account...')
+        let guardVerified = false
+        let retries = 0
+        const maxRetries = 10
+
+        while (!guardVerified && retries < maxRetries) {
+            try {
+                const guardAccount = await fetchCandyGuard(umi, candyGuardPda)
+                guardVerified = true
+                console.log('✓ Candy Guard account verified and readable')
+                console.log('  Guard base:', guardAccount.base.toString())
+            } catch (error) {
+                retries++
+                if (retries < maxRetries) {
+                    console.log(`Candy Guard not yet readable, waiting... (attempt ${retries}/${maxRetries})`)
+                    await new Promise(resolve => setTimeout(resolve, 2000)) // Wait 2 seconds
+                } else {
+                    throw new Error(`Candy Guard account not readable after ${maxRetries} attempts: ${error}`)
+                }
+            }
+        }
 
         // Now wrap the Candy Machine with the Candy Guard
         console.log('Wrapping Candy Machine with Candy Guard...')
@@ -377,12 +409,15 @@ export async function createCandyMachineV3(params: {
         })
 
         const wrapResult = await wrapTx.sendAndConfirm(umi, {
-            confirm: { commitment: 'confirmed' },
+            confirm: { commitment: 'finalized' },
         })
 
         const wrapSignature = Buffer.from(wrapResult.signature).toString('base64')
         console.log('✓ Candy Machine wrapped with Candy Guard')
         console.log('Wrap transaction signature:', wrapSignature)
+
+        // Wait for wrap to propagate
+        await new Promise(resolve => setTimeout(resolve, 1000))
 
         // CRITICAL: Validate Candy Machine is initialized before adding items
         console.log('\n=== Validating Candy Machine initialization ===')
@@ -412,10 +447,15 @@ export async function createCandyMachineV3(params: {
                 })
 
                 await addItemsTx.sendAndConfirm(umi, {
-                    confirm: { commitment: 'confirmed' },
+                    confirm: { commitment: 'finalized' },
                 })
 
                 console.log(`✓ Added items ${i + 1} to ${Math.min(i + batchSize, configLines.length)}`)
+
+                // Small delay between batches to ensure proper sequencing
+                if (i + batchSize < configLines.length) {
+                    await new Promise(resolve => setTimeout(resolve, 500))
+                }
             } catch (batchError) {
                 console.error(`Failed to add batch starting at index ${i}:`, batchError)
                 throw new Error(
