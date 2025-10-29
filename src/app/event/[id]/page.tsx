@@ -3,7 +3,7 @@
 import { useState, use, useEffect, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, Calendar, MapPin, Clock, Plus, Minus, Users, Share2, Loader2 } from "lucide-react"
+import { ChevronLeft, Calendar, MapPin, Clock, Plus, Minus, Users, Share2, Loader2, Copy, Check } from "lucide-react"
 import { useWallet } from "@solana/wallet-adapter-react"
 import WalletDrawer from "@/components/WalletDrawer"
 import CollectionStatus from "@/components/CollectionStatus"
@@ -71,6 +71,9 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     const [mintProgress, setMintProgress] = useState<string>("")
     const [mintResult, setMintResult] = useState<EventMintResult | null>(null)
     const [showMintModal, setShowMintModal] = useState(false)
+    const [derivedAddress, setDerivedAddress] = useState<string | null>(null)
+    const [signature, setSignature] = useState<Uint8Array | null>(null)
+    const [copiedAddress, setCopiedAddress] = useState(false)
     const { connected, publicKey, signTransaction, signAllTransactions, wallet, signMessage } = useWallet()
 
     const resolvedParams = use(params)
@@ -126,11 +129,78 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         fetchEvent()
     }, [resolvedParams.id])
 
-    // useEffect(() => {
-    //     if (event && event.candyMachineAddress) {
+    // Request signature and derive address when wallet is connected
+    useEffect(() => {
+        const deriveAddressFromSignature = async () => {
+            if (!publicKey || !connected || !signMessage && (!wallet || !wallet.adapter || !wallet.adapter.signMessage)) {
+                setDerivedAddress(null)
+                setSignature(null)
+                return
+            }
 
-    //     }
-    // }, [event, fetchCandyMachineData])
+            try {
+                // Step 1: Request signature immediately when wallet connects
+                const message = new TextEncoder().encode("etcha-mint-auth-v1")
+                
+                let signature: Uint8Array
+                if (signMessage) {
+                    signature = await signMessage(message)
+                } else if (wallet?.adapter?.signMessage) {
+                    signature = await wallet.adapter.signMessage(message)
+                } else {
+                    console.warn("Cannot derive address: wallet does not support message signing")
+                    return
+                }
+
+                // Step 2: Send signature to server to derive address (salt stays secret on server)
+                const signatureHex = Array.from(signature)
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('')
+
+                const response = await fetch('/api/wallet/derived-address', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userPublicKey: publicKey.toBase58(),
+                        signature: signatureHex,
+                    }),
+                })
+
+                const data = await response.json()
+
+                if (data.success) {
+                    setDerivedAddress(data.derivedPublicKey)
+                    setSignature(signature) // Save signature for later use
+                    console.log('Derived address from server:', data.derivedPublicKey)
+                } else {
+                    throw new Error(data.message || 'Failed to derive address')
+                }
+            } catch (err) {
+                console.error("Failed to derive address from signature:", err)
+                // Don't show error to user, just don't show address
+                setDerivedAddress(null)
+                setSignature(null)
+            }
+        }
+
+        deriveAddressFromSignature()
+    }, [publicKey, connected, signMessage, wallet])
+
+    const handleCopyDerivedAddress = async () => {
+        if (!derivedAddress) return
+
+        try {
+            await navigator.clipboard.writeText(derivedAddress)
+            setCopiedAddress(true)
+            setTimeout(() => setCopiedAddress(false), 2000)
+        } catch (err) {
+            console.error("Failed to copy address:", err)
+        }
+    }
+
+    const formatAddress = (address: string) => {
+        return `${address.slice(0, 6)}...${address.slice(-6)}`
+    }
 
     // Loading state
     if (isLoading) {
@@ -199,47 +269,19 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         setMintProgress("Requesting signature...")
 
         try {
-            // Step 1: Get user signature for key derivation
-            console.log('Requesting signature from wallet...')
-            
-            const message = new TextEncoder().encode("etcha-mint-auth-v1")
-            
-            // Check if signMessage is available from useWallet hook or wallet adapter
-            if (!signMessage && (!wallet || !wallet.adapter || !wallet.adapter.signMessage)) {
-                throw new Error('Wallet does not support message signing. Please use a compatible wallet like Phantom.')
+            // Step 1: Use saved signature (already requested when wallet connected)
+            if (!signature) {
+                throw new Error('Please wait for wallet address to be generated. Sign the message when prompted.')
             }
 
-            setMintProgress("Please sign the authentication message in your wallet...")
-            
-            // Try signMessage from useWallet hook first, then fallback to wallet.adapter
-            let signature: Uint8Array
-            if (signMessage) {
-                signature = await signMessage(message)
-            } else if (wallet?.adapter?.signMessage) {
-                signature = await wallet.adapter.signMessage(message)
-            } else {
-                throw new Error('No signing method available')
-            }
-            
-            console.log('Signature received:', signature)
-            
-            // Step 2: Derive seed (temporarily show in alert)
-            const { deriveSeedFromSignature, seedToBase58 } = await import('@/lib/utils/keyDerivation')
-            
-            // For testing, we'll use a placeholder salt (will come from server later)
-            const testSalt = 'etcha-salt-placeholder' // TODO: Get from server
-            const seed = await deriveSeedFromSignature(signature, publicKey.toBase58(), testSalt)
-            const seedHex = seedToBase58(seed)
-            
-            // Temporary: Show seed in alert
-            alert(`Seed derived successfully!\n\nSeed (hex): ${seedHex}\n\n(Signature: ${Array.from(signature).map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 32)}...)`)
+            console.log('Using saved signature for minting...')
             
             setMintStatus("minting")
             setMintProgress(`Minting ${ticketQuantity} ticket${ticketQuantity > 1 ? 's' : ''}... Please approve the transaction in your wallet.`)
 
             console.log('Starting mint via API route...')
 
-            // Step 3: Send signature to server for minting
+            // Step 2: Send signature to server for minting
             // Convert signature to hex string for transmission
             const signatureHex = Array.from(signature)
                 .map(b => b.toString(16).padStart(2, '0'))
@@ -415,6 +457,44 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                         </div>
                         <div className="text-xs text-muted-foreground">per ticket</div>
                     </div>
+
+                    {/* Derived Wallet Address for Funding */}
+                    {connected && publicKey && (
+                        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-4">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="text-xs font-medium text-foreground">Minting Wallet Address</div>
+                                {derivedAddress && (
+                                    <button
+                                        onClick={handleCopyDerivedAddress}
+                                        className="p-1.5 hover:bg-primary/10 rounded transition-colors"
+                                        title={copiedAddress ? "Copied!" : "Copy address"}
+                                    >
+                                        {copiedAddress ? (
+                                            <Check className="w-4 h-4 text-primary" />
+                                        ) : (
+                                            <Copy className="w-4 h-4 text-muted-foreground" />
+                                        )}
+                                    </button>
+                                )}
+                            </div>
+                            {derivedAddress ? (
+                                <>
+                                    <div className="flex items-center gap-2">
+                                        <code className="text-xs font-mono text-foreground break-all flex-1">
+                                            {formatAddress(derivedAddress)}
+                                        </code>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-2">
+                                        Send SOL to this address to fund your minting wallet. You'll need enough SOL to cover the ticket price + transaction fees.
+                                    </p>
+                                </>
+                            ) : (
+                                <p className="text-xs text-muted-foreground">
+                                    Sign the authentication message when prompted to generate your minting wallet address.
+                                </p>
+                            )}
+                        </div>
+                    )}
 
                     <div className="flex items-center justify-between mb-5">
                         <span className="text-sm font-medium text-foreground">Quantity</span>
