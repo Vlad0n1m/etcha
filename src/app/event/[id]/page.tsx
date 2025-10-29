@@ -9,14 +9,7 @@ import WalletDrawer from "@/components/WalletDrawer"
 import CollectionStatus from "@/components/CollectionStatus"
 import MintProgress, { MintStatus } from "@/components/MintProgress"
 import MintResultModal from "@/components/MintResultModal"
-import { mintFromCandyMachine } from "@/lib/utils/candy-machine-client"
-import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
-import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters'
-import { fetchCandyMachine, fetchCandyGuard } from "@metaplex-foundation/mpl-candy-machine"
-
-
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
-import { Metaplex, keypairIdentity, bundlrStorage, toMetaplexFile, toBigNumber, CreateCandyMachineInput, DefaultCandyGuardSettings, CandyMachineItem, toDateTime, sol, TransactionBuilder, CreateCandyMachineBuilderContext } from "@metaplex-foundation/js";
+import { PublicKey } from "@solana/web3.js"
 
 
 // Extended event data structure
@@ -212,6 +205,9 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
 
             console.log('Starting client-side mint...')
 
+            // Dynamic import to avoid bundling Metaplex (with Node.js modules) on client
+            const { mintFromCandyMachine } = await import("@/lib/utils/candy-machine-client")
+
             // Create wallet context for minting
             const walletContext = {
                 publicKey,
@@ -221,12 +217,12 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 wallet,
             }
 
-            // const { nftMintAddresses, signature } = await mintFromCandyMachine(
-            //     event.candyMachineAddress,
-            //     walletContext as any, // WalletContextState type compatibility
-            //     ticketQuantity
-            // )
-            const candy = await metaplex.candyMachines().findByAddress({ address: event.candyMachineAddress });
+            const { nftMintAddresses, signature } = await mintFromCandyMachine(
+                event.candyMachineAddress!,
+                walletContext as any, // WalletContextState type compatibility
+                ticketQuantity,
+                event.collectionNftAddress ? new PublicKey(event.collectionNftAddress) : undefined
+            )
 
             console.log('Mint successful!', { nftMintAddresses, signature })
 
@@ -259,7 +255,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 setShowMintModal(true)
 
                 // Refresh Candy Machine data
-                await fetchCandyMachineData()
+                // Note: Candy Machine data refresh handled by CollectionStatus component
             } else {
                 setMintStatus("error")
                 setMintProgress(result.message || "Failed to save ticket information")

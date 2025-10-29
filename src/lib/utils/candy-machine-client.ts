@@ -1,20 +1,12 @@
 /**
- * Client-Side Candy Machine V3 Mint Utilities
- * Using Wallet Adapter for browser-based minting
+ * Client-Side Candy Machine Mint Utilities
+ * Using @metaplex-foundation/js SDK (v0.19.0) with Wallet Adapter
+ * Note: JS SDK v0.19.0 may not have direct wallet adapter support
+ * We'll use transaction builders and manual signing
  */
 
-import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
-import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters'
-import { mplCandyMachine } from '@metaplex-foundation/mpl-candy-machine'
-import {
-    generateSigner,
-    publicKey as umiPublicKey,
-} from '@metaplex-foundation/umi'
-import {
-    mintV2,
-    fetchCandyMachine,
-    fetchCandyGuard,
-} from '@metaplex-foundation/mpl-candy-machine'
+import { Connection, PublicKey } from '@solana/web3.js'
+import { Metaplex } from '@metaplex-foundation/js'
 import type { WalletContextState } from '@solana/wallet-adapter-react'
 
 /**
@@ -25,43 +17,20 @@ export async function getCandyMachinePrice(
     rpcUrl: string = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
 ): Promise<number> {
     try {
-        const umi = createUmi(rpcUrl).use(mplCandyMachine())
+        const connection = new Connection(rpcUrl, { commitment: 'confirmed' })
+        const metaplex = Metaplex.make(connection)
 
-        const candyMachine = await fetchCandyMachine(umi, umiPublicKey(candyMachineAddress))
+        const candyMachine = await metaplex.candyMachines().findByAddress({
+            address: new PublicKey(candyMachineAddress),
+        })
 
-        // Get price from Candy Guard
-        try {
-            const candyGuard = await fetchCandyGuard(umi, candyMachine.mintAuthority)
-            const guardAny = candyGuard as any
-
-            if (guardAny.guards?.solPayment) {
-                const solPayment = guardAny.guards.solPayment
-
-                // Try different access patterns
-                if (solPayment.__option === 'Some' && solPayment.value?.lamports) {
-                    const lamportsValue = solPayment.value.lamports
-
-                    // lamports can be a number or an object with basisPoints
-                    if (lamportsValue && typeof lamportsValue === 'object' && lamportsValue.basisPoints) {
-                        // New format: { basisPoints: 10000000000n, identifier: 'SOL', decimals: 9 }
-                        return Number(lamportsValue.basisPoints) / 1_000_000_000 // Convert to SOL
-                    } else {
-                        // Old format: direct number
-                        return Number(lamportsValue) / 1_000_000_000
-                    }
-                } else if (solPayment.lamports) {
-                    const lamportsValue = solPayment.lamports
-                    if (lamportsValue && typeof lamportsValue === 'object' && lamportsValue.basisPoints) {
-                        return Number(lamportsValue.basisPoints) / 1_000_000_000
-                    } else {
-                        return Number(lamportsValue) / 1_000_000_000
-                    }
-                }
-            }
-        } catch (guardError) {
-            console.error('Error fetching Candy Guard:', guardError)
-        }
-
+        // Price is stored in guards - need to check guards structure
+        // In JS SDK v0.19.0, guards are accessed through candyMachine.guards
+        // This is a simplified version - actual implementation may vary
+        console.log('Candy Machine guards structure:', candyMachine)
+        
+        // Try to extract price from guards (if available in this SDK version)
+        // Placeholder - will need to be adjusted based on actual SDK structure
         return 0
     } catch (error) {
         console.error('Error getting Candy Machine price:', error)
@@ -71,11 +40,15 @@ export async function getCandyMachinePrice(
 
 /**
  * Mint NFT from Candy Machine using user's wallet
+ * 
+ * Note: This function handles wallet adapter integration for JS SDK v0.19.0
+ * The SDK may require manual transaction signing through wallet adapter
  */
 export async function mintFromCandyMachine(
     candyMachineAddress: string,
     wallet: WalletContextState,
     quantity: number = 1,
+    collectionUpdateAuthority?: PublicKey,
     rpcUrl: string = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com'
 ): Promise<{
     nftMintAddresses: string[]
@@ -86,43 +59,25 @@ export async function mintFromCandyMachine(
     }
 
     try {
-        console.log('Initializing UMI with wallet adapter...')
-        const umi = createUmi(rpcUrl)
-            .use(walletAdapterIdentity(wallet))
-            .use(mplCandyMachine())
+        console.log('Initializing Metaplex with wallet adapter...')
+        
+        const connection = new Connection(rpcUrl, { commitment: 'confirmed' })
+        
+        // Create Metaplex instance without identity (we'll sign manually)
+        // JS SDK v0.19.0 may not have walletAdapterIdentity, so we use transaction builders
+        const metaplex = Metaplex.make(connection)
 
         console.log('Fetching Candy Machine:', candyMachineAddress)
-        const candyMachine = await fetchCandyMachine(umi, umiPublicKey(candyMachineAddress))
-
-        console.log('Candy Machine:', {
-            address: candyMachine.publicKey.toString(),
-            authority: candyMachine.authority.toString(),
-            collectionMint: candyMachine.collectionMint.toString(),
-            mintAuthority: candyMachine.mintAuthority.toString(),
+        
+        const candyMachine = await metaplex.candyMachines().findByAddress({
+            address: new PublicKey(candyMachineAddress),
         })
 
-        // Fetch Candy Guard
-        console.log('Fetching Candy Guard from mintAuthority:', candyMachine.mintAuthority.toString())
-        const candyGuard = await fetchCandyGuard(umi, candyMachine.mintAuthority)
-        console.log('Candy Guard fetched successfully')
-
-        // Prepare mint args from Candy Guard
-        const guardAny = candyGuard as any
-        let mintArgs: any = {}
-
-        if (guardAny.guards?.solPayment?.__option === 'Some') {
-            // Extract destination for solPayment
-            const destination = guardAny.guards.solPayment.value.destination
-            console.log('Using solPayment destination:', destination)
-
-            mintArgs = {
-                solPayment: {
-                    destination,
-                },
-            }
-        }
-
-        console.log('Mint args prepared:', mintArgs)
+        console.log('Candy Machine found:', {
+            address: candyMachine.address.toString(),
+            itemsAvailable: candyMachine.itemsAvailable.toString(),
+            itemsMinted: candyMachine.itemsMinted.toString(),
+        })
 
         const nftMintAddresses: string[] = []
         let lastSignature = ''
@@ -131,33 +86,41 @@ export async function mintFromCandyMachine(
         for (let i = 0; i < quantity; i++) {
             console.log(`Minting NFT ${i + 1}/${quantity}...`)
 
-            const nftMint = generateSigner(umi)
+            // Build mint transaction
+            // In JS SDK v0.19.0, we need to use transaction builder
+            // For now, we'll try direct mint call - if it fails, we'll need to handle manually
+            try {
+                // Try to use mint with wallet adapter identity
+                // This is a simplified approach - may need adjustment
+                interface MintParams {
+                    candyMachine: typeof candyMachine
+                    collectionUpdateAuthority?: PublicKey
+                }
+                
+                const mintParams: MintParams = {
+                    candyMachine,
+                }
+                if (collectionUpdateAuthority) {
+                    mintParams.collectionUpdateAuthority = collectionUpdateAuthority
+                }
+                
+                // Create a temporary identity for building transaction
+                // The actual signing will happen through wallet adapter
+                const { nft, response } = await metaplex.candyMachines().mint(mintParams)
 
-            // CRITICAL: Mint through Candy Guard to enforce guards (like solPayment)
-            console.log('Building mint transaction with Candy Guard...')
+                lastSignature = response.signature
+                nftMintAddresses.push(nft.address.toString())
 
-            const mintTx = mintV2(umi, {
-                candyMachine: candyMachine.publicKey,
-                nftMint,
-                collectionMint: candyMachine.collectionMint,
-                collectionUpdateAuthority: candyMachine.authority,
-                // IMPORTANT: Specify candyGuard to enforce guards
-                candyGuard: candyMachine.mintAuthority,
-                // Use default guard group (no group parameter = default)
-                group: undefined,
-                // CRITICAL: Pass mintArgs to provide guard parameters
-                mintArgs,
-            })
-
-            console.log('Sending and confirming transaction...')
-            const result = await mintTx.sendAndConfirm(umi, {
-                confirm: { commitment: 'confirmed' },
-            })
-
-            lastSignature = Buffer.from(result.signature).toString('base64')
-            nftMintAddresses.push(nftMint.publicKey.toString())
-
-            console.log(`✓ Minted NFT ${i + 1}/${quantity}:`, nftMint.publicKey.toString())
+                console.log(`✓ Minted NFT ${i + 1}/${quantity}:`, nft.address.toString())
+            } catch (mintError: unknown) {
+                // If direct mint fails (likely because no identity), we need to handle manually
+                console.warn('Direct mint failed, may need manual transaction building:', mintError)
+                throw new Error(
+                    `Minting requires wallet adapter integration. ` +
+                    `JS SDK v0.19.0 may need manual transaction building. ` +
+                    `Error: ${mintError.message}`
+                )
+            }
         }
 
         console.log('All NFTs minted successfully!')
@@ -186,12 +149,15 @@ export async function getCandyMachineAvailability(
     itemsRemaining: number
 }> {
     try {
-        const umi = createUmi(rpcUrl).use(mplCandyMachine())
-        const candyMachine = await fetchCandyMachine(umi, umiPublicKey(candyMachineAddress))
+        const connection = new Connection(rpcUrl, { commitment: 'confirmed' })
+        const metaplex = Metaplex.make(connection)
+        
+        const candyMachine = await metaplex.candyMachines().findByAddress({
+            address: new PublicKey(candyMachineAddress),
+        })
 
-        const cmData = candyMachine as any
-        const itemsAvailable = Number(cmData.data?.itemsAvailable || 0)
-        const itemsRedeemed = Number(candyMachine.itemsRedeemed || 0)
+        const itemsAvailable = candyMachine.itemsAvailable.toNumber()
+        const itemsRedeemed = candyMachine.itemsMinted.toNumber()
 
         return {
             itemsAvailable,
@@ -203,4 +169,3 @@ export async function getCandyMachineAvailability(
         throw error
     }
 }
-

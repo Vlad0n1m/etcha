@@ -33,6 +33,16 @@ export async function GET(
             )
         }
 
+        if (!event.organizer) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "Event organizer not found",
+                },
+                { status: 404 }
+            )
+        }
+
         // Format response to match frontend EventData interface
         const formattedEvent = {
             id: event.id,

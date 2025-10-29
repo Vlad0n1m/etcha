@@ -22,7 +22,7 @@ export function loadPlatformWallet(): Keypair {
         // Try parsing as base58
         const secretKey = bs58.decode(privateKey)
         return Keypair.fromSecretKey(secretKey)
-    } catch (error) {
+    } catch {
         throw new Error('Failed to parse PLATFORM_WALLET_PRIVATE_KEY. Must be either JSON array or base58 string')
     }
 }
@@ -47,7 +47,7 @@ export function loadCandyMachineAuthority(): Keypair {
 
         const secretKey = bs58.decode(privateKey)
         return Keypair.fromSecretKey(secretKey)
-    } catch (error) {
+    } catch {
         throw new Error('Failed to parse CANDY_MACHINE_AUTHORITY_PRIVATE_KEY')
     }
 }

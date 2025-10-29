@@ -3,14 +3,14 @@
  * Placeholder for future resale functionality using Metaplex Auction House
  * 
  * TODO: Implement in next iteration when resale feature is ready
+ * Will use @metaplex-foundation/js SDK instead of UMI
  */
 
-import { Umi, Signer } from '@metaplex-foundation/umi'
+import { Keypair } from '@solana/web3.js'
 
 /**
  * Initialize Auction House for the platform
  * 
- * @param umi - UMI instance
  * @param authority - Authority keypair
  * @param sellerFeeBasisPoints - Platform fee in basis points (e.g., 250 = 2.5%)
  * @returns Auction House address
@@ -18,8 +18,7 @@ import { Umi, Signer } from '@metaplex-foundation/umi'
  * @throws {Error} Not implemented yet
  */
 export async function initializeAuctionHouse(
-    umi: Umi,
-    authority: Signer,
+    authority: Keypair,
     sellerFeeBasisPoints: number = 250 // 2.5% default
 ): Promise<string> {
     throw new Error('Auction House: Not implemented yet. Will be added in the resale feature iteration.')
@@ -31,7 +30,7 @@ export async function initializeAuctionHouse(
  * @param params.auctionHouse - Auction House address
  * @param params.nftMint - NFT mint address to list
  * @param params.price - Listing price in SOL
- * @param params.seller - Seller's signer
+ * @param params.seller - Seller's keypair
  * @returns Listing address
  * 
  * @throws {Error} Not implemented yet
@@ -40,7 +39,7 @@ export async function createResaleListing(params: {
     auctionHouse: string
     nftMint: string
     price: number
-    seller: Signer
+    seller: Keypair
 }): Promise<string> {
     throw new Error('Resale Listing: Not implemented yet. Will be added in the resale feature iteration.')
 }
@@ -50,7 +49,7 @@ export async function createResaleListing(params: {
  * 
  * @param params.auctionHouse - Auction House address
  * @param params.listing - Listing address
- * @param params.buyer - Buyer's signer
+ * @param params.buyer - Buyer's keypair
  * @returns Transaction signature
  * 
  * @throws {Error} Not implemented yet
@@ -58,7 +57,7 @@ export async function createResaleListing(params: {
 export async function buyFromResale(params: {
     auctionHouse: string
     listing: string
-    buyer: Signer
+    buyer: Keypair
 }): Promise<string> {
     throw new Error('Resale Purchase: Not implemented yet. Will be added in the resale feature iteration.')
 }
@@ -68,7 +67,7 @@ export async function buyFromResale(params: {
  * 
  * @param params.auctionHouse - Auction House address
  * @param params.listing - Listing address
- * @param params.seller - Seller's signer
+ * @param params.seller - Seller's keypair
  * @returns Transaction signature
  * 
  * @throws {Error} Not implemented yet
@@ -76,7 +75,7 @@ export async function buyFromResale(params: {
 export async function cancelListing(params: {
     auctionHouse: string
     listing: string
-    seller: Signer
+    seller: Keypair
 }): Promise<string> {
     throw new Error('Cancel Listing: Not implemented yet. Will be added in the resale feature iteration.')
 }

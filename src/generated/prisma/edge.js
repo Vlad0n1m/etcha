@@ -250,7 +250,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/Users/l0xa1/Desktop/etcha/src/generated/prisma",
+      "value": "C:\\work\\etcha\\etcha\\src\\generated\\prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -259,17 +259,16 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "darwin-arm64",
+        "value": "windows",
         "native": true
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "/Users/l0xa1/Desktop/etcha/prisma/schema.prisma",
+    "sourceFilePath": "C:\\work\\etcha\\etcha\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": null,
-    "schemaEnvPath": "../../../.env"
+    "rootEnvPath": null
   },
   "relativePath": "../../../prisma",
   "clientVersion": "6.18.0",

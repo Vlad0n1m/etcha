@@ -3,7 +3,6 @@ import { PrismaClient } from '@/generated/prisma'
 import {
     createCollection,
     createCandyMachineV3,
-    initializeUmiWithSigner,
 } from '@/lib/services/CandyMachineService'
 import {
     uploadCollectionAssets,
