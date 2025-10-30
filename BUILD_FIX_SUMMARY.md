@@ -76,7 +76,8 @@ Updated build scripts to ensure Prisma client generation:
     "dev": "next dev --turbopack",
     "build": "prisma generate && next build",  // Added prisma generate
     "start": "next start",
-    "postinstall": "prisma generate"  // Added for automatic generation
+    "postinstall": "prisma generate",  // Added for automatic generation
+    "db:seed": "ts-node prisma/seed.ts"  // Moved from deprecated prisma config
 }
 ```
 
