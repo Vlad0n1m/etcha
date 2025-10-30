@@ -13,6 +13,10 @@
   "dependencies": {
     "@metaplex-foundation/js": "^0.19.0",
     "@metaplex-foundation/mpl-auction-house": "^2.5.1",
+    "@metaplex-foundation/mpl-candy-machine": "^6.1.0",
+    "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
+    "@metaplex-foundation/umi": "^1.4.1",
+    "@metaplex-foundation/umi-bundle-defaults": "^1.4.1",
     "@prisma/client": "^6.18.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-slot": "^1.2.3",
