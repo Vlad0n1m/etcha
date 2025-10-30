@@ -406,8 +406,8 @@ export default function ProfilePage() {
                             <Button
                                 onClick={handleTopUp}
                                 className={`w-full text-white text-xs py-1.5 h-auto ${copiedInternalAddress
-                                        ? "bg-green-600 hover:bg-green-700"
-                                        : "bg-blue-600 hover:bg-blue-700"
+                                    ? "bg-green-600 hover:bg-green-700"
+                                    : "bg-blue-600 hover:bg-blue-700"
                                     }`}
                                 size="sm"
                                 disabled={copiedInternalAddress}
