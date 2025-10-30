@@ -18,7 +18,7 @@ datasource db {
 model User {
     id                  String   @id @default(cuid())
     walletAddress       String   @unique // External wallet address
-    internalWalletAddress String @unique // Internal derived wallet address
+    internalWalletAddress String? @unique // Internal derived wallet address (derived on first use)
     createdAt            DateTime @default(now())
     updatedAt          DateTime @updatedAt
 

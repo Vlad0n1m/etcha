@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { z } from 'zod'
 import jwt from 'jsonwebtoken'
 import { verifyWalletSignature } from '@/lib/blockchain/wallet-verifier'
+import { deriveKeypairFromSignature, getDerivationSalt } from '@/lib/utils/keyDerivation.server'
 
 const verifySchema = z.object({
     walletAddress: z.string().min(1),
@@ -55,8 +56,12 @@ export async function POST(request: NextRequest) {
         })
 
         if (!user) {
+            // Create user without internal wallet address
+            // It will be derived on first use with a consistent signature
             user = await prisma.user.create({
-                data: { walletAddress }
+                data: { 
+                    walletAddress
+                }
             })
         }
 

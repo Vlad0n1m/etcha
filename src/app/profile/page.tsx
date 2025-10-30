@@ -2,13 +2,14 @@
 
 import { useWallet } from "@solana/wallet-adapter-react"
 import { useState, useEffect } from "react"
-import { Copy, Edit, Eye, TrendingUp, TrendingDown, MoreHorizontal, Wallet, RefreshCw } from "lucide-react"
+import { Copy, Edit, Eye, TrendingUp, TrendingDown, MoreHorizontal, Wallet, RefreshCw, Save, X } from "lucide-react"
 import WalletDrawer from "@/components/WalletDrawer"
 import MobileHeader from "@/components/MobileHeader"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Image from "next/image"
 import Link from "next/link"
+import { useAuth } from "@/components/AuthProvider"
 
 type TicketStatus = "bought" | "on_resale" | "passed" | "nft"
 
@@ -28,19 +29,22 @@ interface Ticket {
 
 export default function ProfilePage() {
     const { connected, publicKey, signMessage } = useWallet()
+    const { isLoading: authLoading, error: authError, refreshToken } = useAuth()
     const [activeTab, setActiveTab] = useState("bought")
     const [copied, setCopied] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
-    const [nickname, setNickname] = useState("")
+    const [nickname, setNickname] = useState("User")
     const [tempNickname, setTempNickname] = useState("")
     const [showValue, setShowValue] = useState(true)
     const [internalWalletBalance, setInternalWalletBalance] = useState<number | null>(null)
     const [internalWalletAddress, setInternalWalletAddress] = useState<string | null>(null)
     const [isLoadingBalance, setIsLoadingBalance] = useState(false)
+    const [isSavingNickname, setIsSavingNickname] = useState(false)
     const [copiedInternalAddress, setCopiedInternalAddress] = useState(false)
     const [tickets, setTickets] = useState<Ticket[]>([])
     const [isLoadingTickets, setIsLoadingTickets] = useState(false)
     const [savedSignature, setSavedSignature] = useState<string | null>(null) // Store signature to avoid repeated requests
+    const [isListingModalOpen, setIsListingModalOpen] = useState(false)
 
     // Function to load balance - can be called manually or on mount
     const loadBalance = async (useSavedSignature = false) => {
@@ -52,9 +56,9 @@ export default function ProfilePage() {
 
         try {
             setIsLoadingBalance(true)
-            
+
             let signatureHex = savedSignature
-            
+
             // Get signature only if not using saved one or if saved one doesn't exist
             if (!useSavedSignature || !signatureHex) {
                 // Wait for signMessage to be available
@@ -63,20 +67,20 @@ export default function ProfilePage() {
                     setIsLoadingBalance(false)
                     return
                 }
-                
+
                 // Get signature for deriving internal wallet (only once)
                 const message = new TextEncoder().encode("etcha-mint-auth-v1")
                 const signature = await signMessage(message)
-                
+
                 // Convert signature to hex and save it
                 signatureHex = Array.from(signature)
                     .map(b => b.toString(16).padStart(2, '0'))
                     .join('')
-                
+
                 // Save signature for future use
                 setSavedSignature(signatureHex)
             }
-            
+
             // POST request with signature to derive internal wallet
             const response = await fetch('/api/wallet/balance', {
                 method: 'POST',
@@ -86,9 +90,9 @@ export default function ProfilePage() {
                     signature: signatureHex,
                 }),
             })
-            
+
             const data = await response.json()
-            
+
             if (data.success) {
                 setInternalWalletBalance(data.balance ?? 0)
                 setInternalWalletAddress(data.internalWalletAddress)
@@ -144,10 +148,10 @@ export default function ProfilePage() {
 
             try {
                 setIsLoadingTickets(true)
-                
+
                 // Use saved signature (no need to request again)
                 const signatureHex = savedSignature
-                
+
                 // POST request with signature to derive internal wallet
                 const response = await fetch('/api/profile/tickets', {
                     method: 'POST',
@@ -157,9 +161,9 @@ export default function ProfilePage() {
                         signature: signatureHex,
                     }),
                 })
-                
+
                 const data = await response.json()
-                
+
                 if (data.success) {
                     setTickets(data.tickets || [])
                 } else {
@@ -175,16 +179,16 @@ export default function ProfilePage() {
         }
 
         loadTickets()
-        
+
         // Also refresh tickets when page becomes visible (user returns from purchase)
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible' && connected && publicKey && savedSignature) {
                 loadTickets()
             }
         }
-        
+
         document.addEventListener('visibilitychange', handleVisibilityChange)
-        
+
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange)
         }
@@ -216,7 +220,7 @@ export default function ProfilePage() {
                 // Copy address to clipboard
                 await navigator.clipboard.writeText(internalWalletAddress)
                 setCopiedInternalAddress(true)
-                
+
                 // Show notification (optional - you could add a toast here)
                 setTimeout(() => {
                     setCopiedInternalAddress(false)
@@ -225,6 +229,30 @@ export default function ProfilePage() {
                 console.error('Failed to copy address:', error)
             }
         }
+    }
+
+    const saveNickname = async () => {
+        if (!tempNickname.trim()) {
+            setIsEditing(false)
+            return
+        }
+
+        setIsSavingNickname(true)
+        try {
+            // Here you would save the nickname to your backend
+            // For now, just update the local state
+            setNickname(tempNickname.trim())
+            setIsEditing(false)
+        } catch (error) {
+            console.error('Error saving nickname:', error)
+        } finally {
+            setIsSavingNickname(false)
+        }
+    }
+
+    const cancelEdit = () => {
+        setTempNickname(nickname)
+        setIsEditing(false)
     }
 
     const handleEditNickname = () => {
@@ -325,10 +353,10 @@ export default function ProfilePage() {
                                 <Button
                                     size="sm"
                                     onClick={saveNickname}
-                                    disabled={isLoading}
+                                    disabled={isSavingNickname}
                                     className="px-2 py-1"
                                 >
-                                    {isLoading ? 'Saving...' : <Save className="w-4 h-4" />}
+                                    {isSavingNickname ? 'Saving...' : <Save className="w-4 h-4" />}
                                 </Button>
                                 <Button
                                     size="sm"
@@ -377,11 +405,10 @@ export default function ProfilePage() {
                             </div>
                             <Button
                                 onClick={handleTopUp}
-                                className={`w-full text-white text-xs py-1.5 h-auto ${
-                                    copiedInternalAddress 
-                                        ? "bg-green-600 hover:bg-green-700" 
+                                className={`w-full text-white text-xs py-1.5 h-auto ${copiedInternalAddress
+                                        ? "bg-green-600 hover:bg-green-700"
                                         : "bg-blue-600 hover:bg-blue-700"
-                                }`}
+                                    }`}
                                 size="sm"
                                 disabled={copiedInternalAddress}
                             >
@@ -400,17 +427,17 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-between mb-3">
                     <div>
                         <div className="text-gray-500 text-xs mb-1 flex items-center gap-1">
-                            INTERNAL WALLET BALANCE 
-                            <button 
-                                onClick={() => setShowValue(!showValue)} 
+                            INTERNAL WALLET BALANCE
+                            <button
+                                onClick={() => setShowValue(!showValue)}
                                 className="p-0.5 hover:bg-gray-100 rounded"
                                 title={showValue ? "Hide balance" : "Show balance"}
                             >
                                 <Eye className="w-3 h-3" />
                             </button>
                             {internalWalletAddress && (
-                                <button 
-                                    onClick={() => loadBalance(true)} 
+                                <button
+                                    onClick={() => loadBalance(true)}
                                     disabled={isLoadingBalance}
                                     className="p-0.5 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Refresh balance"
@@ -522,13 +549,14 @@ export default function ProfilePage() {
 
             <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 p-3">
                 <div className="flex items-center gap-2">
-                    <Button
-                        onClick={() => setIsListingModalOpen(true)}
-                        disabled={tickets.length === 0}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm"
-                    >
-                        List items
-                    </Button>
+                    <Link href="/resale/submit/1" className="flex-1">
+                        <Button
+                            disabled={tickets.length === 0}
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm"
+                        >
+                            List items
+                        </Button>
+                    </Link>
                     <Button variant="outline" className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 bg-white text-sm">
                         Accept offers
                     </Button>
@@ -537,16 +565,6 @@ export default function ProfilePage() {
                     </button>
                 </div>
             </div>
-
-            {/* Listing Modal */}
-            <ListingModal
-                isOpen={isListingModalOpen}
-                onClose={() => setIsListingModalOpen(false)}
-                tickets={tickets}
-                onListingCreated={() => {
-                    fetchTickets();
-                }}
-            />
         </div>
     )
 }

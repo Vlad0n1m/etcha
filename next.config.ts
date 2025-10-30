@@ -34,8 +34,8 @@ const nextConfig: NextConfig = {
         fs: false,
         net: false,
         tls: false,
-        crypto: false,
-        stream: false,
+        crypto: require.resolve('crypto-browserify'),
+        stream: require.resolve('stream-browserify'),
         url: false,
         zlib: false,
         http: false,
@@ -44,6 +44,8 @@ const nextConfig: NextConfig = {
         os: false,
         path: false,
         'graceful-fs': false,
+        buffer: require.resolve('buffer/'),
+        process: require.resolve('process/browser'),
       };
       
       // Ignore bundlr native dependencies on client
@@ -55,10 +57,6 @@ const nextConfig: NextConfig = {
         'avsc': false,
         'arbundles': false,
         'fs': false,
-        'util': false,
-        'stream': false,
-        'buffer': false,
-        'process': false,
       };
       
       // Ignore bundlr storage driver completely on client
@@ -67,6 +65,15 @@ const nextConfig: NextConfig = {
       // Ignore Metaplex JS SDK from client bundle completely
       // Only use it on server (API routes)
       config.resolve.alias['@metaplex-foundation/js'] = false;
+      
+      // Add Buffer and process polyfills
+      config.plugins = config.plugins || [];
+      config.plugins.push(
+        new (require('webpack')).ProvidePlugin({
+          Buffer: ['buffer', 'Buffer'],
+          process: 'process/browser',
+        })
+      );
       
       // Ignore native modules that cause issues
       config.externals = config.externals || [];
