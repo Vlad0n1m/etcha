@@ -1,0 +1,15 @@
+{
+  "name": "qweqwe",
+  "symbol": "TICKET",
+  "description": "qweqeq",
+  "image": "http://localhost:3000/uploads/event-1761727062266-d5ks41k.jpg",
+  "properties": {
+    "category": "event-collection",
+    "creators": [
+      {
+        "address": "8FzRarb7UAqpuV4cBDNrqQUU6Kuhez6uNVEisMSD6JEE",
+        "share": 100
+      }
+    ]
+  }
+}

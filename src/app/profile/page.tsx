@@ -1,106 +1,194 @@
 "use client"
 
 import { useWallet } from "@solana/wallet-adapter-react"
-import { useState, useEffect, useCallback } from "react"
-import { Copy, Edit, Eye, MoreHorizontal, Save, X } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Copy, Edit, Eye, TrendingUp, TrendingDown, MoreHorizontal, Wallet, RefreshCw } from "lucide-react"
 import WalletDrawer from "@/components/WalletDrawer"
 import MobileHeader from "@/components/MobileHeader"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Image from "next/image"
-import Link from 'next/link'
-import { useAuth } from "@/components/AuthProvider"
-import ListingModal from "@/components/ListingModal"
+import Link from "next/link"
+
+type TicketStatus = "bought" | "on_resale" | "passed" | "nft"
+
+interface Ticket {
+    id: string
+    nftId: string
+    eventTitle: string
+    eventImage: string
+    date: string
+    time: string
+    location: string
+    price: number
+    originalPrice: number
+    marketPrice: number
+    status: TicketStatus
+}
 
 export default function ProfilePage() {
-    const { connected, publicKey } = useWallet()
-    const { token, isLoading: authLoading, error: authError, refreshToken } = useAuth()
+    const { connected, publicKey, signMessage } = useWallet()
     const [activeTab, setActiveTab] = useState("bought")
     const [copied, setCopied] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
     const [nickname, setNickname] = useState("")
     const [tempNickname, setTempNickname] = useState("")
     const [showValue, setShowValue] = useState(true)
-    const [tickets, setTickets] = useState<Array<{
-        nftAddress: string
-        name: string
-        symbol: string
-        collection?: string
-        uri?: string
-        image?: string | null
-        solscanUrl?: string
-    }>>([])
-    const [, setProfile] = useState<{
-        nickname?: string
-    } | null>(null)
-    const [isLoading, setIsLoading] = useState(false)
+    const [internalWalletBalance, setInternalWalletBalance] = useState<number | null>(null)
+    const [internalWalletAddress, setInternalWalletAddress] = useState<string | null>(null)
+    const [isLoadingBalance, setIsLoadingBalance] = useState(false)
+    const [copiedInternalAddress, setCopiedInternalAddress] = useState(false)
+    const [tickets, setTickets] = useState<Ticket[]>([])
     const [isLoadingTickets, setIsLoadingTickets] = useState(false)
-    const [error, setError] = useState("")
-    const [isListingModalOpen, setIsListingModalOpen] = useState(false)
+    const [savedSignature, setSavedSignature] = useState<string | null>(null) // Store signature to avoid repeated requests
 
-    const fetchProfile = useCallback(async () => {
-        if (!token) return
-
-        try {
-            // Get profile using cached token
-            const profileResponse = await fetch('/api/profile', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
-
-            if (profileResponse.ok) {
-                const profileData = await profileResponse.json()
-                setProfile(profileData)
-                setNickname(profileData.profile?.nickname || "User")
-            } else if (profileResponse.status === 401) {
-                // Token expired, refresh it
-                await refreshToken()
-            }
-        } catch (err) {
-            console.error('Error fetching profile:', err)
+    // Function to load balance - can be called manually or on mount
+    const loadBalance = async (useSavedSignature = false) => {
+        if (!connected || !publicKey) {
+            setInternalWalletBalance(null)
+            setInternalWalletAddress(null)
+            return
         }
-    }, [token, refreshToken])
 
-    const fetchTickets = useCallback(async () => {
-        if (!publicKey) return
-
-        setIsLoadingTickets(true)
         try {
-            console.log('🎫 Fetching NFTs from blockchain...')
+            setIsLoadingBalance(true)
+            
+            let signatureHex = savedSignature
+            
+            // Get signature only if not using saved one or if saved one doesn't exist
+            if (!useSavedSignature || !signatureHex) {
+                // Wait for signMessage to be available
+                if (!signMessage) {
+                    console.log('Waiting for signMessage to be available...')
+                    setIsLoadingBalance(false)
+                    return
+                }
+                
+                // Get signature for deriving internal wallet (only once)
+                const message = new TextEncoder().encode("etcha-mint-auth-v1")
+                const signature = await signMessage(message)
+                
+                // Convert signature to hex and save it
+                signatureHex = Array.from(signature)
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('')
+                
+                // Save signature for future use
+                setSavedSignature(signatureHex)
+            }
+            
+            // POST request with signature to derive internal wallet
+            const response = await fetch('/api/wallet/balance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    walletAddress: publicKey.toString(),
+                    signature: signatureHex,
+                }),
+            })
+            
+            const data = await response.json()
+            
+            if (data.success) {
+                setInternalWalletBalance(data.balance ?? 0)
+                setInternalWalletAddress(data.internalWalletAddress)
+                console.log('Internal wallet loaded:', data.internalWalletAddress, 'Balance:', data.balance)
+            } else {
+                console.error('Failed to load balance:', data.message)
+                setInternalWalletBalance(0)
+                setInternalWalletAddress(null)
+            }
+        } catch (error: any) {
+            console.error('Error loading balance:', error)
+            // Don't clear on user rejection - just log
+            if (error?.message?.includes('User rejected') || error?.message?.includes('cancelled')) {
+                console.log('User rejected signature request')
+                // Keep previous values or show message
+            } else {
+                setInternalWalletBalance(0)
+                setInternalWalletAddress(null)
+            }
+        } finally {
+            setIsLoadingBalance(false)
+        }
+    }
 
-            // Fetch NFTs directly from the blockchain using user's wallet address
-            const ticketsResponse = await fetch(`/api/solana/tickets/user/${publicKey.toString()}`)
+    // Load balance only once on mount (when wallet is connected and signMessage is available)
+    useEffect(() => {
+        if (connected && publicKey && signMessage && !savedSignature) {
+            loadBalance(false) // Request signature on first load
+        } else if (!connected || !publicKey) {
+            setInternalWalletBalance(null)
+            setInternalWalletAddress(null)
+            setSavedSignature(null) // Clear signature when wallet disconnects
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [connected, publicKey, signMessage]) // Wait for signMessage to be available
 
-            if (ticketsResponse.ok) {
-                const response = await ticketsResponse.json()
-                if (response.success && response.data) {
-                    console.log(`✅ Found ${response.data.tickets.length} NFTs in wallet`)
-                    setTickets(response.data.tickets)
+    // Load tickets - use saved signature if available
+    useEffect(() => {
+        const loadTickets = async () => {
+            if (!connected || !publicKey) {
+                setTickets([])
+                return
+            }
+
+            // Use saved signature if available, otherwise wait for signMessage
+            if (!savedSignature) {
+                if (!signMessage) {
+                    return // Wait for signMessage
+                }
+                // Signature will be saved by loadBalance, wait for it
+                return
+            }
+
+            try {
+                setIsLoadingTickets(true)
+                
+                // Use saved signature (no need to request again)
+                const signatureHex = savedSignature
+                
+                // POST request with signature to derive internal wallet
+                const response = await fetch('/api/profile/tickets', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        walletAddress: publicKey.toString(),
+                        signature: signatureHex,
+                    }),
+                })
+                
+                const data = await response.json()
+                
+                if (data.success) {
+                    setTickets(data.tickets || [])
                 } else {
-                    console.error('Failed to fetch NFTs:', response.error)
+                    console.error('Failed to load tickets:', data.message)
                     setTickets([])
                 }
-            } else {
-                console.error('Failed to fetch NFTs:', ticketsResponse.status)
+            } catch (error) {
+                console.error('Error loading tickets:', error)
                 setTickets([])
+            } finally {
+                setIsLoadingTickets(false)
             }
-        } catch (err) {
-            console.error('Error fetching NFTs:', err)
-            setTickets([])
-        } finally {
-            setIsLoadingTickets(false)
         }
-    }, [publicKey])
 
-    useEffect(() => {
-        if (connected && publicKey) {
-            fetchTickets()
-            if (token) {
-                fetchProfile()
+        loadTickets()
+        
+        // Also refresh tickets when page becomes visible (user returns from purchase)
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && connected && publicKey && savedSignature) {
+                loadTickets()
             }
         }
-    }, [connected, publicKey, token, fetchProfile, fetchTickets])
+        
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+        
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange)
+        }
+    }, [connected, publicKey, savedSignature]) // Depend on savedSignature instead of signMessage
 
     const formatAddress = (address: string) => {
         return `${address.slice(0, 4)}...${address.slice(-4)}`
@@ -114,6 +202,31 @@ export default function ProfilePage() {
         }
     }
 
+    const handleCopyInternalAddress = () => {
+        if (internalWalletAddress) {
+            navigator.clipboard.writeText(internalWalletAddress)
+            setCopiedInternalAddress(true)
+            setTimeout(() => setCopiedInternalAddress(false), 2000)
+        }
+    }
+
+    const handleTopUp = async () => {
+        if (internalWalletAddress) {
+            try {
+                // Copy address to clipboard
+                await navigator.clipboard.writeText(internalWalletAddress)
+                setCopiedInternalAddress(true)
+                
+                // Show notification (optional - you could add a toast here)
+                setTimeout(() => {
+                    setCopiedInternalAddress(false)
+                }, 3000)
+            } catch (error) {
+                console.error('Failed to copy address:', error)
+            }
+        }
+    }
+
     const handleEditNickname = () => {
         if (isEditing && tempNickname.trim()) {
             saveNickname()
@@ -123,64 +236,17 @@ export default function ProfilePage() {
         }
     }
 
-    const saveNickname = async () => {
-        if (!tempNickname.trim()) {
-            setError("Nickname cannot be empty")
-            return
-        }
-
-        if (!token) {
-            setError("Authentication required")
-            return
-        }
-
-        setIsLoading(true)
-        setError("")
-
-        try {
-            // Update profile using cached token
-            const response = await fetch('/api/profile', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    nickname: tempNickname
-                })
-            })
-
-            if (response.ok) {
-                const updatedProfile = await response.json()
-                setProfile(updatedProfile)
-                setNickname(updatedProfile.nickname)
-                setIsEditing(false)
-            } else if (response.status === 401) {
-                // Token expired, refresh it and retry
-                await refreshToken()
-                setError("Please try again")
-            } else {
-                const errorData = await response.json()
-                throw new Error(errorData.error || 'Failed to update nickname')
-            }
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to update nickname')
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const cancelEdit = () => {
-        setTempNickname(nickname)
-        setIsEditing(false)
-        setError("")
-    }
-
-    const ownedTickets = tickets
-    const totalValue = 0 // Will be calculated from NFT metadata
+    const ownedTickets = tickets.filter(ticket => ["bought", "on_resale", "nft"].includes(ticket.status))
+    const totalValue = ownedTickets.reduce((sum, ticket) => sum + ticket.price, 0)
     const totalTickets = ownedTickets.length
 
-    const filteredTickets = tickets // All NFTs are shown for now
+    const filteredTickets = tickets.filter(ticket => {
+        if (activeTab === "bought") return ticket.status === "bought"
+        if (activeTab === "on_resale") return ticket.status === "on_resale"
+        if (activeTab === "passed") return ticket.status === "passed"
+        if (activeTab === "nft") return ticket.status === "nft"
+        return true
+    })
 
     if (!connected) {
         return (
@@ -286,23 +352,80 @@ export default function ProfilePage() {
                         </button>
                     </div>
 
-                    {error && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-sm">
-                            {error}
-                        </div>
-                    )}
-
-                    <div className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-700 font-mono">
+                    <div className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-700 font-mono mb-2">
                         {formatAddress(publicKey?.toString() || "").toUpperCase()}
                     </div>
+
+                    {/* Internal Wallet Section */}
+                    {internalWalletAddress && (
+                        <div className="w-full mb-3 p-3 bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                    <Wallet className="w-4 h-4 text-gray-600" />
+                                    <span className="text-gray-600 text-xs font-medium">Internal Wallet</span>
+                                </div>
+                                <button
+                                    onClick={handleCopyInternalAddress}
+                                    className="p-1 hover:bg-gray-100 rounded transition-colors"
+                                    title={copiedInternalAddress ? "Copied!" : "Copy internal wallet address"}
+                                >
+                                    <Copy className={`w-3.5 h-3.5 ${copiedInternalAddress ? "text-green-500" : "text-gray-500"}`} />
+                                </button>
+                            </div>
+                            <div className="px-2 py-1.5 bg-gray-50 rounded text-xs text-gray-700 font-mono mb-2 break-all">
+                                {internalWalletAddress}
+                            </div>
+                            <Button
+                                onClick={handleTopUp}
+                                className={`w-full text-white text-xs py-1.5 h-auto ${
+                                    copiedInternalAddress 
+                                        ? "bg-green-600 hover:bg-green-700" 
+                                        : "bg-blue-600 hover:bg-blue-700"
+                                }`}
+                                size="sm"
+                                disabled={copiedInternalAddress}
+                            >
+                                <Wallet className="w-3 h-3 mr-1.5" />
+                                {copiedInternalAddress ? "✓ Address Copied!" : "Top Up Wallet"}
+                            </Button>
+                            {copiedInternalAddress && (
+                                <p className="text-xs text-gray-600 mt-1 text-center">
+                                    Send SOL to this address from your external wallet
+                                </p>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex items-center justify-between mb-3">
                     <div>
                         <div className="text-gray-500 text-xs mb-1 flex items-center gap-1">
-                            PORTFOLIO VALUE <button onClick={() => setShowValue(!showValue)} className="p-0.5 hover:bg-gray-100 rounded"><Eye className="w-3 h-3" /></button>
+                            INTERNAL WALLET BALANCE 
+                            <button 
+                                onClick={() => setShowValue(!showValue)} 
+                                className="p-0.5 hover:bg-gray-100 rounded"
+                                title={showValue ? "Hide balance" : "Show balance"}
+                            >
+                                <Eye className="w-3 h-3" />
+                            </button>
+                            {internalWalletAddress && (
+                                <button 
+                                    onClick={() => loadBalance(true)} 
+                                    disabled={isLoadingBalance}
+                                    className="p-0.5 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Refresh balance"
+                                >
+                                    <RefreshCw className={`w-3 h-3 ${isLoadingBalance ? 'animate-spin' : ''}`} />
+                                </button>
+                            )}
                         </div>
-                        <div className="text-gray-900 font-bold">{showValue ? totalValue.toFixed(2) : "***"} SOL</div>
+                        <div className="text-gray-900 font-bold">
+                            {isLoadingBalance ? (
+                                <span className="text-sm">Loading...</span>
+                            ) : (
+                                showValue ? (internalWalletBalance !== null ? internalWalletBalance.toFixed(4) : "0.0000") : "***"
+                            )} SOL
+                        </div>
                     </div>
                     <div>
                         <div className="text-gray-500 text-xs mb-1">TICKETS</div>
@@ -329,17 +452,18 @@ export default function ProfilePage() {
                 <div className="pb-20">
                     {isLoadingTickets ? (
                         <div className="flex flex-col items-center justify-center py-12">
-                            <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
-                            <h3 className="text-gray-900 text-xl font-bold mb-2">Loading your tickets...</h3>
-                            <p className="text-gray-600 text-sm text-center px-4">Fetching NFTs from the blockchain</p>
+                            <div className="text-gray-500 text-sm">Loading tickets...</div>
                         </div>
                     ) : filteredTickets.length > 0 ? (
                         <div className="grid grid-cols-2 gap-4">
-                            {filteredTickets.map((ticket) => (
-                                <div key={ticket.nftAddress} className="block">
+                            {filteredTickets.map((ticket) => {
+                                const priceChange = ((ticket.marketPrice - ticket.originalPrice) / ticket.originalPrice * 100)
+                                const isPositive = priceChange > 0
+                                return (
                                     <Link
-                                        href={`/ticket/${ticket.nftAddress}`}
-                                        className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition-all duration-200 shadow-sm flex flex-col"
+                                        key={ticket.id}
+                                        href={`/profile/ticket/${ticket.id}`}
+                                        className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition-all duration-200 shadow-sm flex flex-col cursor-pointer"
                                     >
                                         <div className="aspect-square bg-gray-50 relative shrink-0">
                                             {ticket.image ? (
@@ -361,10 +485,8 @@ export default function ProfilePage() {
                                             </div>
                                             <div className="space-y-1">
                                                 <div className="flex items-center justify-between">
-                                                    <span className="text-gray-600 text-xs font-mono">
-                                                        {ticket.nftAddress.slice(0, 4)}...{ticket.nftAddress.slice(-4)}
-                                                    </span>
-                                                    <span className="text-blue-600 text-xs font-medium">View Ticket →</span>
+                                                    <span className="text-gray-600 text-xs">{ticket.date}</span>
+                                                    <span className="text-gray-600 text-xs font-medium">{ticket.price.toFixed(4)} SOL</span>
                                                 </div>
                                                 <div className="flex items-center gap-1">
                                                     <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-600">
@@ -374,18 +496,18 @@ export default function ProfilePage() {
                                             </div>
                                         </div>
                                     </Link>
-                                </div>
-                            ))}
+                                )
+                            })}
                         </div>
                     ) : (
                         <div className="flex flex-col items-center justify-center py-12">
                             <div className="mb-4 relative">
                                 <Image
-                                    src="/placeholder.svg?height=200&width=300"
+                                    src="/no-ticket-svgrepo-com.svg?height=200&width=300"
                                     alt="No tickets"
                                     width={300}
                                     height={200}
-                                    className="w-64 h-48 object-contain"
+                                    className="w-64 h-48 object-contain opacity-50"
                                 />
                             </div>
                             <h3 className="text-gray-900 text-xl font-bold mb-2">No NFT tickets found</h3>

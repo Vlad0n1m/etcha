@@ -166,19 +166,47 @@ From `package.json`:
 - Events are grouped by date with timelines.
 - Click an event to view details (route: `/event/[id]`).
 
-### Resale Tickets
-- Visit `/resale` for secondary market.
-- Use search and filters to find tickets.
-- Each card shows resale price vs. original, seats, and seller.
+## Database Setup
 
-### Adding Real Data
-- Replace mock data in `page.tsx` and `resale/page.tsx` with API calls (e.g., to a backend or Solana program).
-- Integrate real Solana transactions for ticket purchases.
+This project uses **PostgreSQL** as the database (required for Vercel deployment).
 
-### Customization
-- Add new categories/filters in `EventFilters.tsx` and `ResaleCategoryFilter.tsx`.
-- Extend wallet functionality for ticket minting/NFTs.
-- Implement authentication beyond wallet (e.g., profile management).
+### Local Development
+
+1. Set up a PostgreSQL database (Docker, local installation, or Neon):
+   ```bash
+   # Using Docker
+   docker run --name etcha-postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=etcha -p 5432:5432 -d postgres:15
+   ```
+
+2. Create `.env.local` file:
+   ```env
+   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/etcha?schema=public"
+   ```
+
+3. Run migrations:
+   ```bash
+   npm run db:migrate
+   ```
+
+4. Seed the database (optional):
+   ```bash
+   npm run db:seed
+   ```
+
+### Production Deployment on Vercel
+
+⚠️ **Important**: Vercel does not support SQLite. You must use a remote PostgreSQL database.
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
+
+**Quick setup:**
+1. Create a PostgreSQL database (recommended: [Neon](https://neon.tech) or Vercel Postgres)
+2. Add `DATABASE_URL` environment variable in Vercel
+3. Migrations run automatically during build
+
+For more details, see:
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - Complete deployment guide
+- [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) - SQLite to PostgreSQL migration guide
 
 ## Components Breakdown
 

@@ -1,15 +1,18 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Image from 'next/image'
 import { CardContent } from '@/components/ui/card'
 import { ArrowDownCircle, ArrowUpCircle, Equal } from 'lucide-react'
 import EventCardSkeleton from './EventCardSkeleton'
 import { motion } from 'framer-motion'
+import BuyResaleTicketModal from './BuyResaleTicketModal'
 
 interface ResaleTicketCardProps {
+    id: string
+    listingId: string
     title: string
     company: string
-    price: number
-    originalPrice: number
+    price: number // price in SOL
+    originalPrice: number // original price in SOL
     date: string
     time?: string
     ticketsAvailable: number
@@ -17,10 +20,12 @@ interface ResaleTicketCardProps {
     category: string
     seats: string
     isLoading?: boolean
-    onBuy?: () => void
+    onPurchaseSuccess?: () => void
 }
 
 const ResaleTicketCard: React.FC<ResaleTicketCardProps> = ({
+    id,
+    listingId,
     title,
     company,
     price,
@@ -31,8 +36,10 @@ const ResaleTicketCard: React.FC<ResaleTicketCardProps> = ({
     category,
     seats,
     isLoading = false,
-    onBuy
+    onPurchaseSuccess,
 }) => {
+    const [showBuyModal, setShowBuyModal] = useState(false)
+
     if (isLoading) {
         return <EventCardSkeleton />
     }
@@ -115,22 +122,46 @@ const ResaleTicketCard: React.FC<ResaleTicketCardProps> = ({
                     <div className="mt-auto flex flex-col gap-2">
                         <div className="flex justify-between items-center text-xs sm:text-sm mb-2">
                             <span className="text-lg font-bold text-primary flex items-center">
-                                {price} SOL
+                                {price.toFixed(4)} SOL
                                 {getPriceBadge()}
                             </span>
                         </div>
 
                         {/* Buy Button - Compact on mobile */}
-                        <button
-                            onClick={onBuy}
-                            disabled={isLoading}
-                            className="w-full bg-primary text-primary-foreground py-1.5 sm:py-2 px-3 sm:px-4 rounded-md hover:bg-primary/90 transition-colors text-xs sm:text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        <button 
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setShowBuyModal(true);
+                            }}
+                            className="w-full bg-primary text-primary-foreground py-1.5 sm:py-2 px-3 sm:px-4 rounded-md hover:bg-primary/90 transition-colors text-xs sm:text-sm font-medium"
                         >
-                            {isLoading ? 'Processing...' : 'Buy Now'}
+                            Buy Now
                         </button>
                     </div>
                 </CardContent>
             </motion.div>
+
+            {/* Buy Modal */}
+            <BuyResaleTicketModal
+                open={showBuyModal}
+                onClose={() => setShowBuyModal(false)}
+                listingId={listingId}
+                ticketData={{
+                    title,
+                    price,
+                    originalPrice,
+                    imageUrl,
+                    date,
+                    time,
+                    sellerName: company,
+                }}
+                onSuccess={() => {
+                    setShowBuyModal(false);
+                    if (onPurchaseSuccess) {
+                        onPurchaseSuccess();
+                    }
+                }}
+            />
         </div>
     )
 }

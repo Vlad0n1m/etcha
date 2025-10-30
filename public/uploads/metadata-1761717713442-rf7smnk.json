@@ -1,0 +1,53 @@
+{
+  "name": "qweqwe - Ticket #4",
+  "symbol": "TICKET",
+  "description": "qwewqeq",
+  "image": "http://localhost:3000/uploads/event-1761717697134-mi04g5v.jpg",
+  "attributes": [
+    {
+      "trait_type": "Event Date",
+      "value": "2222-12-12"
+    },
+    {
+      "trait_type": "Event Time",
+      "value": "12:12"
+    },
+    {
+      "trait_type": "Location",
+      "value": "qwe"
+    },
+    {
+      "trait_type": "Category",
+      "value": "cmhap8k1t00013q178ng9wvyd"
+    },
+    {
+      "trait_type": "Organizer Name",
+      "value": "Event Organizer"
+    },
+    {
+      "trait_type": "Organizer Avatar",
+      "value": "/logo.png"
+    },
+    {
+      "trait_type": "Ticket Number",
+      "value": 4
+    },
+    {
+      "trait_type": "Ticket Type",
+      "value": "NFT Event Ticket"
+    },
+    {
+      "trait_type": "Organizer",
+      "value": "Professional event organizer"
+    }
+  ],
+  "properties": {
+    "category": "event-ticket",
+    "creators": [
+      {
+        "address": "8FzRarb7UAqpuV4cBDNrqQUU6Kuhez6uNVEisMSD6JEE",
+        "share": 100
+      }
+    ]
+  }
+}

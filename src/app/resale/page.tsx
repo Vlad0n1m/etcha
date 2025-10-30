@@ -2,7 +2,7 @@
 
 import ResaleTicketCard from '@/components/ResaleTicketCard';
 import ResaleCategoryFilter from '@/components/ResaleCategoryFilter';
-import { Search } from 'lucide-react';
+import { Search, AlertCircle } from 'lucide-react';
 import React from 'react';
 import EventCardSkeleton from '@/components/EventCardSkeleton';
 import { Button } from '@/components/ui/button';
@@ -10,30 +10,31 @@ import MobileHeader from '@/components/MobileHeader';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { Transaction, VersionedTransaction } from '@solana/web3.js';
 
-interface ResaleListing {
-    id: string;
-    nftMintAddress: string;
-    price: number;
-    originalPrice: number;
-    priceComparison: 'cheaper' | 'same' | 'higher';
-    priceDifference: number;
-    sellerNickname: string;
-    seller: {
-        walletAddress: string;
-    };
-    createdAt: string;
+interface ResaleTicket {
+    listingId: string
+    nftMintAddress: string
+    price: number // в SOL
+    originalPrice: number // в SOL
     event: {
-        id: string;
-        title: string;
-        imageUrl: string;
-        date: string;
-        time: string;
-        fullAddress: string;
-        category: {
-            name: string;
-            value: string;
-        };
-    };
+        id: string
+        title: string
+        imageUrl: string
+        date: string // ISO format
+        time: string
+        fullAddress: string
+        category: string
+        organizer: {
+            name: string
+            walletAddress: string
+        } | null
+    }
+    seller: {
+        walletAddress: string
+        nickname?: string
+        organizer?: {
+            companyName: string
+        }
+    }
 }
 
 function ResaleClient() {
@@ -47,9 +48,35 @@ function ResaleClient() {
     const [priceFilter, setPriceFilter] = React.useState('all');
     const [priceComparison, setPriceComparison] = React.useState('all');
     const [isLoading, setIsLoading] = React.useState(true);
-    const [listings, setListings] = React.useState<ResaleListing[]>([]);
-    const [buyingId, setBuyingId] = React.useState<string | null>(null);
-    const [error, setError] = React.useState('');
+    const [resaleTickets, setResaleTickets] = React.useState<ResaleTicket[]>([]);
+    const [error, setError] = React.useState<string | null>(null);
+
+    // Load resale tickets from API
+    const loadResaleTickets = React.useCallback(async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+            const response = await fetch('/api/resale');
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Failed to load resale tickets');
+            }
+
+            setResaleTickets(data.listings || []);
+        } catch (err: unknown) {
+            console.error('Error loading resale tickets:', err);
+            const message = err instanceof Error ? err.message : 'Failed to load resale tickets';
+            setError(message);
+            setResaleTickets([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    React.useEffect(() => {
+        loadResaleTickets();
+    }, [loadResaleTickets]);
 
     const handleFilterChange = (filter: string) => {
         setActiveFilter(filter);
@@ -63,24 +90,19 @@ function ResaleClient() {
         setPriceComparison(comparison);
     };
 
-    React.useEffect(() => {
-        fetchListings();
-    }, []);
+    // Format date like on profile page
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString("en-US", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+        });
+    };
 
-    const fetchListings = async () => {
-        setIsLoading(true);
-        try {
-            const response = await fetch('/api/marketplace/listings?status=active');
-            const data = await response.json();
-
-            if (data.success) {
-                setListings(data.data.listings);
-            }
-        } catch (err) {
-            console.error('Error fetching listings:', err);
-        } finally {
-            setIsLoading(false);
-        }
+    // Format address like on ticket detail page
+    const formatAddress = (address: string) => {
+        return `${address.slice(0, 6)}...${address.slice(-6)}`;
     };
 
     const handleResetFilters = () => {
@@ -90,171 +112,38 @@ function ResaleClient() {
         setPriceComparison('all');
     };
 
-    const handleBuy = async (listing: ResaleListing) => {
-        // Prevent double-clicks and concurrent purchases
-        if (buyingId) {
-            console.log('⚠️ Purchase already in progress, ignoring click');
-            return;
+    // Transform resale tickets to format expected by ResaleTicketCard
+    const transformedTickets = resaleTickets.map((ticket) => {
+        // Get seller display name
+        let sellerName = ticket.seller.walletAddress;
+        if (ticket.seller.organizer?.companyName) {
+            sellerName = ticket.seller.organizer.companyName;
+        } else if (ticket.seller.nickname) {
+            sellerName = ticket.seller.nickname;
+        } else {
+            sellerName = formatAddress(ticket.seller.walletAddress);
         }
 
-        if (!publicKey || !signTransaction) {
-            setError('Please connect your wallet to buy');
-            return;
-        }
+        return {
+            id: ticket.listingId,
+            listingId: ticket.listingId,
+            title: ticket.event.title,
+            company: sellerName,
+            price: ticket.price,
+            originalPrice: ticket.originalPrice,
+            date: formatDate(ticket.event.date),
+            time: ticket.event.time,
+            imageUrl: ticket.event.imageUrl,
+            category: ticket.event.category,
+            seats: 'General Admission',
+            ticketsAvailable: 1,
+        };
+    });
 
-        if (listing.seller.walletAddress === publicKey.toString()) {
-            setError('You cannot buy your own listing');
-            return;
-        }
-
-        setBuyingId(listing.id);
-        setError('');
-
-        try {
-            // Step 1: Prepare purchase transaction
-            console.log('📝 Preparing purchase transaction...');
-            const prepareResponse = await fetch('/api/marketplace/prepare-buy', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    listingId: listing.id,
-                    buyerWallet: publicKey.toString(),
-                }),
-            });
-
-            if (!prepareResponse.ok) {
-                const errorData = await prepareResponse.json();
-                throw new Error(errorData.error || 'Failed to prepare purchase');
-            }
-
-            const { data: prepareData } = await prepareResponse.json();
-            const { transaction: base64Transaction, price } = prepareData;
-
-            // Step 2: Deserialize and sign transaction
-            console.log('💳 Preparing transaction for signature...');
-            console.log(`💰 Total cost: ${price} SOL`);
-
-            const transactionBuffer = Buffer.from(base64Transaction, 'base64');
-            let transaction: Transaction | VersionedTransaction;
-            let isVersioned = false;
-
-            // Check if it's a versioned transaction (starts with version byte)
-            if (transactionBuffer[0] > 127) {
-                // Versioned transaction
-                transaction = VersionedTransaction.deserialize(transactionBuffer);
-                isVersioned = true;
-            } else {
-                // Legacy transaction
-                transaction = Transaction.from(transactionBuffer);
-                isVersioned = false;
-            }
-
-            // Log transaction info based on type
-            if (isVersioned) {
-                console.log('🔍 Versioned transaction detected');
-                console.log('🔍 Transaction signatures before user sign:', (transaction as VersionedTransaction).signatures.length);
-            } else {
-                console.log('🔍 Legacy transaction detected');
-                console.log('🔍 Transaction signatures before user sign:', (transaction as Transaction).signatures.length);
-            }
-
-            // User signs the transaction (may be partially signed by platform)
-            console.log('✍️ Requesting user signature...');
-            const signedTransaction = await signTransaction(transaction);
-
-            console.log('✅ User signed transaction');
-
-            // Manually send the signed transaction
-            console.log('📤 Sending transaction to blockchain...');
-            const rawTransaction = signedTransaction.serialize();
-
-            let transactionSignature: string;
-            try {
-                transactionSignature = await connection.sendRawTransaction(rawTransaction, {
-                    skipPreflight: false,
-                    preflightCommitment: 'confirmed',
-                });
-                console.log('✅ Transaction sent:', transactionSignature);
-            } catch (sendError: unknown) {
-                // If transaction was already processed, extract signature and continue
-                const errorMessage = sendError instanceof Error ? sendError.message : String(sendError);
-                if (errorMessage.includes('already been processed')) {
-                    console.log('⚠️ Transaction already processed, extracting signature...');
-                    // Calculate transaction signature from the signed transaction
-                    let firstSignature: Uint8Array | null = null;
-
-                    if (isVersioned) {
-                        const vTx = signedTransaction as VersionedTransaction;
-                        firstSignature = vTx.signatures[0] || null;
-                    } else {
-                        const legacyTx = signedTransaction as Transaction;
-                        firstSignature = legacyTx.signatures[0]?.signature || null;
-                    }
-
-                    if (firstSignature) {
-                        const bs58 = await import('bs58');
-                        transactionSignature = bs58.default.encode(firstSignature);
-                        console.log('✅ Extracted signature:', transactionSignature);
-                    } else {
-                        throw new Error('Transaction already processed but signature not found');
-                    }
-                } else {
-                    throw sendError;
-                }
-            }
-
-            console.log('⏳ Waiting for confirmation...');
-
-            // Step 3: Wait for confirmation
-            const confirmation = await connection.confirmTransaction(transactionSignature, 'confirmed');
-
-            if (confirmation.value.err) {
-                throw new Error('Transaction failed on blockchain');
-            }
-
-            console.log('✅ Transaction confirmed on blockchain');
-
-            // Step 4: Confirm purchase on backend
-            console.log('📝 Recording purchase in database...');
-            const confirmResponse = await fetch('/api/marketplace/confirm-buy', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    listingId: listing.id,
-                    buyerWallet: publicKey.toString(),
-                    transactionSignature,
-                }),
-            });
-
-            if (!confirmResponse.ok) {
-                const errorData = await confirmResponse.json();
-                throw new Error(errorData.error || 'Failed to confirm purchase');
-            }
-
-            const { data: confirmData } = await confirmResponse.json();
-
-            console.log('🎉 Purchase completed successfully!');
-            console.log('Transaction:', transactionSignature);
-
-            // Refresh listings
-            await fetchListings();
-            alert(`Purchase successful! NFT: ${confirmData.nftAddress}\nTransaction: ${transactionSignature}`);
-        } catch (err) {
-            console.error('Error buying ticket:', err);
-            setError(err instanceof Error ? err.message : 'Failed to buy ticket');
-        } finally {
-            setBuyingId(null);
-        }
-    };
-
-    const filteredTickets = listings.filter(listing =>
-        listing.event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        listing.event.fullAddress.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        listing.sellerNickname.toLowerCase().includes(searchQuery.toLowerCase())
+    const filteredTickets = transformedTickets.filter(ticket =>
+        ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        ticket.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        ticket.company.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const categoryFiltered = activeFilter !== 'all'
@@ -282,9 +171,9 @@ function ResaleClient() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-background ">
+            <div className="min-h-screen bg-background">
                 <MobileHeader />
-                <div className="container mx-auto px-4 ">
+                <div className="container mx-auto px-4">
                     <div className="mb-8 pt-24">
                         <h1 className="text-3xl font-bold text-foreground mb-2">Ticket Resale Marketplace</h1>
                         <p className="text-muted-foreground">Discover and buy resale tickets for your favorite events. Sellers set their own prices.</p>
@@ -421,24 +310,39 @@ function ResaleClient() {
                 <div className="grid grid-cols-2 gap-4">
                     {categoryFilteredTickets.map((listing) => (
                         <ResaleTicketCard
-                            key={listing.id}
-                            title={listing.event.title}
-                            company={listing.sellerNickname}
-                            price={listing.price}
-                            originalPrice={listing.originalPrice}
-                            date={new Date(listing.event.date).toISOString().split('T')[0]}
-                            time={listing.event.time}
-                            ticketsAvailable={1}
-                            imageUrl={listing.event.imageUrl}
-                            category={listing.event.category.name}
-                            seats="General Admission"
-                            isLoading={buyingId === listing.id}
-                            onBuy={() => handleBuy(listing)}
+                            key={ticket.id}
+                            id={ticket.id}
+                            listingId={ticket.listingId}
+                            title={ticket.title}
+                            company={ticket.company}
+                            price={ticket.price}
+                            originalPrice={ticket.originalPrice}
+                            date={ticket.date}
+                            time={ticket.time}
+                            ticketsAvailable={ticket.ticketsAvailable}
+                            imageUrl={ticket.imageUrl}
+                            category={ticket.category}
+                            seats={ticket.seats}
+                            onPurchaseSuccess={loadResaleTickets}
                         />
                     ))}
                 </div>
 
-                {!isLoading && categoryFilteredTickets.length === 0 && (
+                {error && (
+                    <div className="text-center py-12">
+                        <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                        <p className="text-muted-foreground">{error}</p>
+                        <Button
+                            onClick={() => window.location.reload()}
+                            variant="outline"
+                            className="mt-4"
+                        >
+                            Retry
+                        </Button>
+                    </div>
+                )}
+
+                {!isLoading && !error && categoryFilteredTickets.length === 0 && (
                     <div className="text-center py-12">
                         <p className="text-muted-foreground">No resale tickets match your search or filters.</p>
                     </div>
