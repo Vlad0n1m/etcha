@@ -443,11 +443,11 @@ export default function ProfilePage() {
                         <div className="flex flex-col items-center justify-center py-12">
                             <div className="mb-4 relative">
                                 <Image
-                                    src="/placeholder.svg?height=200&width=300"
+                                    src="/no-ticket-svgrepo-com.svg?height=200&width=300"
                                     alt="No tickets"
                                     width={300}
                                     height={200}
-                                    className="w-64 h-48 object-contain"
+                                    className="w-64 h-48 object-contain opacity-50"
                                 />
                             </div>
                             <h3 className="text-gray-900 text-xl font-bold mb-2">No {activeTab} tickets yet</h3>

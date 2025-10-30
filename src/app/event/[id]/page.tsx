@@ -556,7 +556,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     <div className="flex items-center gap-3 mb-4">
                         <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                             <Image
-                                src={event.organizer.avatar || "/placeholder.svg"}
+                                src={event.organizer.avatar || "/no-ticket-svgrepo-com.svg"}
                                 alt={event.organizer.name}
                                 width={48}
                                 height={48}

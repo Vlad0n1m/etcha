@@ -29,11 +29,47 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Database Setup
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This project uses **PostgreSQL** as the database (required for Vercel deployment).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Local Development
+
+1. Set up a PostgreSQL database (Docker, local installation, or Neon):
+   ```bash
+   # Using Docker
+   docker run --name etcha-postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=etcha -p 5432:5432 -d postgres:15
+   ```
+
+2. Create `.env.local` file:
+   ```env
+   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/etcha?schema=public"
+   ```
+
+3. Run migrations:
+   ```bash
+   npm run db:migrate
+   ```
+
+4. Seed the database (optional):
+   ```bash
+   npm run db:seed
+   ```
+
+### Production Deployment on Vercel
+
+⚠️ **Important**: Vercel does not support SQLite. You must use a remote PostgreSQL database.
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
+
+**Quick setup:**
+1. Create a PostgreSQL database (recommended: [Neon](https://neon.tech) or Vercel Postgres)
+2. Add `DATABASE_URL` environment variable in Vercel
+3. Migrations run automatically during build
+
+For more details, see:
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - Complete deployment guide
+- [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) - SQLite to PostgreSQL migration guide
 
 # etcha
 
