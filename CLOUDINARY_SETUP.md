@@ -48,14 +48,18 @@ CLOUDINARY_API_SECRET=ваш_api_secret
 
 ### `/src/app/api/upload/route.ts` (основной endpoint для создания событий)
 - ❌ Убрано: сохранение файлов в `public/uploads/` (не работает на Vercel)
+- ❌ Убрано: обработка Sharp (вызывала ошибки с HEIC/HEIF форматами)
 - ✅ Добавлено: загрузка в Cloudinary через их API
-- ✅ Добавлено: обработка изображений через Sharp (оптимизация, resize)
+- ✅ Добавлено: автоматическая обработка через Cloudinary (resize, оптимизация, WebP/AVIF)
+- ✅ Поддержка: JPEG, PNG, WebP, HEIC/HEIF (формат iPhone)
 - ✅ Возвращает: `{ success: true, url: "https://res.cloudinary.com/..." }`
 
 ### `/src/app/api/upload/image/route.ts` (альтернативный endpoint)
 - ❌ Убрано: сохранение файлов в `public/uploads/` (не работает на Vercel)
+- ❌ Убрано: обработка Sharp (вызывала ошибки с HEIC/HEIF форматами)
 - ✅ Добавлено: загрузка в Cloudinary через их API
-- ✅ Добавлено: обработка изображений через Sharp (оптимизация, resize)
+- ✅ Добавлено: автоматическая обработка через Cloudinary (resize, оптимизация, WebP/AVIF)
+- ✅ Поддержка: все форматы изображений включая HEIC/HEIF
 - ✅ Возвращает: `{ success: true, imageUrl: "https://res.cloudinary.com/..." }`
 
 ## Преимущества Cloudinary

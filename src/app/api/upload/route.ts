@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { v2 as cloudinary } from 'cloudinary'
-import sharp from 'sharp'
+import { v2 as cloudinary, UploadApiResponse } from 'cloudinary'
 
 // Configure Cloudinary
 cloudinary.config({
@@ -26,11 +25,11 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Check file type
-        const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+        // Allow more image types including HEIC/HEIF (Apple formats)
+        const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic", "image/heif"]
         if (!allowedTypes.includes(file.type)) {
             return NextResponse.json(
-                { success: false, message: "Only JPG, PNG, and WebP images are allowed" },
+                { success: false, message: "Only JPG, PNG, WebP, and HEIC images are allowed" },
                 { status: 400 }
             )
         }
@@ -38,22 +37,22 @@ export async function POST(request: NextRequest) {
         const bytes = await file.arrayBuffer()
         const buffer = Buffer.from(bytes)
 
-        // Process image with sharp: resize to 1200x1200 max, convert to JPEG, optimize
-        const processedImage = await sharp(buffer)
-            .resize(1200, 1200, {
-                fit: 'inside',
-                withoutEnlargement: true,
-            })
-            .jpeg({ quality: 85 })
-            .toBuffer()
-
-        // Upload to Cloudinary
-        const uploadResponse = await new Promise<any>((resolve, reject) => {
+        // Upload to Cloudinary with automatic optimization and transformation
+        // Cloudinary will handle HEIC/HEIF and all other formats natively
+        const uploadResponse = await new Promise<UploadApiResponse>((resolve, reject) => {
             const uploadStream = cloudinary.uploader.upload_stream(
                 {
                     folder: 'etcha-events',
                     resource_type: 'image',
-                    format: 'jpg',
+                    transformation: [
+                        {
+                            width: 1200,
+                            height: 1200,
+                            crop: 'limit',
+                            quality: 'auto:good',
+                            fetch_format: 'auto', // Automatically serve best format (WebP, AVIF, etc.)
+                        }
+                    ],
                 },
                 (error, result) => {
                     if (error) reject(error)
@@ -61,7 +60,7 @@ export async function POST(request: NextRequest) {
                 }
             )
 
-            uploadStream.end(processedImage)
+            uploadStream.end(buffer)
         })
 
         return NextResponse.json({
