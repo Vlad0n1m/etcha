@@ -59,6 +59,32 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        // Validate all public key strings before using them
+        const validateKey = (key: string, field: string) => {
+            try {
+                // Also trim to avoid accidental whitespace
+                // eslint-disable-next-line no-new
+                new PublicKey(key.trim());
+            } catch {
+                throw new Error(`${field} is not a valid base58 public key`);
+            }
+        };
+
+        try {
+            validateKey(buyerWallet, 'buyerWallet');
+            validateKey(listing.auctionHouseAddress, 'auctionHouseAddress');
+            validateKey(listing.nftMintAddress, 'nftMintAddress');
+            validateKey(listing.listingAddress, 'listingAddress');
+        } catch (e) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    error: (e as Error).message,
+                },
+                { status: 400 }
+            );
+        }
+
         // Prepare purchase transaction
         const { SolanaService } = await import('@/lib/solana/SolanaService');
         const { MarketplaceService } = await import('@/lib/solana/MarketplaceService');
@@ -66,25 +92,25 @@ export async function POST(req: NextRequest) {
         const solanaService = new SolanaService();
         const marketplaceService = new MarketplaceService(solanaService);
 
-        const buyerPublicKey = new PublicKey(buyerWallet);
+        const buyerPublicKey = new PublicKey(buyerWallet.trim());
 
         // Prepare the purchase transaction (builder pattern)
         const metaplex = solanaService.getMetaplex();
 
         // Get Auction House
         const auctionHouse = await metaplex.auctionHouse().findByAddress({
-            address: new PublicKey(listing.auctionHouseAddress),
+            address: new PublicKey(listing.auctionHouseAddress.trim()),
         });
 
         // Load NFT metadata
         const nft = await metaplex.nfts().findByMint({
-            mintAddress: new PublicKey(listing.nftMintAddress)
+            mintAddress: new PublicKey(listing.nftMintAddress.trim())
         });
 
         // Find the listing
         const lazyListing = await metaplex.auctionHouse().findListingByTradeState({
             auctionHouse,
-            tradeStateAddress: new PublicKey(listing.listingAddress),
+            tradeStateAddress: new PublicKey(listing.listingAddress.trim()),
         });
 
         // Load full listing

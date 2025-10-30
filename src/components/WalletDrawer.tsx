@@ -56,6 +56,7 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
     const [linkedWallets, setLinkedWallets] = useState<Set<string>>(new Set())
     const checkedWalletsRef = useRef<Set<string>>(new Set())
     const isProcessingRef = useRef(false)
+    const activatingRef = useRef(false)
 
     // Check if wallet is already linked on mount and load from localStorage
     useEffect(() => {
@@ -63,7 +64,8 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
             const stored = localStorage.getItem('linkedWallets')
             if (stored) {
                 try {
-                    const parsed = new Set(JSON.parse(stored))
+                    const parsedArray: string[] = JSON.parse(stored)
+                    const parsed = new Set<string>(parsedArray)
                     setLinkedWallets(parsed)
                     checkedWalletsRef.current = new Set(parsed)
                 } catch (e) {
@@ -81,7 +83,7 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
             }
 
             const walletKey = publicKey.toString()
-            
+
             // Prevent multiple simultaneous checks for the same wallet
             if (isProcessingRef.current || checkedWalletsRef.current.has(walletKey)) {
                 return
@@ -92,13 +94,14 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
                 const stored = localStorage.getItem('linkedWallets')
                 if (stored) {
                     try {
-                        const storedSet = new Set(JSON.parse(stored))
+                        const parsedArray: string[] = JSON.parse(stored)
+                        const storedSet = new Set<string>(parsedArray)
                         if (storedSet.has(walletKey)) {
                             checkedWalletsRef.current.add(walletKey)
                             setLinkedWallets(storedSet)
                             return
                         }
-                    } catch (e) {
+                    } catch {
                         // Ignore parse errors
                     }
                 }
@@ -130,7 +133,7 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
                 }
 
                 setIsLinking(true)
-                
+
                 // Create a standardized message to sign
                 // This message must be consistent across all operations to ensure signature-derived keypair matches
                 // IMPORTANT: Must use same message as profile page ("etcha-mint-auth-v1") to get same internal wallet
@@ -138,7 +141,7 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
 
                 // Request signature from wallet
                 const signature = await signMessage(message)
-                
+
                 // Convert signature to hex string
                 const signatureHex = Buffer.from(signature).toString('hex')
 
@@ -168,11 +171,12 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
                     const error = await response.json()
                     console.error('Failed to link wallet:', error)
                 }
-            } catch (error: any) {
+            } catch (error: unknown) {
                 // Remove from checked if error occurred
                 checkedWalletsRef.current.delete(walletKey)
                 // Silent fail - user might have rejected signature
-                if (error.message && !error.message.includes('User rejected')) {
+                const err = error as { message?: string }
+                if (err?.message && !err.message.includes('User rejected')) {
                     console.error('Error linking wallet:', error)
                 }
             } finally {
@@ -189,7 +193,7 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
         return () => {
             clearTimeout(timeout)
         }
-    }, [connected, publicKey?.toString()])
+    }, [connected, publicKey, signMessage, linkedWallets])
 
     const handleCopyAddress = async () => {
         if (publicKey) {
@@ -206,6 +210,19 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
         }
     }
 
+    const handleWalletActivate = (walletName: string) => {
+        if (connecting || activatingRef.current) return
+        activatingRef.current = true
+        try {
+            handleWalletSelect(walletName)
+        } finally {
+            // small timeout prevents accidental double-activations on mobile
+            setTimeout(() => {
+                activatingRef.current = false
+            }, 300)
+        }
+    }
+
     const formatAddress = (address: string) => {
         return `${address.slice(0, 4)}...${address.slice(-4)}`
     }
@@ -215,7 +232,7 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
             <DrawerTrigger asChild>{children}</DrawerTrigger>
             <DrawerContent className="max-h-[85vh]">
                 {connecting && (
-                    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center rounded-t-[10px]">
+                    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center rounded-t-[10px]" aria-live="polite" aria-busy="true">
                         <div className="flex flex-col items-center gap-3">
                             <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                             <p className="text-sm font-medium">Connecting...</p>
@@ -230,7 +247,7 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
                         </DrawerTitle>
                     </DrawerHeader>
 
-                    <div className="px-4 pb-6 max-h-[50vh] overflow-y-auto">
+                    <div className="px-4 pb-6 max-h-[50vh] overflow-y-auto" aria-busy={connecting || isLinking}>
                         {connected ? (
                             <div className="space-y-4">
                                 <div className="bg-card border-2 border-border rounded-xl p-6 space-y-4">
@@ -243,6 +260,7 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
                                                     width={64}
                                                     height={64}
                                                     className="w-16 h-16 rounded-lg"
+                                                    draggable={false}
                                                 />
                                             ) : (
                                                 <Wallet className="w-10 h-10" />
@@ -261,7 +279,6 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
                                         </div>
                                     </div>
                                 </div>
-
                                 <Button
                                     onClick={() => {
                                         // Remove from linked wallets
@@ -278,13 +295,15 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
                                     }}
                                     variant="destructive"
                                     className="w-full h-12 font-medium text-white"
+                                    type="button"
+                                    style={{ touchAction: 'manipulation' }}
                                 >
                                     <X className="w-4 h-4 mr-2" />
                                     Disconnect
                                 </Button>
                             </div>
                         ) : (
-                            <div className="space-y-3">
+                            <div className="space-y-3" role="list" aria-label="Available wallets">
                                 {wallets.filter((wallet) => wallet.readyState === "Installed").length > 0 && (
                                     <>
                                         {wallets
@@ -292,9 +311,19 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
                                             .map((wallet) => (
                                                 <button
                                                     key={wallet.adapter.name}
-                                                    onClick={() => handleWalletSelect(wallet.adapter.name)}
+                                                    onPointerUp={() => handleWalletActivate(wallet.adapter.name)}
+                                                    onClick={() => handleWalletActivate(wallet.adapter.name)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' || e.key === ' ') {
+                                                            e.preventDefault()
+                                                            handleWalletActivate(wallet.adapter.name)
+                                                        }
+                                                    }}
                                                     disabled={connecting}
-                                                    className="w-full group rounded-xl border-2 border-border hover:border-primary transition-all duration-200 bg-card hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    aria-label={`Connect ${wallet.adapter.name}`}
+                                                    type="button"
+                                                    className="w-full group rounded-xl border-2 border-border hover:border-primary transition-all duration-200 bg-card hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px]"
+                                                    style={{ touchAction: 'manipulation' }}
                                                 >
                                                     <div className="flex items-center gap-4 p-4">
                                                         <div className="w-12 h-12 flex items-center justify-center">
@@ -305,6 +334,7 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
                                                                     width={48}
                                                                     height={48}
                                                                     className="w-12 h-12 rounded-lg"
+                                                                    draggable={false}
                                                                 />
                                                             ) : (
                                                                 <Wallet className="w-8 h-8" />
@@ -328,9 +358,19 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
                                             .map((wallet) => (
                                                 <button
                                                     key={wallet.adapter.name}
-                                                    onClick={() => handleWalletSelect(wallet.adapter.name)}
+                                                    onPointerUp={() => handleWalletActivate(wallet.adapter.name)}
+                                                    onClick={() => handleWalletActivate(wallet.adapter.name)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' || e.key === ' ') {
+                                                            e.preventDefault()
+                                                            handleWalletActivate(wallet.adapter.name)
+                                                        }
+                                                    }}
                                                     disabled={connecting}
-                                                    className="w-full group rounded-xl border-2 border-dashed border-border hover:border-primary transition-all duration-200 bg-card/50 hover:bg-card hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    aria-label={`Connect ${wallet.adapter.name}`}
+                                                    type="button"
+                                                    className="w-full group rounded-xl border-2 border-dashed border-border hover:border-primary transition-all duration-200 bg-card/50 hover:bg-card hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px]"
+                                                    style={{ touchAction: 'manipulation' }}
                                                 >
                                                     <div className="flex items-center gap-4 p-4">
                                                         <div className="w-12 h-12 flex items-center justify-center opacity-60 group-hover:opacity-100 transition-opacity">
@@ -341,6 +381,7 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
                                                                     width={48}
                                                                     height={48}
                                                                     className="w-12 h-12 rounded-lg"
+                                                                    draggable={false}
                                                                 />
                                                             ) : (
                                                                 <Wallet className="w-8 h-8" />
@@ -361,7 +402,7 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
 
                     <DrawerFooter className="pt-4 border-t">
                         <DrawerClose asChild>
-                            <Button variant="outline" className="w-full h-11 font-medium bg-transparent">
+                            <Button variant="outline" className="w-full h-11 font-medium bg-transparent" type="button" style={{ touchAction: 'manipulation' }}>
                                 Close
                             </Button>
                         </DrawerClose>

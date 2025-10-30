@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { Connection, Transaction } from '@solana/web3.js';
 import { ArrowDownCircle, ArrowUpCircle, Equal, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface ResaleListing {
     id: string;
@@ -32,7 +34,7 @@ interface ResaleSectionProps {
 }
 
 export default function ResaleSection({ eventId, eventTitle, eventImage, originalPrice }: ResaleSectionProps) {
-    const { publicKey } = useWallet();
+    const { publicKey, wallet } = useWallet();
     const [listings, setListings] = useState<ResaleListing[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [buyingId, setBuyingId] = useState<string | null>(null);
@@ -75,21 +77,56 @@ export default function ResaleSection({ eventId, eventTitle, eventImage, origina
         setError('');
 
         try {
-            const response = await fetch('/api/marketplace/buy', {
+            // 1) Prepare transaction on server
+            const prepareRes = await fetch('/api/marketplace/prepare-buy', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     listingId: listing.id,
                     buyerWallet: publicKey.toString(),
                 }),
             });
 
-            const data = await response.json();
+            const prepareData = await prepareRes.json();
 
-            if (!response.ok || !data.success) {
-                throw new Error(data.error || 'Failed to complete purchase');
+            if (!prepareRes.ok || !prepareData.success) {
+                throw new Error(prepareData.error || 'Failed to prepare purchase');
+            }
+
+            const base64Tx: string = prepareData.data.transaction;
+
+            // 2) Reconstruct, sign and send transaction
+            const raw = Buffer.from(base64Tx, 'base64');
+            const transaction = Transaction.from(raw);
+
+            if (!wallet?.adapter) {
+                throw new Error('Wallet adapter not available');
+            }
+
+            const connection = new Connection(
+                process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
+                'confirmed'
+            );
+
+            const signature = await wallet.adapter.sendTransaction(transaction, connection);
+
+            // Optional: wait for confirmation
+            await connection.confirmTransaction(signature, 'confirmed');
+
+            // 3) Confirm on server
+            const confirmRes = await fetch('/api/marketplace/confirm-buy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    listingId: listing.id,
+                    buyerWallet: publicKey.toString(),
+                    transactionSignature: signature,
+                }),
+            });
+
+            const confirmData = await confirmRes.json();
+            if (!confirmRes.ok || !confirmData.success) {
+                throw new Error(confirmData.error || 'Failed to confirm purchase');
             }
 
             // Refresh listings
@@ -164,7 +201,7 @@ export default function ResaleSection({ eventId, eventTitle, eventImage, origina
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4">
                 {listings.map((listing) => {
                     const badge = getPriceBadge(listing.priceComparison, listing.priceDifference);
                     const BadgeIcon = badge.icon;
@@ -194,21 +231,14 @@ export default function ResaleSection({ eventId, eventTitle, eventImage, origina
                                 </div>
                             </div>
 
-                            <Button
-                                onClick={() => handleBuy(listing)}
-                                disabled={buyingId === listing.id || !publicKey}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                                size="sm"
+                            <Link href="/resale"
+
                             >
-                                {buyingId === listing.id ? (
-                                    'Processing...'
-                                ) : (
-                                    <>
-                                        <ShoppingCart className="w-4 h-4 mr-2" />
-                                        Buy from Resale
-                                    </>
-                                )}
-                            </Button>
+                                <div className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-1 px-2 text-s rounded-xl w-full">
+                                    <ShoppingCart className="w-4 h-4 mr-2" />
+                                    Buy from Resale
+                                </div>
+                            </Link>
                         </div>
                     );
                 })}

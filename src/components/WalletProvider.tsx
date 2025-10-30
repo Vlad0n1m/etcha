@@ -3,7 +3,12 @@
 import React, { FC, ReactNode, useMemo } from 'react'
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react'
 import { WalletAdapterNetwork } from '@solana/wallet-adapter-base'
-import { PhantomWalletAdapter, SolflareWalletAdapter, TorusWalletAdapter } from '@solana/wallet-adapter-wallets'
+import {
+    PhantomWalletAdapter,
+    SolflareWalletAdapter,
+    TorusWalletAdapter,
+    TrustWalletAdapter,
+} from '@solana/wallet-adapter-wallets'
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui'
 import { clusterApiUrl } from '@solana/web3.js'
 
@@ -18,20 +23,20 @@ export const WalletContextProvider: FC<WalletContextProviderProps> = ({ children
     const network = WalletAdapterNetwork.Devnet
 
     // You can also provide a custom RPC endpoint
-    const endpoint = useMemo(() => clusterApiUrl(network), [network])
-
-    // Disable autoConnect on mobile to prevent repeated connection prompts
-    const isMobile = useMemo(() => {
-        if (typeof navigator === 'undefined') return false
-        const ua = navigator.userAgent || ''
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)
-    }, [])
+    const endpoint = useMemo(() => {
+        // Prefer explicit RPC when available for better reliability
+        if (typeof process !== 'undefined' && process.env && process.env.NEXT_PUBLIC_SOLANA_RPC_URL) {
+            return process.env.NEXT_PUBLIC_SOLANA_RPC_URL
+        }
+        return clusterApiUrl(network)
+    }, [network])
 
     const wallets = useMemo(
         () => [
             new PhantomWalletAdapter(),
             new SolflareWalletAdapter(),
             new TorusWalletAdapter(),
+            new TrustWalletAdapter(),
         ],
         []
     )
@@ -40,13 +45,10 @@ export const WalletContextProvider: FC<WalletContextProviderProps> = ({ children
         <ConnectionProvider endpoint={endpoint}>
             <WalletProvider
                 wallets={wallets}
-                autoConnect={!isMobile}
-                onError={(error) => {
-                    // Avoid noisy error loops on mobile deep-link flows
-                    if (process.env.NODE_ENV !== 'production') {
-
-                        console.warn('[wallet-adapter] error:', error?.message || error)
-                    }
+                autoConnect
+                onError={(e) => {
+                    // Surface adapter errors to help diagnose mobile issues
+                    console.error('[WalletAdapterError]', e)
                 }}
             >
                 <WalletModalProvider>
