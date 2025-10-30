@@ -8,73 +8,21 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Image from "next/image"
 
-const mockTickets = [
-    {
-        id: "1",
-        eventTitle: "Arcium's <encrypted> Side Track",
-        eventImage: "/logo.png",
-        date: "2024-03-15",
-        time: "19:00",
-        location: "San Francisco, CA",
-        price: 0.5,
-        originalPrice: 0.4,
-        marketPrice: 0.6,
-        status: "bought" as const,
-        nftId: "A7x9K2mP4nQ8rT1vW5yZ3bC6dE9fH2jL",
-    },
-    {
-        id: "2",
-        eventTitle: "Blockchain Security Workshop",
-        eventImage: "/logo.png",
-        date: "2024-03-20",
-        time: "21:30",
-        location: "New York, NY",
-        price: 0.3,
-        originalPrice: 0.3,
-        marketPrice: 0.35,
-        status: "on_resale" as const,
-        nftId: "B3c5D7e9F1g3H5i7J9k1L3m5N7o9P1q3",
-    },
-    {
-        id: "3",
-        eventTitle: "Solana Dev Meetup",
-        eventImage: "/logo.png",
-        date: "2024-04-10",
-        time: "18:00",
-        location: "Miami, FL",
-        price: 0.7,
-        originalPrice: 0.5,
-        marketPrice: 0.8,
-        status: "passed" as const,
-        nftId: "C1d3E5f7G9h1I3j5K7l9M1n3O5p7Q9r1",
-    },
-    {
-        id: "4",
-        eventTitle: "Crypto Art Auction",
-        eventImage: "/logo.png",
-        date: "2024-05-05",
-        time: "20:00",
-        location: "Los Angeles, CA",
-        price: 1.2,
-        originalPrice: 1.0,
-        marketPrice: 1.5,
-        status: "nft" as const,
-        nftId: "D2e4F6g8H0i2J4k6L8m0N2o4P6q8R0s2",
-    },
-    {
-        id: "5",
-        eventTitle: "Web3 Conference",
-        eventImage: "/logo.png",
-        date: "2024-06-15",
-        time: "16:00",
-        location: "Berlin, Germany",
-        price: 0.4,
-        originalPrice: 0.35,
-        marketPrice: 0.45,
-        status: "bought" as const,
-        nftId: "E3f5G7h9I1j3K5l7M9n1O3p5Q7r9S1t3",
-    },
-]
+type TicketStatus = "bought" | "on_resale" | "passed" | "nft"
+
+interface Ticket {
+    id: string
+    nftId: string
+    eventTitle: string
+    eventImage: string
+    date: string
+    time: string
+    location: string
+    price: number
+    originalPrice: number
+    marketPrice: number
+    status: TicketStatus
+}
 
 export default function ProfilePage() {
     const { connected, publicKey } = useWallet()
@@ -87,6 +35,8 @@ export default function ProfilePage() {
     const [internalWalletAddress, setInternalWalletAddress] = useState<string | null>(null)
     const [isLoadingBalance, setIsLoadingBalance] = useState(false)
     const [copiedInternalAddress, setCopiedInternalAddress] = useState(false)
+    const [tickets, setTickets] = useState<Ticket[]>([])
+    const [isLoadingTickets, setIsLoadingTickets] = useState(false)
 
     // Load internal wallet balance and address
     useEffect(() => {
@@ -122,6 +72,36 @@ export default function ProfilePage() {
         // Refresh balance every 10 seconds
         const interval = setInterval(loadBalance, 10000)
         return () => clearInterval(interval)
+    }, [connected, publicKey])
+
+    // Load tickets
+    useEffect(() => {
+        const loadTickets = async () => {
+            if (!connected || !publicKey) {
+                setTickets([])
+                return
+            }
+
+            try {
+                setIsLoadingTickets(true)
+                const response = await fetch(`/api/profile/tickets?walletAddress=${publicKey.toString()}`)
+                const data = await response.json()
+                
+                if (data.success) {
+                    setTickets(data.tickets || [])
+                } else {
+                    console.error('Failed to load tickets:', data.message)
+                    setTickets([])
+                }
+            } catch (error) {
+                console.error('Error loading tickets:', error)
+                setTickets([])
+            } finally {
+                setIsLoadingTickets(false)
+            }
+        }
+
+        loadTickets()
     }, [connected, publicKey])
 
     const formatAddress = (address: string) => {
@@ -170,11 +150,11 @@ export default function ProfilePage() {
         }
     }
 
-    const ownedTickets = mockTickets.filter(ticket => ["bought", "on_resale", "nft"].includes(ticket.status))
+    const ownedTickets = tickets.filter(ticket => ["bought", "on_resale", "nft"].includes(ticket.status))
     const totalValue = ownedTickets.reduce((sum, ticket) => sum + ticket.price, 0)
     const totalTickets = ownedTickets.length
 
-    const filteredTickets = mockTickets.filter(ticket => {
+    const filteredTickets = tickets.filter(ticket => {
         if (activeTab === "bought") return ticket.status === "bought"
         if (activeTab === "on_resale") return ticket.status === "on_resale"
         if (activeTab === "passed") return ticket.status === "passed"
@@ -316,7 +296,11 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="pb-20">
-                    {filteredTickets.length > 0 ? (
+                    {isLoadingTickets ? (
+                        <div className="flex flex-col items-center justify-center py-12">
+                            <div className="text-gray-500 text-sm">Loading tickets...</div>
+                        </div>
+                    ) : filteredTickets.length > 0 ? (
                         <div className="grid grid-cols-2 gap-4">
                             {filteredTickets.map((ticket) => {
                                 const priceChange = ((ticket.marketPrice - ticket.originalPrice) / ticket.originalPrice * 100)
@@ -341,7 +325,7 @@ export default function ProfilePage() {
                                             <div className="space-y-1">
                                                 <div className="flex items-center justify-between">
                                                     <span className="text-gray-600 text-xs">{ticket.date}</span>
-                                                    <span className="text-gray-600 text-xs font-medium">{ticket.price} SOL</span>
+                                                    <span className="text-gray-600 text-xs font-medium">{ticket.price.toFixed(4)} SOL</span>
                                                 </div>
                                                 <div className="flex items-center gap-1">
                                                     {isPositive ? <TrendingUp className="w-3 h-3 text-green-600" /> : <TrendingDown className="w-3 h-3 text-red-600" />}

@@ -50,7 +50,7 @@ export default function MintResultModal({ open, onClose, result }: MintResultMod
         <Drawer.Root open={open} onOpenChange={(open) => !open && onClose()}>
             <Drawer.Portal>
                 <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50" />
-                <Drawer.Content className="fixed bottom-0 left-0 right-0 max-h-[90vh] z-50 bg-surface rounded-t-2xl">
+                <Drawer.Content className="fixed bottom-0 left-0 right-0 max-h-[90vh] bg-white z-50 bg-surface rounded-t-2xl">
                     <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-muted-foreground/20 mt-4" />
 
                     <div className="p-6 overflow-y-auto max-h-[calc(90vh-2rem)]">

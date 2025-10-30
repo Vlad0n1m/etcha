@@ -132,14 +132,45 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     // Request signature and derive address when wallet is connected
     useEffect(() => {
         const deriveAddressFromSignature = async () => {
-            if (!publicKey || !connected || !signMessage && (!wallet || !wallet.adapter || !wallet.adapter.signMessage)) {
+            if (!publicKey || !connected) {
                 setDerivedAddress(null)
                 setSignature(null)
                 return
             }
 
             try {
-                // Step 1: Request signature immediately when wallet connects
+                // Step 1: First check if user already has an internal wallet address in database
+                const balanceResponse = await fetch(`/api/wallet/balance?walletAddress=${publicKey.toBase58()}`)
+                const balanceData = await balanceResponse.json()
+                
+                if (balanceData.success && balanceData.internalWalletAddress) {
+                    // User already has an internal wallet - use it
+                    setDerivedAddress(balanceData.internalWalletAddress)
+                    console.log('Using existing internal wallet from database:', balanceData.internalWalletAddress)
+                    
+                    // Still need to get signature for minting, but we'll use the existing address
+                    if (signMessage || (wallet && wallet.adapter && wallet.adapter.signMessage)) {
+                        const message = new TextEncoder().encode("etcha-mint-auth-v1")
+                        let signature: Uint8Array
+                        if (signMessage) {
+                            signature = await signMessage(message)
+                        } else if (wallet?.adapter?.signMessage) {
+                            signature = await wallet.adapter.signMessage(message)
+                        } else {
+                            console.warn("Cannot get signature: wallet does not support message signing")
+                            return
+                        }
+                        setSignature(signature) // Save signature for minting
+                    }
+                    return
+                }
+
+                // Step 2: User doesn't have internal wallet yet - derive new one from signature
+                if (!signMessage && (!wallet || !wallet.adapter || !wallet.adapter.signMessage)) {
+                    console.warn("Cannot derive address: wallet does not support message signing")
+                    return
+                }
+
                 const message = new TextEncoder().encode("etcha-mint-auth-v1")
                 
                 let signature: Uint8Array
@@ -152,7 +183,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     return
                 }
 
-                // Step 2: Send signature to server to derive address (salt stays secret on server)
+                // Step 3: Send signature to server to derive address (salt stays secret on server)
                 const signatureHex = Array.from(signature)
                     .map(b => b.toString(16).padStart(2, '0'))
                     .join('')
@@ -171,7 +202,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 if (data.success) {
                     setDerivedAddress(data.derivedPublicKey)
                     setSignature(signature) // Save signature for later use
-                    console.log('Derived address from server:', data.derivedPublicKey)
+                    console.log('Derived new address from server:', data.derivedPublicKey)
                 } else {
                     throw new Error(data.message || 'Failed to derive address')
                 }
