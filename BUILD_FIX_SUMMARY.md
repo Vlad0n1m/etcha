@@ -177,6 +177,7 @@ When deploying to Vercel, you should see:
 |-------|----------|----------------|
 | Services instantiated at module level | Lazy initialization via `getServices()` function | 6 API route files |
 | Prisma binary not found on Vercel | Added `binaryTargets` in schema | `prisma/schema.prisma` |
+| Prisma config requiring DATABASE_URL at build | Deleted deprecated `prisma.config.ts` | `prisma.config.ts` (deleted) |
 | Prisma not generated before build | Added `postinstall` script | `package.json` |
 | Missing Vercel configuration | Created Vercel config files | `vercel.json`, `.vercelignore` |
 
