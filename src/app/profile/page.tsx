@@ -1,7 +1,7 @@
 "use client"
 import { useWallet } from "@solana/wallet-adapter-react"
-import { useState } from "react"
-import { Copy, Edit, Eye, TrendingUp, TrendingDown, MoreHorizontal } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Copy, Edit, Eye, TrendingUp, TrendingDown, MoreHorizontal, Wallet } from "lucide-react"
 import WalletDrawer from "@/components/WalletDrawer"
 import MobileHeader from "@/components/MobileHeader"
 import { Button } from "@/components/ui/button"
@@ -83,6 +83,46 @@ export default function ProfilePage() {
     const [isEditing, setIsEditing] = useState(false)
     const [nickname, setNickname] = useState("User")
     const [showValue, setShowValue] = useState(true)
+    const [internalWalletBalance, setInternalWalletBalance] = useState<number | null>(null)
+    const [internalWalletAddress, setInternalWalletAddress] = useState<string | null>(null)
+    const [isLoadingBalance, setIsLoadingBalance] = useState(false)
+    const [copiedInternalAddress, setCopiedInternalAddress] = useState(false)
+
+    // Load internal wallet balance and address
+    useEffect(() => {
+        const loadBalance = async () => {
+            if (!connected || !publicKey) {
+                setInternalWalletBalance(null)
+                setInternalWalletAddress(null)
+                return
+            }
+
+            try {
+                setIsLoadingBalance(true)
+                const response = await fetch(`/api/wallet/balance?walletAddress=${publicKey.toString()}`)
+                const data = await response.json()
+                
+                if (data.success) {
+                    setInternalWalletBalance(data.balance ?? 0)
+                    setInternalWalletAddress(data.internalWalletAddress)
+                } else {
+                    setInternalWalletBalance(0)
+                    setInternalWalletAddress(null)
+                }
+            } catch (error) {
+                console.error('Error loading balance:', error)
+                setInternalWalletBalance(0)
+                setInternalWalletAddress(null)
+            } finally {
+                setIsLoadingBalance(false)
+            }
+        }
+
+        loadBalance()
+        // Refresh balance every 10 seconds
+        const interval = setInterval(loadBalance, 10000)
+        return () => clearInterval(interval)
+    }, [connected, publicKey])
 
     const formatAddress = (address: string) => {
         return `${address.slice(0, 4)}...${address.slice(-4)}`
@@ -93,6 +133,31 @@ export default function ProfilePage() {
             navigator.clipboard.writeText(publicKey.toString())
             setCopied(true)
             setTimeout(() => setCopied(false), 2000)
+        }
+    }
+
+    const handleCopyInternalAddress = () => {
+        if (internalWalletAddress) {
+            navigator.clipboard.writeText(internalWalletAddress)
+            setCopiedInternalAddress(true)
+            setTimeout(() => setCopiedInternalAddress(false), 2000)
+        }
+    }
+
+    const handleTopUp = async () => {
+        if (internalWalletAddress) {
+            try {
+                // Copy address to clipboard
+                await navigator.clipboard.writeText(internalWalletAddress)
+                setCopiedInternalAddress(true)
+                
+                // Show notification (optional - you could add a toast here)
+                setTimeout(() => {
+                    setCopiedInternalAddress(false)
+                }, 3000)
+            } catch (error) {
+                console.error('Failed to copy address:', error)
+            }
         }
     }
 
@@ -170,17 +235,63 @@ export default function ProfilePage() {
                         </button>
                     </div>
 
-                    <div className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-700 font-mono">
+                    <div className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-700 font-mono mb-2">
                         {formatAddress(publicKey?.toString() || "").toUpperCase()}
                     </div>
+
+                    {/* Internal Wallet Section */}
+                    {internalWalletAddress && (
+                        <div className="w-full mb-3 p-3 bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                    <Wallet className="w-4 h-4 text-gray-600" />
+                                    <span className="text-gray-600 text-xs font-medium">Internal Wallet</span>
+                                </div>
+                                <button
+                                    onClick={handleCopyInternalAddress}
+                                    className="p-1 hover:bg-gray-100 rounded transition-colors"
+                                    title={copiedInternalAddress ? "Copied!" : "Copy internal wallet address"}
+                                >
+                                    <Copy className={`w-3.5 h-3.5 ${copiedInternalAddress ? "text-green-500" : "text-gray-500"}`} />
+                                </button>
+                            </div>
+                            <div className="px-2 py-1.5 bg-gray-50 rounded text-xs text-gray-700 font-mono mb-2 break-all">
+                                {internalWalletAddress}
+                            </div>
+                            <Button
+                                onClick={handleTopUp}
+                                className={`w-full text-white text-xs py-1.5 h-auto ${
+                                    copiedInternalAddress 
+                                        ? "bg-green-600 hover:bg-green-700" 
+                                        : "bg-blue-600 hover:bg-blue-700"
+                                }`}
+                                size="sm"
+                                disabled={copiedInternalAddress}
+                            >
+                                <Wallet className="w-3 h-3 mr-1.5" />
+                                {copiedInternalAddress ? "✓ Address Copied!" : "Top Up Wallet"}
+                            </Button>
+                            {copiedInternalAddress && (
+                                <p className="text-xs text-gray-600 mt-1 text-center">
+                                    Send SOL to this address from your external wallet
+                                </p>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex items-center justify-between mb-3">
                     <div>
                         <div className="text-gray-500 text-xs mb-1 flex items-center gap-1">
-                            PORTFOLIO VALUE <button onClick={() => setShowValue(!showValue)} className="p-0.5 hover:bg-gray-100 rounded"><Eye className="w-3 h-3" /></button>
+                            INTERNAL WALLET BALANCE <button onClick={() => setShowValue(!showValue)} className="p-0.5 hover:bg-gray-100 rounded"><Eye className="w-3 h-3" /></button>
                         </div>
-                        <div className="text-gray-900 font-bold">{showValue ? totalValue.toFixed(2) : "***"} SOL</div>
+                        <div className="text-gray-900 font-bold">
+                            {isLoadingBalance ? (
+                                <span className="text-sm">Loading...</span>
+                            ) : (
+                                showValue ? (internalWalletBalance !== null ? internalWalletBalance.toFixed(4) : "0.0000") : "***"
+                            )} SOL
+                        </div>
                     </div>
                     <div>
                         <div className="text-gray-500 text-xs mb-1">TICKETS</div>

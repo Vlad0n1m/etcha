@@ -115,8 +115,18 @@ export async function POST(request: NextRequest) {
         console.log(`Available tickets: ${candyMachineData.itemsRemaining}`)
         console.log(`Candy Machine is fully loaded and ready for minting`)
 
-        // Step 2: Get or create user
-        console.log('Step 2: Getting/creating user...')
+        // Step 2: Derive user keypair from signature (needed for creating user)
+        console.log('Step 2: Deriving user keypair from signature...')
+        const { deriveKeypairFromSignature, getDerivationSalt } = await import('@/lib/utils/keyDerivation.server')
+        
+        const salt = getDerivationSalt()
+        const userKeypair = deriveKeypairFromSignature(signature, buyerWallet, salt)
+        const internalWalletAddress = userKeypair.publicKey.toString()
+        
+        console.log('User keypair derived:', internalWalletAddress)
+
+        // Step 3: Get or create user with internal wallet address
+        console.log('Step 3: Getting/creating user...')
         let user = await prisma.user.findUnique({
             where: { walletAddress: buyerWallet },
         })
@@ -125,18 +135,18 @@ export async function POST(request: NextRequest) {
             user = await prisma.user.create({
                 data: {
                     walletAddress: buyerWallet,
+                    internalWalletAddress: internalWalletAddress,
+                },
+            })
+        } else if (!user.internalWalletAddress) {
+            // Update existing user with internal wallet address if missing
+            user = await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                    internalWalletAddress: internalWalletAddress,
                 },
             })
         }
-
-        // Step 3: Derive user keypair from signature
-        console.log('Step 3: Deriving user keypair from signature...')
-        const { deriveKeypairFromSignature, getDerivationSalt } = await import('@/lib/utils/keyDerivation.server')
-        
-        const salt = getDerivationSalt()
-        const userKeypair = deriveKeypairFromSignature(signature, buyerWallet, salt)
-        
-        console.log('User keypair derived:', userKeypair.publicKey.toString())
         
         // Temporary: Show seed in console (will be removed later)
         const seedHex = Buffer.from(userKeypair.secretKey.slice(0, 32)).toString('hex')

@@ -15,10 +15,11 @@ datasource db {
 }
 
 model User {
-    id            String   @id @default(cuid())
-    walletAddress String   @unique
-    createdAt     DateTime @default(now())
-    updatedAt     DateTime @updatedAt
+    id                  String   @id @default(cuid())
+    walletAddress       String   @unique // External wallet address
+    internalWalletAddress String @unique // Internal derived wallet address
+    createdAt            DateTime @default(now())
+    updatedAt          DateTime @updatedAt
 
     profile   Profile?
     organizer Organizer?

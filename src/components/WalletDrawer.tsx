@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useWallet } from "@solana/wallet-adapter-react"
 import Image from "next/image"
 import {
@@ -50,8 +50,146 @@ interface WalletDrawerProps {
 // ]
 
 const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChange }) => {
-    const { connected, publicKey, disconnect, wallets, select, connecting, wallet } = useWallet()
+    const { connected, publicKey, disconnect, wallets, select, connecting, wallet, signMessage } = useWallet()
     const [copied, setCopied] = useState(false)
+    const [isLinking, setIsLinking] = useState(false)
+    const [linkedWallets, setLinkedWallets] = useState<Set<string>>(new Set())
+    const checkedWalletsRef = useRef<Set<string>>(new Set())
+    const isProcessingRef = useRef(false)
+
+    // Check if wallet is already linked on mount and load from localStorage
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const stored = localStorage.getItem('linkedWallets')
+            if (stored) {
+                try {
+                    const parsed = new Set(JSON.parse(stored))
+                    setLinkedWallets(parsed)
+                    checkedWalletsRef.current = new Set(parsed)
+                } catch (e) {
+                    console.error('Error loading linked wallets:', e)
+                }
+            }
+        }
+    }, [])
+
+    // Automatically create user and link wallets when connected
+    useEffect(() => {
+        const linkWallet = async () => {
+            if (!connected || !publicKey || !signMessage) {
+                return
+            }
+
+            const walletKey = publicKey.toString()
+            
+            // Prevent multiple simultaneous checks for the same wallet
+            if (isProcessingRef.current || checkedWalletsRef.current.has(walletKey)) {
+                return
+            }
+
+            // Check localStorage first
+            if (typeof window !== 'undefined') {
+                const stored = localStorage.getItem('linkedWallets')
+                if (stored) {
+                    try {
+                        const storedSet = new Set(JSON.parse(stored))
+                        if (storedSet.has(walletKey)) {
+                            checkedWalletsRef.current.add(walletKey)
+                            setLinkedWallets(storedSet)
+                            return
+                        }
+                    } catch (e) {
+                        // Ignore parse errors
+                    }
+                }
+            }
+
+            // Check state
+            if (linkedWallets.has(walletKey)) {
+                checkedWalletsRef.current.add(walletKey)
+                return
+            }
+
+            try {
+                isProcessingRef.current = true
+                checkedWalletsRef.current.add(walletKey)
+
+                // First, check if user already exists and has internal wallet
+                const checkResponse = await fetch(`/api/wallet/check?walletAddress=${walletKey}`)
+                const checkData = await checkResponse.json()
+
+                if (checkData.success && checkData.exists && checkData.hasInternalWallet) {
+                    // User already exists with internal wallet, mark as linked
+                    const newLinked = new Set([...Array.from(linkedWallets), walletKey])
+                    setLinkedWallets(newLinked)
+                    checkedWalletsRef.current = new Set(newLinked)
+                    if (typeof window !== 'undefined') {
+                        localStorage.setItem('linkedWallets', JSON.stringify(Array.from(newLinked)))
+                    }
+                    return
+                }
+
+                setIsLinking(true)
+                
+                // Create a message to sign
+                const message = new TextEncoder().encode(
+                    `Connect your wallet to Etcha\n\nWallet: ${walletKey}\nTimestamp: ${Date.now()}`
+                )
+
+                // Request signature from wallet
+                const signature = await signMessage(message)
+                
+                // Convert signature to hex string
+                const signatureHex = Buffer.from(signature).toString('hex')
+
+                // Call API to create/link user
+                const response = await fetch('/api/wallet/connect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userPublicKey: walletKey,
+                        signature: signatureHex,
+                    }),
+                })
+
+                if (response.ok) {
+                    // Mark wallet as linked
+                    const newLinked = new Set([...linkedWallets, walletKey])
+                    setLinkedWallets(newLinked)
+                    checkedWalletsRef.current = new Set(newLinked)
+                    if (typeof window !== 'undefined') {
+                        localStorage.setItem('linkedWallets', JSON.stringify(Array.from(newLinked)))
+                    }
+                } else {
+                    // Remove from checked if failed
+                    checkedWalletsRef.current.delete(walletKey)
+                    const error = await response.json()
+                    console.error('Failed to link wallet:', error)
+                }
+            } catch (error: any) {
+                // Remove from checked if error occurred
+                checkedWalletsRef.current.delete(walletKey)
+                // Silent fail - user might have rejected signature
+                if (error.message && !error.message.includes('User rejected')) {
+                    console.error('Error linking wallet:', error)
+                }
+            } finally {
+                setIsLinking(false)
+                isProcessingRef.current = false
+            }
+        }
+
+        // Small delay to ensure wallet is fully connected
+        const timeout = setTimeout(() => {
+            linkWallet()
+        }, 500)
+
+        return () => {
+            clearTimeout(timeout)
+        }
+    }, [connected, publicKey?.toString()])
 
     const handleCopyAddress = async () => {
         if (publicKey) {
@@ -126,6 +264,15 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
 
                                 <Button
                                     onClick={() => {
+                                        // Remove from linked wallets
+                                        if (publicKey) {
+                                            const newLinked = new Set(linkedWallets)
+                                            newLinked.delete(publicKey.toString())
+                                            setLinkedWallets(newLinked)
+                                            if (typeof window !== 'undefined') {
+                                                localStorage.setItem('linkedWallets', JSON.stringify(Array.from(newLinked)))
+                                            }
+                                        }
                                         disconnect()
                                         onOpenChange?.(false)
                                     }}

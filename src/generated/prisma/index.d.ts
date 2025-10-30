@@ -1883,6 +1883,7 @@ export namespace Prisma {
   export type UserMinAggregateOutputType = {
     id: string | null
     walletAddress: string | null
+    internalWalletAddress: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -1890,6 +1891,7 @@ export namespace Prisma {
   export type UserMaxAggregateOutputType = {
     id: string | null
     walletAddress: string | null
+    internalWalletAddress: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -1897,6 +1899,7 @@ export namespace Prisma {
   export type UserCountAggregateOutputType = {
     id: number
     walletAddress: number
+    internalWalletAddress: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -1906,6 +1909,7 @@ export namespace Prisma {
   export type UserMinAggregateInputType = {
     id?: true
     walletAddress?: true
+    internalWalletAddress?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -1913,6 +1917,7 @@ export namespace Prisma {
   export type UserMaxAggregateInputType = {
     id?: true
     walletAddress?: true
+    internalWalletAddress?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -1920,6 +1925,7 @@ export namespace Prisma {
   export type UserCountAggregateInputType = {
     id?: true
     walletAddress?: true
+    internalWalletAddress?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -2000,6 +2006,7 @@ export namespace Prisma {
   export type UserGroupByOutputType = {
     id: string
     walletAddress: string
+    internalWalletAddress: string
     createdAt: Date
     updatedAt: Date
     _count: UserCountAggregateOutputType | null
@@ -2024,6 +2031,7 @@ export namespace Prisma {
   export type UserSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     walletAddress?: boolean
+    internalWalletAddress?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     profile?: boolean | User$profileArgs<ExtArgs>
@@ -2037,6 +2045,7 @@ export namespace Prisma {
   export type UserSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     walletAddress?: boolean
+    internalWalletAddress?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["user"]>
@@ -2044,6 +2053,7 @@ export namespace Prisma {
   export type UserSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     walletAddress?: boolean
+    internalWalletAddress?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["user"]>
@@ -2051,11 +2061,12 @@ export namespace Prisma {
   export type UserSelectScalar = {
     id?: boolean
     walletAddress?: boolean
+    internalWalletAddress?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "walletAddress" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "walletAddress" | "internalWalletAddress" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     profile?: boolean | User$profileArgs<ExtArgs>
     organizer?: boolean | User$organizerArgs<ExtArgs>
@@ -2079,6 +2090,7 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       id: string
       walletAddress: string
+      internalWalletAddress: string
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["user"]>
@@ -2511,6 +2523,7 @@ export namespace Prisma {
   interface UserFieldRefs {
     readonly id: FieldRef<"User", 'String'>
     readonly walletAddress: FieldRef<"User", 'String'>
+    readonly internalWalletAddress: FieldRef<"User", 'String'>
     readonly createdAt: FieldRef<"User", 'DateTime'>
     readonly updatedAt: FieldRef<"User", 'DateTime'>
   }
@@ -13540,6 +13553,7 @@ export namespace Prisma {
   export const UserScalarFieldEnum: {
     id: 'id',
     walletAddress: 'walletAddress',
+    internalWalletAddress: 'internalWalletAddress',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -13759,6 +13773,7 @@ export namespace Prisma {
     NOT?: UserWhereInput | UserWhereInput[]
     id?: StringFilter<"User"> | string
     walletAddress?: StringFilter<"User"> | string
+    internalWalletAddress?: StringFilter<"User"> | string
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
     profile?: XOR<ProfileNullableScalarRelationFilter, ProfileWhereInput> | null
@@ -13771,6 +13786,7 @@ export namespace Prisma {
   export type UserOrderByWithRelationInput = {
     id?: SortOrder
     walletAddress?: SortOrder
+    internalWalletAddress?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     profile?: ProfileOrderByWithRelationInput
@@ -13783,6 +13799,7 @@ export namespace Prisma {
   export type UserWhereUniqueInput = Prisma.AtLeast<{
     id?: string
     walletAddress?: string
+    internalWalletAddress?: string
     AND?: UserWhereInput | UserWhereInput[]
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
@@ -13793,11 +13810,12 @@ export namespace Prisma {
     orders?: OrderListRelationFilter
     tickets?: TicketListRelationFilter
     listings?: ListingListRelationFilter
-  }, "id" | "walletAddress">
+  }, "id" | "walletAddress" | "internalWalletAddress">
 
   export type UserOrderByWithAggregationInput = {
     id?: SortOrder
     walletAddress?: SortOrder
+    internalWalletAddress?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: UserCountOrderByAggregateInput
@@ -13811,6 +13829,7 @@ export namespace Prisma {
     NOT?: UserScalarWhereWithAggregatesInput | UserScalarWhereWithAggregatesInput[]
     id?: StringWithAggregatesFilter<"User"> | string
     walletAddress?: StringWithAggregatesFilter<"User"> | string
+    internalWalletAddress?: StringWithAggregatesFilter<"User"> | string
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
   }
@@ -14593,6 +14612,7 @@ export namespace Prisma {
   export type UserCreateInput = {
     id?: string
     walletAddress: string
+    internalWalletAddress: string
     createdAt?: Date | string
     updatedAt?: Date | string
     profile?: ProfileCreateNestedOneWithoutUserInput
@@ -14605,6 +14625,7 @@ export namespace Prisma {
   export type UserUncheckedCreateInput = {
     id?: string
     walletAddress: string
+    internalWalletAddress: string
     createdAt?: Date | string
     updatedAt?: Date | string
     profile?: ProfileUncheckedCreateNestedOneWithoutUserInput
@@ -14617,6 +14638,7 @@ export namespace Prisma {
   export type UserUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     walletAddress?: StringFieldUpdateOperationsInput | string
+    internalWalletAddress?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     profile?: ProfileUpdateOneWithoutUserNestedInput
@@ -14629,6 +14651,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateInput = {
     id?: StringFieldUpdateOperationsInput | string
     walletAddress?: StringFieldUpdateOperationsInput | string
+    internalWalletAddress?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     profile?: ProfileUncheckedUpdateOneWithoutUserNestedInput
@@ -14641,6 +14664,7 @@ export namespace Prisma {
   export type UserCreateManyInput = {
     id?: string
     walletAddress: string
+    internalWalletAddress: string
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -14648,6 +14672,7 @@ export namespace Prisma {
   export type UserUpdateManyMutationInput = {
     id?: StringFieldUpdateOperationsInput | string
     walletAddress?: StringFieldUpdateOperationsInput | string
+    internalWalletAddress?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -14655,6 +14680,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateManyInput = {
     id?: StringFieldUpdateOperationsInput | string
     walletAddress?: StringFieldUpdateOperationsInput | string
+    internalWalletAddress?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -15583,6 +15609,7 @@ export namespace Prisma {
   export type UserCountOrderByAggregateInput = {
     id?: SortOrder
     walletAddress?: SortOrder
+    internalWalletAddress?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -15590,6 +15617,7 @@ export namespace Prisma {
   export type UserMaxOrderByAggregateInput = {
     id?: SortOrder
     walletAddress?: SortOrder
+    internalWalletAddress?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -15597,6 +15625,7 @@ export namespace Prisma {
   export type UserMinOrderByAggregateInput = {
     id?: SortOrder
     walletAddress?: SortOrder
+    internalWalletAddress?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -17422,6 +17451,7 @@ export namespace Prisma {
   export type UserCreateWithoutProfileInput = {
     id?: string
     walletAddress: string
+    internalWalletAddress: string
     createdAt?: Date | string
     updatedAt?: Date | string
     organizer?: OrganizerCreateNestedOneWithoutUserInput
@@ -17433,6 +17463,7 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutProfileInput = {
     id?: string
     walletAddress: string
+    internalWalletAddress: string
     createdAt?: Date | string
     updatedAt?: Date | string
     organizer?: OrganizerUncheckedCreateNestedOneWithoutUserInput
@@ -17460,6 +17491,7 @@ export namespace Prisma {
   export type UserUpdateWithoutProfileInput = {
     id?: StringFieldUpdateOperationsInput | string
     walletAddress?: StringFieldUpdateOperationsInput | string
+    internalWalletAddress?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     organizer?: OrganizerUpdateOneWithoutUserNestedInput
@@ -17471,6 +17503,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutProfileInput = {
     id?: StringFieldUpdateOperationsInput | string
     walletAddress?: StringFieldUpdateOperationsInput | string
+    internalWalletAddress?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     organizer?: OrganizerUncheckedUpdateOneWithoutUserNestedInput
@@ -17482,6 +17515,7 @@ export namespace Prisma {
   export type UserCreateWithoutOrganizerInput = {
     id?: string
     walletAddress: string
+    internalWalletAddress: string
     createdAt?: Date | string
     updatedAt?: Date | string
     profile?: ProfileCreateNestedOneWithoutUserInput
@@ -17493,6 +17527,7 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutOrganizerInput = {
     id?: string
     walletAddress: string
+    internalWalletAddress: string
     createdAt?: Date | string
     updatedAt?: Date | string
     profile?: ProfileUncheckedCreateNestedOneWithoutUserInput
@@ -17575,6 +17610,7 @@ export namespace Prisma {
   export type UserUpdateWithoutOrganizerInput = {
     id?: StringFieldUpdateOperationsInput | string
     walletAddress?: StringFieldUpdateOperationsInput | string
+    internalWalletAddress?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     profile?: ProfileUpdateOneWithoutUserNestedInput
@@ -17586,6 +17622,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutOrganizerInput = {
     id?: StringFieldUpdateOperationsInput | string
     walletAddress?: StringFieldUpdateOperationsInput | string
+    internalWalletAddress?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     profile?: ProfileUncheckedUpdateOneWithoutUserNestedInput
@@ -18048,6 +18085,7 @@ export namespace Prisma {
   export type UserCreateWithoutOrdersInput = {
     id?: string
     walletAddress: string
+    internalWalletAddress: string
     createdAt?: Date | string
     updatedAt?: Date | string
     profile?: ProfileCreateNestedOneWithoutUserInput
@@ -18059,6 +18097,7 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutOrdersInput = {
     id?: string
     walletAddress: string
+    internalWalletAddress: string
     createdAt?: Date | string
     updatedAt?: Date | string
     profile?: ProfileUncheckedCreateNestedOneWithoutUserInput
@@ -18207,6 +18246,7 @@ export namespace Prisma {
   export type UserUpdateWithoutOrdersInput = {
     id?: StringFieldUpdateOperationsInput | string
     walletAddress?: StringFieldUpdateOperationsInput | string
+    internalWalletAddress?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     profile?: ProfileUpdateOneWithoutUserNestedInput
@@ -18218,6 +18258,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutOrdersInput = {
     id?: StringFieldUpdateOperationsInput | string
     walletAddress?: StringFieldUpdateOperationsInput | string
+    internalWalletAddress?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     profile?: ProfileUncheckedUpdateOneWithoutUserNestedInput
@@ -18364,6 +18405,7 @@ export namespace Prisma {
   export type UserCreateWithoutTicketsInput = {
     id?: string
     walletAddress: string
+    internalWalletAddress: string
     createdAt?: Date | string
     updatedAt?: Date | string
     profile?: ProfileCreateNestedOneWithoutUserInput
@@ -18375,6 +18417,7 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutTicketsInput = {
     id?: string
     walletAddress: string
+    internalWalletAddress: string
     createdAt?: Date | string
     updatedAt?: Date | string
     profile?: ProfileUncheckedCreateNestedOneWithoutUserInput
@@ -18498,6 +18541,7 @@ export namespace Prisma {
   export type UserUpdateWithoutTicketsInput = {
     id?: StringFieldUpdateOperationsInput | string
     walletAddress?: StringFieldUpdateOperationsInput | string
+    internalWalletAddress?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     profile?: ProfileUpdateOneWithoutUserNestedInput
@@ -18509,6 +18553,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutTicketsInput = {
     id?: StringFieldUpdateOperationsInput | string
     walletAddress?: StringFieldUpdateOperationsInput | string
+    internalWalletAddress?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     profile?: ProfileUncheckedUpdateOneWithoutUserNestedInput
@@ -18571,6 +18616,7 @@ export namespace Prisma {
   export type UserCreateWithoutListingsInput = {
     id?: string
     walletAddress: string
+    internalWalletAddress: string
     createdAt?: Date | string
     updatedAt?: Date | string
     profile?: ProfileCreateNestedOneWithoutUserInput
@@ -18582,6 +18628,7 @@ export namespace Prisma {
   export type UserUncheckedCreateWithoutListingsInput = {
     id?: string
     walletAddress: string
+    internalWalletAddress: string
     createdAt?: Date | string
     updatedAt?: Date | string
     profile?: ProfileUncheckedCreateNestedOneWithoutUserInput
@@ -18666,6 +18713,7 @@ export namespace Prisma {
   export type UserUpdateWithoutListingsInput = {
     id?: StringFieldUpdateOperationsInput | string
     walletAddress?: StringFieldUpdateOperationsInput | string
+    internalWalletAddress?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     profile?: ProfileUpdateOneWithoutUserNestedInput
@@ -18677,6 +18725,7 @@ export namespace Prisma {
   export type UserUncheckedUpdateWithoutListingsInput = {
     id?: StringFieldUpdateOperationsInput | string
     walletAddress?: StringFieldUpdateOperationsInput | string
+    internalWalletAddress?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     profile?: ProfileUncheckedUpdateOneWithoutUserNestedInput
