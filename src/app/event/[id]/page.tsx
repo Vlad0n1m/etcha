@@ -3,12 +3,16 @@
 import { useState, use, useEffect, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, Calendar, MapPin, Clock, Plus, Minus, Share2, Loader2, Copy, Check } from "lucide-react"
+import { ChevronLeft, Calendar, MapPin, Clock, Loader2 } from "lucide-react"
 import { useWallet } from "@solana/wallet-adapter-react"
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui"
 import WalletDrawer from "@/components/WalletDrawer"
 import CollectionStatus from "@/components/CollectionStatus"
 import MintProgress, { MintStatus } from "@/components/MintProgress"
 import MintResultModal from "@/components/MintResultModal"
+import { useSignature } from "@/components/SignatureProvider"
+import ResaleSection from "@/components/ResaleSection"
+import { Button } from "@/components/ui/button"
 
 
 interface Event {
@@ -69,8 +73,9 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     const [mintProgress, setMintProgress] = useState<string>("")
     const [mintResult, setMintResult] = useState<EventMintResult | null>(null)
     const [showMintModal, setShowMintModal] = useState(false)
-    const [derivedAddress, setDerivedAddress] = useState<string | null>(null)
-    const [signature, setSignature] = useState<Uint8Array | null>(null)
+    const [showBuyConfirm, setShowBuyConfirm] = useState(false)
+    const [internalBalance, setInternalBalance] = useState<number | null>(null)
+    const { signature, derivedAddress, refreshSignature } = useSignature()
     const [copiedAddress, setCopiedAddress] = useState(false)
 
     const { connected, publicKey, signTransaction, wallet, signMessage } = useWallet()
@@ -143,7 +148,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         }
     }
 
-    const handleBuyClick = async () => {
+    const startMint = async () => {
         if (!connected || !publicKey || !wallet || !signTransaction) {
             setIsWalletDrawerOpen(true)
             return
@@ -154,30 +159,23 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             return
         }
 
+        setShowBuyConfirm(false)
         setIsMinting(true)
         setMintStatus("preparing")
         setMintProgress("Requesting signature...")
 
         try {
-            // Step 1: Use saved signature (already requested when wallet connected)
             if (!signature) {
                 throw new Error('Please wait for wallet address to be generated. Sign the message when prompted.')
             }
 
-            console.log('Using saved signature for minting...')
-
             setMintStatus("minting")
             setMintProgress(`Minting ${ticketQuantity} ticket${ticketQuantity > 1 ? 's' : ''}... Please approve the transaction in your wallet.`)
 
-            console.log('Starting mint via API route...')
-
-            // Step 2: Send signature to server for minting
-            // Convert signature to hex string for transmission
             const signatureHex = Array.from(signature)
                 .map(b => b.toString(16).padStart(2, '0'))
                 .join('')
 
-            // Use API route directly to avoid bundling Metaplex on client
             const mintResponse = await fetch('/api/mint', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -186,7 +184,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     candyMachineAddress: event.candyMachineAddress,
                     buyerWallet: publicKey.toBase58(),
                     quantity: ticketQuantity,
-                    signature: signatureHex, // Send signature for key derivation
+                    signature: signatureHex,
                 }),
             })
 
@@ -199,9 +197,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             const nftMintAddresses = mintResult.nftMintAddresses || []
             const txSignature = mintResult.transactionSignature || ''
 
-            console.log('Mint successful!', { nftMintAddresses, txSignature })
-
-            // Step 3: Save to database
             setMintProgress("Saving ticket information...")
 
             const response = await fetch("/api/mint/confirm", {
@@ -228,9 +223,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     transactionSignature: txSignature,
                 })
                 setShowMintModal(true)
-
-                // Refresh Candy Machine data
-                // Note: Candy Machine data refresh handled by CollectionStatus component
             } else {
                 setMintStatus("error")
                 setMintProgress(result.message || "Failed to save ticket information")
@@ -243,7 +235,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
 
             if (error instanceof Error) {
                 errorMessage = error.message
-                // Handle specific error cases
                 if (errorMessage.includes('User rejected')) {
                     errorMessage = "Transaction cancelled by user"
                 } else if (errorMessage.includes('insufficient funds')) {
@@ -256,62 +247,39 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         }
     }
 
+    const handleBuyClick = () => {
+        setShowBuyConfirm(true)
+    }
 
-    // Request signature and derive address when wallet is connected
+
+    // Ensure signature exists on mount/change
     useEffect(() => {
-        const deriveAddressFromSignature = async () => {
-            if (!publicKey || !connected) {
-                setDerivedAddress(null)
-                setSignature(null)
-                return
-            }
+        if (connected && publicKey && !signature) {
+            void refreshSignature()
+        }
+    }, [connected, publicKey, signature, refreshSignature])
 
+    // Load internal wallet balance when signature is available
+    useEffect(() => {
+        const loadBalance = async () => {
+            if (!connected || !publicKey || !signature) return
             try {
-                // Always derive address from signature (never use DB)
-                if (!signMessage) {
-                    console.warn("Cannot derive address: wallet does not support message signing")
-                    return
-                }
-
-                const message = new TextEncoder().encode("etcha-mint-auth-v1")
-
-                const signature: Uint8Array = await signMessage(message)
-
-                // Save signature for later use in minting
-                setSignature(signature)
-
-                // Send signature to server to derive address (salt stays secret on server)
-                const signatureHex = Array.from(signature)
-                    .map(b => b.toString(16).padStart(2, '0'))
-                    .join('')
-
-                const response = await fetch('/api/wallet/derived-address', {
+                const sigHex = Array.from(signature).map(b => b.toString(16).padStart(2, '0')).join('')
+                const resp = await fetch('/api/wallet/balance', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userPublicKey: publicKey.toBase58(),
-                        signature: signatureHex,
-                    }),
+                    body: JSON.stringify({ walletAddress: publicKey.toBase58(), signature: sigHex }),
                 })
-
-                const data = await response.json()
-
-                if (data.success) {
-                    setDerivedAddress(data.derivedPublicKey)
-                    console.log('Derived internal wallet address from Phantom signature:', data.derivedPublicKey)
-                } else {
-                    throw new Error(data.message || 'Failed to derive address')
+                const data = await resp.json()
+                if (data?.success && typeof data.balance === 'number') {
+                    setInternalBalance(data.balance)
                 }
-            } catch (err) {
-                console.error("Failed to derive address from signature:", err)
-                // Don't show error to user, just don't show address
-                setDerivedAddress(null)
-                setSignature(null)
+            } catch {
+                // ignore for header UI
             }
         }
-
-        deriveAddressFromSignature()
-    }, [publicKey, connected, signMessage, wallet])
+        void loadBalance()
+    }, [connected, publicKey, signature])
 
     // Loading state
     if (isLoading) {
@@ -351,9 +319,35 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                         <ChevronLeft className="w-5 h-5" />
                         <span className="font-medium text-sm">Back</span>
                     </Link>
-                    <button className="p-2 hover:bg-muted rounded-lg transition-colors">
-                        <Share2 className="w-5 h-5 text-muted-foreground" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {internalBalance !== null && (
+                            <span className="text-xs font-medium text-muted-foreground">
+                                {internalBalance.toFixed(3)} SOL
+                            </span>
+                        )}
+                        {connected ? (
+                            <WalletDrawer>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="flex items-center gap-2 border-green-500 text-green-700 hover:bg-green-50"
+                                >
+                                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                                    {formatAddress(publicKey?.toString() || "")}
+                                </Button>
+                            </WalletDrawer>
+                        ) : (
+                            <WalletDrawer>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="bg-purple-500 text-white hover:bg-purple-600"
+                                >
+                                    Connect Wallet
+                                </Button>
+                            </WalletDrawer>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -431,28 +425,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                         </div>
                     )}
 
-                    {event.price > 0 && (
-                        <div className="flex items-center justify-between mb-5">
-                            <span className="text-sm font-medium text-foreground">Quantity</span>
-                            <div className="flex items-center gap-3">
-                                <button
-                                    onClick={() => handleQuantityChange(-1)}
-                                    disabled={ticketQuantity <= 1}
-                                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-muted hover:bg-muted/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    <Minus className="w-4 h-4 text-foreground" />
-                                </button>
-                                <span className="text-lg font-bold text-foreground min-w-[2rem] text-center">{ticketQuantity}</span>
-                                <button
-                                    onClick={() => handleQuantityChange(1)}
-                                    disabled={ticketQuantity >= event.ticketsAvailable}
-                                    className="w-9 h-9 flex items-center justify-center rounded-lg bg-muted hover:bg-muted/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                                >
-                                    <Plus className="w-4 h-4 text-foreground" />
-                                </button>
-                            </div>
-                        </div>
-                    )}
+
 
                     {error && (
                         <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-sm mb-4">
@@ -460,43 +433,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                         </div>
                     )}
 
-                    {/* Derived Wallet Address for Funding */}
-                    {connected && publicKey && (
-                        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mb-4">
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="text-xs font-medium text-foreground">Minting Wallet Address</div>
-                                {derivedAddress && (
-                                    <button
-                                        onClick={handleCopyDerivedAddress}
-                                        className="p-1.5 hover:bg-primary/10 rounded transition-colors"
-                                        title={copiedAddress ? "Copied!" : "Copy address"}
-                                    >
-                                        {copiedAddress ? (
-                                            <Check className="w-4 h-4 text-primary" />
-                                        ) : (
-                                            <Copy className="w-4 h-4 text-muted-foreground" />
-                                        )}
-                                    </button>
-                                )}
-                            </div>
-                            {derivedAddress ? (
-                                <>
-                                    <div className="flex items-center gap-2">
-                                        <code className="text-xs font-mono text-foreground break-all flex-1">
-                                            {formatAddress(derivedAddress)}
-                                        </code>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mt-2">
-                                        Send SOL to this address to fund your minting wallet. You&apos;ll need enough SOL to cover the ticket price + transaction fees.
-                                    </p>
-                                </>
-                            ) : (
-                                <p className="text-xs text-muted-foreground">
-                                    Sign the authentication message when prompted to generate your minting wallet address.
-                                </p>
-                            )}
-                        </div>
-                    )}
+
 
                     {/* Mint Progress */}
                     {isMinting && (
@@ -512,6 +449,16 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     >
                         {isMinting ? "Minting..." : event.price === 0 ? 'Get Ticket' : `Buy for ${formatPrice(totalPrice)} SOL`}
                     </button>
+                </div>
+
+                {/* Resale offers */}
+                <div className="mt-4">
+                    <ResaleSection
+                        eventId={event.id}
+                        eventTitle={event.title}
+                        eventImage={event.imageUrl || "/no-ticket-svgrepo-com.svg"}
+                        originalPrice={event.price}
+                    />
                 </div>
 
                 <div className="bg-surface rounded-2xl p-5 mt-4 border border-border">
@@ -582,6 +529,36 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 }}
                 result={mintResult}
             />
+
+            {/* Confirm Buy Modal */}
+            {showBuyConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="bg-surface rounded-2xl w-full max-w-sm border border-border shadow-xl">
+                        <div className="p-5">
+                            <h3 className="text-base font-bold text-foreground mb-2">Confirm Purchase</h3>
+                            <p className="text-sm text-muted-foreground mb-4">
+                                Are you sure you want to buy this ticket for {formatPrice(totalPrice)} SOL?
+                            </p>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setShowBuyConfirm(false)}
+                                    disabled={isMinting}
+                                    className="flex-1 bg-muted text-foreground font-medium py-2.5 rounded-xl hover:bg-muted/80 transition-colors disabled:opacity-50"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={startMint}
+                                    disabled={isMinting}
+                                    className="flex-1 bg-primary text-primary-foreground font-semibold py-2.5 rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50"
+                                >
+                                    {isMinting ? 'Processing...' : 'Confirm'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

@@ -4,6 +4,7 @@ import "./globals.css";
 import { WalletContextProvider } from "@/components/WalletProvider";
 import { NavigationProvider } from "@/components/NavigationProvider";
 import { AuthProvider } from "@/components/AuthProvider";
+import { SignatureProvider } from "@/components/SignatureProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,9 +33,11 @@ export default function RootLayout({
       >
         <WalletContextProvider>
           <AuthProvider>
-            <NavigationProvider>
-              {children}
-            </NavigationProvider>
+            <SignatureProvider>
+              <NavigationProvider>
+                {children}
+              </NavigationProvider>
+            </SignatureProvider>
           </AuthProvider>
         </WalletContextProvider>
       </body>

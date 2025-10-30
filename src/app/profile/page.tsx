@@ -1,7 +1,7 @@
 "use client"
 
 import { useWallet } from "@solana/wallet-adapter-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Copy, Edit, Eye, TrendingUp, TrendingDown, MoreHorizontal, Wallet, RefreshCw, Save, X } from "lucide-react"
 import WalletDrawer from "@/components/WalletDrawer"
 import MobileHeader from "@/components/MobileHeader"
@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import Image from "next/image"
 import Link from "next/link"
 import { useAuth } from "@/components/AuthProvider"
+import { useSignature } from "@/components/SignatureProvider"
 
 type TicketStatus = "bought" | "on_resale" | "passed" | "nft"
 
@@ -28,8 +29,9 @@ interface Ticket {
 }
 
 export default function ProfilePage() {
-    const { connected, publicKey, signMessage } = useWallet()
+    const { connected, publicKey } = useWallet()
     const { isLoading: authLoading, error: authError, refreshToken } = useAuth()
+    const { signature, derivedAddress, refreshSignature } = useSignature()
     const [activeTab, setActiveTab] = useState("bought")
     const [copied, setCopied] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
@@ -43,10 +45,10 @@ export default function ProfilePage() {
     const [copiedInternalAddress, setCopiedInternalAddress] = useState(false)
     const [tickets, setTickets] = useState<Ticket[]>([])
     const [isLoadingTickets, setIsLoadingTickets] = useState(false)
-    const [savedSignature, setSavedSignature] = useState<string | null>(null) // Store signature to avoid repeated requests
+    // Signature and derived address are provided by SignatureProvider
 
     // Function to load balance - can be called manually or on mount
-    const loadBalance = async (useSavedSignature = false) => {
+    const loadBalance = async () => {
         if (!connected || !publicKey) {
             setInternalWalletBalance(null)
             setInternalWalletAddress(null)
@@ -56,29 +58,19 @@ export default function ProfilePage() {
         try {
             setIsLoadingBalance(true)
 
-            let signatureHex = savedSignature
-
-            // Get signature only if not using saved one or if saved one doesn't exist
-            if (!useSavedSignature || !signatureHex) {
-                // Wait for signMessage to be available
-                if (!signMessage) {
-                    console.log('Waiting for signMessage to be available...')
-                    setIsLoadingBalance(false)
-                    return
-                }
-
-                // Get signature for deriving internal wallet (only once)
-                const message = new TextEncoder().encode("etcha-mint-auth-v1")
-                const signature = await signMessage(message)
-
-                // Convert signature to hex and save it
-                signatureHex = Array.from(signature)
-                    .map(b => b.toString(16).padStart(2, '0'))
-                    .join('')
-
-                // Save signature for future use
-                setSavedSignature(signatureHex)
+            // Ensure we have a signature; if not, refresh via provider
+            let activeSig = signature
+            if (!activeSig) {
+                const result = await refreshSignature()
+                activeSig = result?.signature || null
             }
+            if (!activeSig) {
+                setIsLoadingBalance(false)
+                return
+            }
+            const signatureHex = Array.from(activeSig)
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join('')
 
             // POST request with signature to derive internal wallet
             const response = await fetch('/api/wallet/balance', {
@@ -94,7 +86,7 @@ export default function ProfilePage() {
 
             if (data.success) {
                 setInternalWalletBalance(data.balance ?? 0)
-                setInternalWalletAddress(data.internalWalletAddress)
+                setInternalWalletAddress(derivedAddress || data.internalWalletAddress || null)
                 console.log('Internal wallet loaded:', data.internalWalletAddress, 'Balance:', data.balance)
             } else {
                 console.error('Failed to load balance:', data.message)
@@ -116,19 +108,23 @@ export default function ProfilePage() {
         }
     }
 
-    // Load balance only once on mount (when wallet is connected and signMessage is available)
+    // Guard to avoid double-invocation in React Strict Mode
+    const didInitRef = useRef(false)
+
+    // Load balance once when wallet/signature ready
     useEffect(() => {
-        if (connected && publicKey && signMessage && !savedSignature) {
-            loadBalance(false) // Request signature on first load
+        if (didInitRef.current) return
+        if (connected && publicKey) {
+            didInitRef.current = true
+            loadBalance()
         } else if (!connected || !publicKey) {
             setInternalWalletBalance(null)
             setInternalWalletAddress(null)
-            setSavedSignature(null) // Clear signature when wallet disconnects
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [connected, publicKey, signMessage]) // Wait for signMessage to be available
+    }, [connected, publicKey])
 
-    // Load tickets - use saved signature if available
+    // Load tickets - use shared signature
     useEffect(() => {
         const loadTickets = async () => {
             if (!connected || !publicKey) {
@@ -136,20 +132,22 @@ export default function ProfilePage() {
                 return
             }
 
-            // Use saved signature if available, otherwise wait for signMessage
-            if (!savedSignature) {
-                if (!signMessage) {
-                    return // Wait for signMessage
-                }
-                // Signature will be saved by loadBalance, wait for it
+            // Ensure signature exists
+            let activeSig = signature
+            if (!activeSig) {
+                const result = await refreshSignature()
+                activeSig = result?.signature || null
+            }
+            if (!activeSig) {
                 return
             }
 
             try {
                 setIsLoadingTickets(true)
 
-                // Use saved signature (no need to request again)
-                const signatureHex = savedSignature
+                const signatureHex = Array.from(activeSig)
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('')
 
                 // POST request with signature to derive internal wallet
                 const response = await fetch('/api/profile/tickets', {
@@ -181,7 +179,7 @@ export default function ProfilePage() {
 
         // Also refresh tickets when page becomes visible (user returns from purchase)
         const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible' && connected && publicKey && savedSignature) {
+            if (document.visibilityState === 'visible' && connected && publicKey) {
                 loadTickets()
             }
         }
@@ -191,7 +189,7 @@ export default function ProfilePage() {
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange)
         }
-    }, [connected, publicKey, savedSignature]) // Depend on savedSignature instead of signMessage
+    }, [connected, publicKey, signature])
 
     const formatAddress = (address: string) => {
         return `${address.slice(0, 4)}...${address.slice(-4)}`
@@ -433,7 +431,7 @@ export default function ProfilePage() {
                             </button>
                             {internalWalletAddress && (
                                 <button
-                                    onClick={() => loadBalance(true)}
+                                    onClick={() => loadBalance()}
                                     disabled={isLoadingBalance}
                                     className="p-0.5 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Refresh balance"

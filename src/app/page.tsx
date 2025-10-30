@@ -33,7 +33,8 @@ export default function Home() {
     setError('')
 
     try {
-      const response = await fetch(`/api/events${activeFilter !== 'all' ? `?category=${activeFilter}` : ''}`)
+      const query = activeFilter !== 'all' ? `?category=${encodeURIComponent(activeFilter)}` : ''
+      const response = await fetch(`/api/events${query}`)
 
       if (!response.ok) {
         const errorData = await response.json()
@@ -122,14 +123,8 @@ export default function Home() {
     },
   ]
 
-  const filteredEvents = useMemo(() => {
-    return events.filter((event: Event) => {
-      if (activeFilter === 'all') return true
-      return event.category?.toLowerCase() === activeFilter.toLowerCase()
-    })
-  }, [events, activeFilter])
-
-  const groupedEvents = groupEventsByDate(filteredEvents)
+  // Use server-filtered results directly
+  const groupedEvents = groupEventsByDate(events)
 
   const handleFilterChange = (filter: string) => {
     setActiveFilter(filter)

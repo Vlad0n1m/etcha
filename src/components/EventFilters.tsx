@@ -6,17 +6,69 @@ interface EventFiltersProps {
   activeFilter: string
 }
 
+// Map string icon names from DB to lucide-react icon components
+const iconRegistry: Record<string, React.ComponentType<{ className?: string }>> = {
+  globe: Globe,
+  code: Code,
+  brain: Brain,
+  network: Network,
+  code2: Code2,
+  megaphone: Megaphone,
+  users: Users,
+}
+
+interface FilterItem {
+  label: string
+  value: string
+  icon?: string
+}
+
 const EventFilters: React.FC<EventFiltersProps> = ({ onFilterChange, activeFilter }) => {
-  // Фильтры для ивентов - только категории
-  const filterItems = [
-    { label: "All", value: "all", icon: Globe },
-    { label: "Blockchain", value: "blockchain", icon: Code },
-    { label: "AI/ML", value: "ai/ml", icon: Brain },
-    { label: "Web3", value: "web3", icon: Network },
-    { label: "Development", value: "development", icon: Code2 },
-    { label: "Marketing", value: "marketing", icon: Megaphone },
-    { label: "Community", value: "community", icon: Users },
-  ]
+  const [filterItems, setFilterItems] = React.useState<FilterItem[]>([
+    { label: 'All', value: 'all', icon: 'globe' },
+  ])
+
+  React.useEffect(() => {
+    let isCancelled = false
+
+    const loadCategories = async () => {
+      try {
+        const res = await fetch('/api/filters/categories', { cache: 'no-store' })
+        if (!res.ok) {
+          // Fallback to /api/categories shape if filters endpoint is unavailable
+          const alt = await fetch('/api/categories', { cache: 'no-store' })
+          if (!alt.ok) return
+          const data = await alt.json()
+          if (!isCancelled && data?.success && Array.isArray(data.categories)) {
+            const items: FilterItem[] = data.categories.map((c: any) => ({
+              label: c.name,
+              value: c.value,
+              icon: (c.icon || '').toString().toLowerCase(),
+            }))
+            setFilterItems([{ label: 'All', value: 'all', icon: 'globe' }, ...items])
+          }
+          return
+        }
+
+        const categories = await res.json()
+        if (!isCancelled && Array.isArray(categories)) {
+          const items: FilterItem[] = categories.map((c: any) => ({
+            label: c.label,
+            value: c.value,
+            icon: (c.icon || '').toString().toLowerCase(),
+          }))
+          setFilterItems([{ label: 'All', value: 'all', icon: 'globe' }, ...items])
+        }
+      } catch (_) {
+        // Silently ignore; keep default "All"
+      }
+    }
+
+    loadCategories()
+    return () => {
+      isCancelled = true
+    }
+  }, [])
 
   const handleFilterClick = (value: string) => {
     onFilterChange(value)
@@ -28,7 +80,6 @@ const EventFilters: React.FC<EventFiltersProps> = ({ onFilterChange, activeFilte
         <div className="overflow-x-auto scrollbar-hide w-full">
           <div className="flex py-1 whitespace-nowrap">
             {filterItems.map((item) => {
-              const Icon = item.icon
               return (
                 <button
                   key={item.value}
@@ -43,7 +94,6 @@ const EventFilters: React.FC<EventFiltersProps> = ({ onFilterChange, activeFilte
                     }
                   `}
                 >
-                  <Icon className={`w-3 h-3 flex-shrink-0 ${activeFilter === item.value ? 'text-white' : 'text-black'}`} />
                   <span className="relative z-10">{item.label}</span>
                   {/* Remove the problematic gradient overlay */}
                   <div className={`
