@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { writeFile } from "fs/promises"
-import path from "path"
+import { v2 as cloudinary } from 'cloudinary'
+import sharp from 'sharp'
+
+// Configure Cloudinary
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+})
 
 export async function POST(request: NextRequest) {
     try {
@@ -11,10 +18,10 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, message: "No file uploaded" }, { status: 400 })
         }
 
-        // Check file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
+        // Check file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
             return NextResponse.json(
-                { success: false, message: "File size must be less than 5MB" },
+                { success: false, message: "File size must be less than 10MB" },
                 { status: 400 }
             )
         }
@@ -31,25 +38,36 @@ export async function POST(request: NextRequest) {
         const bytes = await file.arrayBuffer()
         const buffer = Buffer.from(bytes)
 
-        // Generate unique filename
-        const timestamp = Date.now()
-        const randomString = Math.random().toString(36).substring(2, 9)
-        const extension = path.extname(file.name)
-        const filename = `event-${timestamp}-${randomString}${extension}`
+        // Process image with sharp: resize to 1200x1200 max, convert to JPEG, optimize
+        const processedImage = await sharp(buffer)
+            .resize(1200, 1200, {
+                fit: 'inside',
+                withoutEnlargement: true,
+            })
+            .jpeg({ quality: 85 })
+            .toBuffer()
 
-        // Save to public/uploads directory
-        const uploadDir = path.join(process.cwd(), "public", "uploads")
-        const filepath = path.join(uploadDir, filename)
+        // Upload to Cloudinary
+        const uploadResponse = await new Promise<any>((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                {
+                    folder: 'etcha-events',
+                    resource_type: 'image',
+                    format: 'jpg',
+                },
+                (error, result) => {
+                    if (error) reject(error)
+                    else resolve(result)
+                }
+            )
 
-        await writeFile(filepath, buffer)
-
-        // Return the public URL
-        const url = `/uploads/${filename}`
+            uploadStream.end(processedImage)
+        })
 
         return NextResponse.json({
             success: true,
-            url,
-            filename,
+            url: uploadResponse.secure_url,
+            filename: uploadResponse.public_id,
         })
     } catch (error) {
         console.error("Error uploading file:", error)

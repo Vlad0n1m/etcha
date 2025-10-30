@@ -28,6 +28,7 @@
     "bs58": "^6.0.0",
     "buffer": "^6.0.3",
     "class-variance-authority": "^0.7.1",
+    "cloudinary": "^2.8.0",
     "clsx": "^2.1.1",
     "crypto-browserify": "^3.12.1",
     "dotenv": "^17.2.3",

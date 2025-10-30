@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { v2 as cloudinary } from 'cloudinary';
 import sharp from 'sharp';
+
+// Configure Cloudinary
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(request: NextRequest) {
     try {
@@ -43,30 +49,27 @@ export async function POST(request: NextRequest) {
             .jpeg({ quality: 85 })
             .toBuffer();
 
-        // Generate unique filename
-        const timestamp = Date.now();
-        const randomString = Math.random().toString(36).substring(2, 9);
-        const filename = `event-${timestamp}-${randomString}.jpg`;
+        // Upload to Cloudinary
+        const uploadResponse = await new Promise<any>((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                {
+                    folder: 'etcha-events',
+                    resource_type: 'image',
+                    format: 'jpg',
+                },
+                (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                }
+            );
 
-        // Save to public/uploads directory
-        const uploadsDir = join(process.cwd(), 'public', 'uploads');
-        try {
-            await mkdir(uploadsDir, { recursive: true });
-        } catch (error) {
-            // Directory might already exist
-        }
-
-        const filepath = join(uploadsDir, filename);
-        await writeFile(filepath, processedImage);
-
-        // Return public URL
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-        const imageUrl = `${baseUrl}/uploads/${filename}`;
+            uploadStream.end(processedImage);
+        });
 
         return NextResponse.json({
             success: true,
-            imageUrl,
-            filename,
+            imageUrl: uploadResponse.secure_url,
+            filename: uploadResponse.public_id,
         });
     } catch (error) {
         console.error('Error uploading image:', error);
