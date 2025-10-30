@@ -118,7 +118,9 @@ export async function GET(request: NextRequest) {
                 date: ticket.event.date.toISOString().split('T')[0], // Format as YYYY-MM-DD
                 time: ticket.event.time,
                 location: ticket.event.fullAddress,
-                price: ticket.order.quantity > 0 
+                // Calculate price per ticket
+                // If order.totalPrice is 0 or invalid, fall back to event price
+                price: (ticket.order.totalPrice > 0 && ticket.order.quantity > 0)
                     ? ticket.order.totalPrice / ticket.order.quantity 
                     : ticket.event.price, // Price per ticket
                 originalPrice: ticket.event.price,

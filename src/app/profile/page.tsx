@@ -7,6 +7,7 @@ import MobileHeader from "@/components/MobileHeader"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Image from "next/image"
+import Link from "next/link"
 
 type TicketStatus = "bought" | "on_resale" | "passed" | "nft"
 
@@ -306,9 +307,10 @@ export default function ProfilePage() {
                                 const priceChange = ((ticket.marketPrice - ticket.originalPrice) / ticket.originalPrice * 100)
                                 const isPositive = priceChange > 0
                                 return (
-                                    <div
+                                    <Link
                                         key={ticket.id}
-                                        className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition-all duration-200 shadow-sm flex flex-col"
+                                        href={`/profile/ticket/${ticket.id}`}
+                                        className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition-all duration-200 shadow-sm flex flex-col cursor-pointer"
                                     >
                                         <div className="aspect-square bg-gray-50 relative flex-shrink-0">
                                             <Image
@@ -333,7 +335,7 @@ export default function ProfilePage() {
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    </Link>
                                 )
                             })}
                         </div>

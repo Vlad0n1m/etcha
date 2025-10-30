@@ -217,12 +217,13 @@ export async function POST(request: NextRequest) {
 
         // Step 5: Create order in database
         console.log('Step 5: Creating order in database...')
+        // Note: totalPaid from mintNFT is already in SOL, not lamports
         const order = await prisma.order.create({
             data: {
                 eventId,
                 userId: user.id,
                 quantity,
-                totalPrice: lamportsToSol(totalPaid),
+                totalPrice: totalPaid, // totalPaid is already in SOL
                 status: 'confirmed',
                 transactionHash: transactionSignature,
             },
@@ -250,9 +251,9 @@ export async function POST(request: NextRequest) {
         await (prisma as any).paymentDistribution.create({
             data: {
                 orderId: order.id,
-                totalAmount: lamportsToSol(totalPaid),
-                organizerShare: lamportsToSol(organizerShare),
-                platformShare: lamportsToSol(platformShare),
+                totalAmount: totalPaid, // Already in SOL
+                organizerShare: organizerShare, // Already in SOL from distributePayment
+                platformShare: platformShare, // Already in SOL from distributePayment
                 organizerWallet,
                 platformWallet: platformSigner.publicKey.toBase58(),
                 transactionHash: distributionTxHash,
