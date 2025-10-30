@@ -7,6 +7,7 @@ import { DrawerTitle } from "@/components/ui/drawer"
 import { Button } from "@/components/ui/button"
 import { useWallet } from "@solana/wallet-adapter-react"
 import { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } from "@solana/web3.js"
+import { useSignature } from "@/components/SignatureProvider"
 
 interface BuyResaleTicketModalProps {
     open: boolean
@@ -31,7 +32,8 @@ export default function BuyResaleTicketModal({
     ticketData,
     onSuccess,
 }: BuyResaleTicketModalProps) {
-    const { connected, publicKey, signMessage, wallet } = useWallet()
+    const { connected, publicKey, wallet } = useWallet()
+    const { signature } = useSignature()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState(false)
@@ -45,8 +47,13 @@ export default function BuyResaleTicketModal({
     const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK || "devnet"
 
     const handlePurchase = async () => {
-        if (!connected || !publicKey || !signMessage) {
+        if (!connected || !publicKey) {
             setError("Please connect your wallet")
+            return
+        }
+
+        if (!signature) {
+            setError("Please wait for wallet to be ready")
             return
         }
 
@@ -54,12 +61,8 @@ export default function BuyResaleTicketModal({
         setError(null)
 
         try {
-            // Step 1: Get buyer signature
-            // Use standardized message to ensure signature-derived keypair matches internalWalletAddress
-            // IMPORTANT: Must use same message as profile page ("etcha-mint-auth-v1") to get same internal wallet
-            const message = new TextEncoder().encode("etcha-mint-auth-v1")
-            const buyerSignature = await signMessage(message)
-            const buyerSignatureHex = Array.from(buyerSignature)
+            // Step 1: Use cached signature from SignatureProvider
+            const buyerSignatureHex = Array.from(signature)
                 .map(b => b.toString(16).padStart(2, '0'))
                 .join('')
 

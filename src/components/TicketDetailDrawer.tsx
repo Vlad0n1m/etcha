@@ -7,6 +7,7 @@ import { DrawerTitle } from "@/components/ui/drawer"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useWallet } from "@solana/wallet-adapter-react"
+import { useSignature } from "@/components/SignatureProvider"
 
 interface TicketDetailDrawerProps {
     open: boolean
@@ -27,7 +28,8 @@ export default function TicketDetailDrawer({
     walletAddress,
     onSuccess,
 }: TicketDetailDrawerProps) {
-    const { signMessage } = useWallet()
+    const { publicKey } = useWallet()
+    const { signature } = useSignature()
     const [price, setPrice] = useState<string>("")
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -40,8 +42,8 @@ export default function TicketDetailDrawer({
             return
         }
 
-        if (!signMessage) {
-            setError("Your wallet does not support message signing. Please use a different wallet.")
+        if (!signature) {
+            setError("Please wait for wallet to be ready")
             return
         }
 
@@ -55,12 +57,7 @@ export default function TicketDetailDrawer({
         setError(null)
 
         try {
-            // Get seller signature for future NFT transfers
-            // This allows instant purchase without seller being online
-            // Use standardized message to ensure signature-derived keypair matches internalWalletAddress
-            // IMPORTANT: Must use same message as profile page ("etcha-mint-auth-v1") to get same internal wallet
-            const message = new TextEncoder().encode("etcha-mint-auth-v1")
-            const signature = await signMessage(message)
+            // Use cached signature from SignatureProvider
             const signatureHex = Array.from(signature)
                 .map(b => b.toString(16).padStart(2, '0'))
                 .join('')

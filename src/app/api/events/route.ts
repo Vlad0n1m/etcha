@@ -71,6 +71,7 @@ export async function GET(request: NextRequest) {
             time: event.time,
             ticketsAvailable: event.ticketsAvailable,
             imageUrl: event.imageUrl,
+            description: event.description,
             category: event.category.name,
             organizer: event.organizer ? {
                 name: event.organizer.companyName,

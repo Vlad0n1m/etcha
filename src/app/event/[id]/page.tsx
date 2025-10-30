@@ -75,10 +75,10 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     const [showMintModal, setShowMintModal] = useState(false)
     const [showBuyConfirm, setShowBuyConfirm] = useState(false)
     const [internalBalance, setInternalBalance] = useState<number | null>(null)
-    const { signature, derivedAddress, refreshSignature } = useSignature()
+    const { signature, derivedAddress } = useSignature()
     const [copiedAddress, setCopiedAddress] = useState(false)
 
-    const { connected, publicKey, signTransaction, wallet, signMessage } = useWallet()
+    const { connected, publicKey, signTransaction, wallet } = useWallet()
     const resolvedParams = use(params)
 
     const fetchEvent = useCallback(async () => {
@@ -252,13 +252,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     }
 
 
-    // Ensure signature exists on mount/change
-    useEffect(() => {
-        if (connected && publicKey && !signature) {
-            void refreshSignature()
-        }
-    }, [connected, publicKey, signature, refreshSignature])
-
     // Load internal wallet balance when signature is available
     useEffect(() => {
         const loadBalance = async () => {
@@ -280,6 +273,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         }
         void loadBalance()
     }, [connected, publicKey, signature])
+
+    // (External wallet balance removed; showing internal wallet balance instead)
 
     // Loading state
     if (isLoading) {
@@ -320,10 +315,10 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                         <span className="font-medium text-sm">Back</span>
                     </Link>
                     <div className="flex items-center gap-2">
+                        {/* Devnet badge */}
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-semibold uppercase tracking-wide">Devnet</span>
                         {internalBalance !== null && (
-                            <span className="text-xs font-medium text-muted-foreground">
-                                {internalBalance.toFixed(3)} SOL
-                            </span>
+                            <span className="text-xs font-medium text-muted-foreground">{internalBalance.toFixed(3)} SOL</span>
                         )}
                         {connected ? (
                             <WalletDrawer>

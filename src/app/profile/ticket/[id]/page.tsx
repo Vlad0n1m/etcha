@@ -9,6 +9,7 @@ import MobileHeader from "@/components/MobileHeader"
 import TicketDetailDrawer from "@/components/TicketDetailDrawer"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
+import { useSignature } from "@/components/SignatureProvider"
 
 interface TicketDetail {
     id: string
@@ -58,7 +59,8 @@ interface TicketDetail {
 export default function TicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const resolvedParams = use(params)
     const ticketId = resolvedParams.id
-    const { connected, publicKey, signMessage } = useWallet()
+    const { connected, publicKey } = useWallet()
+    const { signature } = useSignature()
     const router = useRouter()
 
     const [ticket, setTicket] = useState<TicketDetail | null>(null)
@@ -70,19 +72,21 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
 
     useEffect(() => {
         const loadTicket = async () => {
-            if (!connected || !publicKey || !signMessage) {
+            if (!connected || !publicKey) {
                 setError("Please connect your wallet")
                 setIsLoading(false)
+                return
+            }
+
+            // Wait for signature from SignatureProvider
+            if (!signature) {
+                console.log('⏳ Waiting for signature from SignatureProvider...')
                 return
             }
 
             try {
                 setIsLoading(true)
                 setError(null)
-
-                // Get signature for deriving internal wallet
-                const message = new TextEncoder().encode("etcha-mint-auth-v1")
-                const signature = await signMessage(message)
 
                 // Convert signature to hex
                 const signatureHex = Array.from(signature)
@@ -116,7 +120,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         }
 
         loadTicket()
-    }, [ticketId, connected, publicKey, signMessage])
+    }, [ticketId, connected, publicKey, signature])
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString)
@@ -143,12 +147,8 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
 
     const handleResaleSuccess = async () => {
         // Reload ticket data to get updated status
-        if (connected && publicKey && signMessage) {
+        if (connected && publicKey && signature) {
             try {
-                // Get signature for deriving internal wallet
-                const message = new TextEncoder().encode("etcha-mint-auth-v1")
-                const signature = await signMessage(message)
-
                 // Convert signature to hex
                 const signatureHex = Array.from(signature)
                     .map(b => b.toString(16).padStart(2, '0'))

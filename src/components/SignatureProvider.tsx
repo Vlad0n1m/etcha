@@ -2,6 +2,7 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
+import { getOrRequestSignature, clearSignature, uint8ToHex } from '@/lib/utils/signature-cache'
 
 type SignatureContextType = {
     signature: Uint8Array | null
@@ -13,12 +14,6 @@ type SignatureContextType = {
 }
 
 const SignatureContext = createContext<SignatureContextType | undefined>(undefined)
-
-const SIGN_MESSAGE_TEXT = 'etcha-mint-auth-v1'
-
-function uint8ToHex(bytes: Uint8Array): string {
-    return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')
-}
 
 export const SignatureProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { connected, publicKey, signMessage } = useWallet()
@@ -34,7 +29,9 @@ export const SignatureProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         setSignature(null)
         setDerivedAddress(null)
         setError(null)
-        if (storageKey) sessionStorage.removeItem(storageKey)
+        if (storageKey) {
+            clearSignature(storageKey)
+        }
     }, [storageKey])
 
     const refreshSignature = useCallback(async (): Promise<{ signature: Uint8Array; derivedAddress: string } | null> => {
@@ -52,11 +49,13 @@ export const SignatureProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             setIsDeriving(true)
             setError(null)
             try {
-                const messageBytes = new TextEncoder().encode(SIGN_MESSAGE_TEXT)
-                const sig = await signMessage(messageBytes)
-                setSignature(sig)
+                const sig = await getOrRequestSignature(storageKey!, signMessage)
 
-                if (storageKey) sessionStorage.setItem(storageKey, uint8ToHex(sig))
+                if (!sig) {
+                    throw new Error('Failed to get signature')
+                }
+
+                setSignature(sig)
 
                 const sigHex = uint8ToHex(sig)
                 const resp = await fetch('/api/wallet/derived-address', {
@@ -95,23 +94,10 @@ export const SignatureProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             return
         }
 
-        // Try sessionStorage cache first
-        if (storageKey) {
-            const cachedHex = sessionStorage.getItem(storageKey)
-            if (cachedHex && !signature) {
-                try {
-                    const bytes = new Uint8Array(cachedHex.match(/.{1,2}/g)!.map(b => parseInt(b, 16)))
-                    setSignature(bytes)
-                } catch {
-                    sessionStorage.removeItem(storageKey)
-                }
-            }
-        }
-
-        // If we still don't have signature, request it
+        // If we don't have signature, request it using the shared cache
         if (!signature && !inFlightRef.current) {
             void refreshSignature()
-        } else if (!derivedAddress) {
+        } else if (!derivedAddress && signature) {
             // If signature exists but derivedAddress not yet loaded, request derivation only
             const derive = async () => {
                 try {
@@ -135,7 +121,7 @@ export const SignatureProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             void derive()
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [connected, publicKey])
+    }, [connected, publicKey, signature, derivedAddress])
 
     const value: SignatureContextType = {
         signature,

@@ -1,14 +1,15 @@
 "use client"
 
 import { useWallet } from "@solana/wallet-adapter-react"
-import { useState, useEffect, useRef } from "react"
-import { Copy, Edit, Eye, TrendingUp, TrendingDown, MoreHorizontal, Wallet, RefreshCw, Save, X } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Copy, Edit, Eye, MoreHorizontal, Wallet, RefreshCw, Save, X } from "lucide-react"
 import WalletDrawer from "@/components/WalletDrawer"
 import MobileHeader from "@/components/MobileHeader"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Image from "next/image"
-import Link from "next/link"
+// Link not needed after redesign
+import EventCard from "@/components/EventCard"
 import { useAuth } from "@/components/AuthProvider"
 import { useSignature } from "@/components/SignatureProvider"
 
@@ -19,6 +20,7 @@ interface Ticket {
     nftId: string
     eventTitle: string
     eventImage: string
+    description?: string
     date: string
     time: string
     location: string
@@ -26,12 +28,13 @@ interface Ticket {
     originalPrice: number
     marketPrice: number
     status: TicketStatus
+    organizerName?: string
 }
 
 export default function ProfilePage() {
     const { connected, publicKey } = useWallet()
     const { isLoading: authLoading, error: authError, refreshToken } = useAuth()
-    const { signature, derivedAddress, refreshSignature } = useSignature()
+    const { signature, derivedAddress } = useSignature()
     const [activeTab, setActiveTab] = useState("bought")
     const [copied, setCopied] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
@@ -55,20 +58,16 @@ export default function ProfilePage() {
             return
         }
 
+        // Wait for signature to be available from SignatureProvider
+        if (!signature) {
+            console.log('⏳ Waiting for signature from SignatureProvider...')
+            return
+        }
+
         try {
             setIsLoadingBalance(true)
 
-            // Ensure we have a signature; if not, refresh via provider
-            let activeSig = signature
-            if (!activeSig) {
-                const result = await refreshSignature()
-                activeSig = result?.signature || null
-            }
-            if (!activeSig) {
-                setIsLoadingBalance(false)
-                return
-            }
-            const signatureHex = Array.from(activeSig)
+            const signatureHex = Array.from(signature)
                 .map(b => b.toString(16).padStart(2, '0'))
                 .join('')
 
@@ -95,34 +94,23 @@ export default function ProfilePage() {
             }
         } catch (error: unknown) {
             console.error('Error loading balance:', error)
-            // Don't clear on user rejection - just log
-            if (error instanceof Error && (error.message.includes('User rejected') || error.message.includes('cancelled'))) {
-                console.log('User rejected signature request')
-                // Keep previous values or show message
-            } else {
-                setInternalWalletBalance(0)
-                setInternalWalletAddress(null)
-            }
+            setInternalWalletBalance(0)
+            setInternalWalletAddress(null)
         } finally {
             setIsLoadingBalance(false)
         }
     }
 
-    // Guard to avoid double-invocation in React Strict Mode
-    const didInitRef = useRef(false)
-
     // Load balance once when wallet/signature ready
     useEffect(() => {
-        if (didInitRef.current) return
-        if (connected && publicKey) {
-            didInitRef.current = true
+        if (connected && publicKey && signature) {
             loadBalance()
         } else if (!connected || !publicKey) {
             setInternalWalletBalance(null)
             setInternalWalletAddress(null)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [connected, publicKey])
+    }, [connected, publicKey, signature])
 
     // Load tickets - use shared signature
     useEffect(() => {
@@ -132,20 +120,16 @@ export default function ProfilePage() {
                 return
             }
 
-            // Ensure signature exists
-            let activeSig = signature
-            if (!activeSig) {
-                const result = await refreshSignature()
-                activeSig = result?.signature || null
-            }
-            if (!activeSig) {
+            // Wait for signature from SignatureProvider
+            if (!signature) {
+                console.log('⏳ Waiting for signature for tickets...')
                 return
             }
 
             try {
                 setIsLoadingTickets(true)
 
-                const signatureHex = Array.from(activeSig)
+                const signatureHex = Array.from(signature)
                     .map(b => b.toString(16).padStart(2, '0'))
                     .join('')
 
@@ -269,6 +253,34 @@ export default function ProfilePage() {
         if (activeTab === "used") return ticket.status === "passed"
         return true
     })
+
+    // Group tickets by date similar to home page feed
+    const groupTicketsByDate = (items: Ticket[]) => {
+        const grouped = items.reduce((acc: Record<string, Ticket[]>, t: Ticket) => {
+            const dateKey = t.date
+            if (!acc[dateKey]) acc[dateKey] = []
+            acc[dateKey].push(t)
+            return acc
+        }, {} as Record<string, Ticket[]>)
+        return Object.keys(grouped)
+            .sort()
+            .map(date => ({
+                date,
+                items: grouped[date].sort((a: Ticket, b: Ticket) => (a.time || '').localeCompare(b.time || ''))
+            }))
+    }
+
+    const formatDateHeader = (dateString: string) => {
+        const date = new Date(dateString)
+        const today = new Date()
+        const tomorrow = new Date(today)
+        tomorrow.setDate(tomorrow.getDate() + 1)
+        if (date.toDateString() === today.toDateString()) return 'Today'
+        if (date.toDateString() === tomorrow.toDateString()) return 'Tomorrow'
+        return date.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'long' })
+    }
+
+    const groupedTickets = groupTicketsByDate(filteredTickets)
 
     if (!connected) {
         return (
@@ -475,43 +487,38 @@ export default function ProfilePage() {
                         <div className="flex flex-col items-center justify-center py-12">
                             <div className="text-gray-500 text-sm">Loading tickets...</div>
                         </div>
-                    ) : filteredTickets.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-4">
-                            {filteredTickets.map((ticket) => {
-                                const priceChange = ((ticket.marketPrice - ticket.originalPrice) / ticket.originalPrice * 100)
-                                const isPositive = priceChange > 0
-                                return (
-                                    <Link
-                                        key={ticket.id}
-                                        href={`/profile/ticket/${ticket.id}`}
-                                        className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition-all duration-200 shadow-sm flex flex-col cursor-pointer"
-                                    >
-                                        <div className="aspect-square bg-gray-50 relative flex-shrink-0">
-                                            <Image
-                                                src={ticket.eventImage || "/placeholder.svg"}
-                                                alt={ticket.eventTitle}
-                                                fill
-                                                className="object-cover"
-                                            />
-                                        </div>
-                                        <div className="flex-1 flex flex-col p-3 justify-between">
-                                            <div className="mb-auto">
-                                                <div className="text-gray-900 text-sm font-semibold line-clamp-2">{ticket.eventTitle}</div>
+                    ) : groupedTickets.length > 0 ? (
+                        <div className="space-y-3">
+                            {groupedTickets.map(group => (
+                                <div key={group.date} className="mb-4">
+                                    <div className="flex items-center mb-2">
+                                        <div className="w-3 h-3 bg-gray-400 rounded-full mr-4 translate-x-[-6px]"></div>
+                                        <h2 className="text-xl font-bold text-gray-900">{formatDateHeader(group.date)}</h2>
+                                    </div>
+                                    <div className="space-y-3 pl-4 border-l border-gray-300 border-dashed">
+                                        {group.items.map(ticket => (
+                                            <div key={ticket.id} className="relative">
+                                                <EventCard
+                                                    id={ticket.id}
+                                                    title={ticket.eventTitle}
+                                                    company=""
+                                                    price={ticket.price}
+                                                    date={ticket.date}
+                                                    time={ticket.time}
+                                                    ticketsAvailable={0}
+                                                    imageUrl={ticket.eventImage}
+                                                    category=""
+                                                    organizer={null}
+                                                    href={`/profile/ticket/${ticket.id}`}
+                                                    size="lg"
+                                                    description={ticket.description}
+                                                    badge={(ticket.status === 'on_resale') ? 'on resale' : (ticket.status === 'bought' || ticket.status === 'nft') ? 'owned' : undefined}
+                                                />
                                             </div>
-                                            <div className="space-y-1">
-                                                <div className="flex items-center justify-between">
-                                                    <span className="text-gray-600 text-xs">{ticket.date}</span>
-                                                    <span className="text-gray-600 text-xs font-medium">{ticket.price.toFixed(4)} SOL</span>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    {isPositive ? <TrendingUp className="w-3 h-3 text-green-600" /> : <TrendingDown className="w-3 h-3 text-red-600" />}
-                                                    <span className={`text-xs font-medium ${isPositive ? "text-green-600" : "text-red-600"}`}>{priceChange.toFixed(1)}%</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </Link>
-                                )
-                            })}
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     ) : (
                         <div className="flex flex-col items-center justify-center py-12">

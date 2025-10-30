@@ -100,26 +100,27 @@ export default function Home() {
   const bannerData = [
     {
       id: '1',
-      title: 'Become a Sponsor',
-      description: 'Reach 130,000+ top-tier talent in under 5 clicks. Get high-quality work done across content, development, and design.',
+      title: 'Host with Confidence',
+      description: 'Launch your event in minutes. Sell verified NFT tickets, earn from resales, and reach real fans—powered by Solana.',
       buttonText: 'Get Started',
       backgroundImage: '/banner1.png',
-      buttonLink: '/create-event'
+      buttonLink: '/organizer/create-event'
     },
     {
       id: '2',
-      title: 'Connect Your Wallet',
-      description: 'Join our community and start participating in events. Connect your Solana wallet to get started.',
-      buttonText: 'Connect Wallet',
-      backgroundImage: '/banner1.png'
+      title: 'Join the Real Event',
+      description: 'Buy authentic tickets safely and instantly. No scams, no fakes—your access is on-chain and truly yours.',
+      backgroundImage: '/banner1.png',
+      buttonText: 'Explore Events',
+      buttonLink: '/'
     },
     {
       id: '3',
-      title: 'Become a Sponsor',
-      description: 'Reach 130,000+ top-tier talent in under 5 clicks. Get high-quality work done across content, development, and design.',
-      buttonText: 'Get Started',
+      title: 'Resell Smarter',
+      description: 'Can’t attend? List your ticket in one click and get paid instantly on Solana—with low fees and full transparency.',
+      buttonText: 'Start Reselling',
       backgroundImage: '/banner1.png',
-      buttonLink: '/create-event'
+      buttonLink: '/resale'
     },
   ]
 
@@ -194,6 +195,7 @@ export default function Home() {
                           title={event.title}
                           company=""
                           price={event.price}
+                          description={event.description}
                           date={event.date}
                           time={event.time}
                           ticketsAvailable={event.ticketsAvailable}

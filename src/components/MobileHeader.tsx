@@ -26,8 +26,9 @@ export default function MobileHeader() {
                         className="w-8 h-8"
                     />
                 </div>
-
+                <div className="flex justify-center gap-2 items-center">
                 {/* Wallet Status or Connect Button */}
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-semibold uppercase tracking-wide">Devnet</span>
                 {connected ? (
                     <WalletDrawer>
                         <Button
@@ -50,6 +51,7 @@ export default function MobileHeader() {
                         </Button>
                     </WalletDrawer>
                 )}
+                </div>
             </div>
         </header>
     )

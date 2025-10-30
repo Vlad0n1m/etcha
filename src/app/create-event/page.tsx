@@ -274,13 +274,19 @@ export default function CreateEventPage() {
         ])
 
         try {
-            // Create auth message and get signature
+            // Use cached signature from AuthProvider or request new one
             setCurrentMessage('🔐 Authenticating your wallet...')
-            const message = `Create event ${formData.title} at ${new Date().toISOString()}`
-            const messageBytes = new TextEncoder().encode(message)
-            const signature = await signMessage(messageBytes)
+            const { getOrRequestSignature, SIGN_MESSAGE_TEXT } = await import('@/lib/utils/signature-cache')
+            const storageKey = publicKey ? `etcha:mint:signature:${publicKey.toBase58()}` : null
+            
+            let signature: Uint8Array
+            if (storageKey && signMessage) {
+                signature = await getOrRequestSignature(storageKey, signMessage) as Uint8Array
+            } else {
+                throw new Error('Wallet not connected')
+            }
 
-            // Get auth token
+            // Get auth token using the shared signature
             const authResponse = await fetch('/api/auth/verify', {
                 method: 'POST',
                 headers: {
@@ -289,7 +295,7 @@ export default function CreateEventPage() {
                 body: JSON.stringify({
                     walletAddress: publicKey.toString(),
                     signature: Buffer.from(signature).toString('base64'),
-                    message
+                    message: SIGN_MESSAGE_TEXT
                 })
             })
 

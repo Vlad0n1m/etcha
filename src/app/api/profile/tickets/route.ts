@@ -145,6 +145,7 @@ export async function POST(request: NextRequest) {
                 nftId: ticket.nftMintAddress,
                 eventTitle: ticket.event.title,
                 eventImage: ticket.event.imageUrl,
+                description: ticket.event.description,
                 date: ticket.event.date.toISOString().split('T')[0], // Format as YYYY-MM-DD
                 time: ticket.event.time,
                 location: ticket.event.fullAddress,

@@ -1,7 +1,8 @@
 "use client"
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react'
 import { useWallet } from '@solana/wallet-adapter-react'
+import { getOrRequestSignature, clearSignature, SIGN_MESSAGE_TEXT } from '@/lib/utils/signature-cache'
 
 interface AuthContextType {
     token: string | null
@@ -23,8 +24,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
+    const storageKey = React.useMemo(() => (publicKey ? `etcha:mint:signature:${publicKey.toBase58()}` : null), [publicKey])
+    const hasRequestedRef = useRef(false)
+
     const refreshToken = async () => {
-        if (!signMessage || !publicKey) {
+        if (!signMessage || !publicKey || !storageKey) {
             setToken(null)
             return
         }
@@ -33,12 +37,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setError(null)
 
         try {
-            // Create auth message and get signature (constant message, no timestamp)
-            const message = 'etcha-auth-v1'
-            const messageBytes = new TextEncoder().encode(message)
-            const signature = await signMessage(messageBytes)
+            const signature = await getOrRequestSignature(storageKey, signMessage)
+            
+            if (!signature) {
+                throw new Error('Failed to get signature')
+            }
 
-            // Get auth token
+            // Get auth token using the signature
             const authResponse = await fetch('/api/auth/verify', {
                 method: 'POST',
                 headers: {
@@ -47,7 +52,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 body: JSON.stringify({
                     walletAddress: publicKey.toString(),
                     signature: Buffer.from(signature).toString('base64'),
-                    message
+                    message: SIGN_MESSAGE_TEXT
                 })
             })
 
@@ -69,16 +74,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const clearAuth = () => {
         setToken(null)
         setError(null)
+        if (storageKey) {
+            clearSignature(storageKey)
+        }
     }
 
     // Auto-refresh token when wallet connects
     useEffect(() => {
-        if (connected && publicKey && !token) {
+        if (connected && publicKey && !token && !hasRequestedRef.current) {
+            hasRequestedRef.current = true
             refreshToken()
         } else if (!connected) {
+            hasRequestedRef.current = false
             clearAuth()
         }
-    }, [connected, publicKey])
+    }, [connected, publicKey, token])
 
     const value: AuthContextType = {
         token,
