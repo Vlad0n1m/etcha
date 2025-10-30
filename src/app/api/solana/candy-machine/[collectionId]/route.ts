@@ -3,9 +3,13 @@ import { SolanaService } from '@/lib/solana/SolanaService';
 import { CollectionService } from '@/lib/solana/CollectionService';
 import { CandyMachineService } from '@/lib/solana/CandyMachineService';
 
-const solanaService = new SolanaService();
-const collectionService = new CollectionService();
-const candyMachineService = new CandyMachineService(solanaService, collectionService);
+// Lazy initialization to avoid instantiation during build time
+function getServices() {
+    const solanaService = new SolanaService();
+    const collectionService = new CollectionService();
+    const candyMachineService = new CandyMachineService(solanaService, collectionService);
+    return { solanaService, collectionService, candyMachineService };
+}
 
 export async function POST(
     request: NextRequest,
@@ -13,6 +17,7 @@ export async function POST(
 ) {
     try {
         const { collectionId } = await params;
+        const { collectionService, candyMachineService } = getServices();
         const collection = await collectionService.getCollectionById(collectionId);
 
         if (!collection) {
@@ -58,6 +63,7 @@ export async function GET(
 ) {
     try {
         const { collectionId } = await params;
+        const { collectionService, candyMachineService } = getServices();
         const collection = await collectionService.getCollectionById(collectionId);
 
         if (!collection || !collection.candyMachineAddress) {

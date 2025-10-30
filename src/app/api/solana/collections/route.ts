@@ -3,13 +3,17 @@ import { SolanaService } from '@/lib/solana/SolanaService';
 import { CollectionService } from '@/lib/solana/CollectionService';
 import { CandyMachineService } from '@/lib/solana/CandyMachineService';
 
-// Initialize services
-const solanaService = new SolanaService();
-const collectionService = new CollectionService();
-const candyMachineService = new CandyMachineService(solanaService, collectionService);
+// Lazy initialization to avoid instantiation during build time
+function getServices() {
+    const solanaService = new SolanaService();
+    const collectionService = new CollectionService();
+    const candyMachineService = new CandyMachineService(solanaService, collectionService);
+    return { solanaService, collectionService, candyMachineService };
+}
 
 export async function GET(request: NextRequest) {
     try {
+        const { collectionService } = getServices();
         const collections = await collectionService.getCollections();
 
         return NextResponse.json({
@@ -36,6 +40,8 @@ export async function POST(request: NextRequest) {
                 { status: 400 }
             );
         }
+
+        const { collectionService, candyMachineService } = getServices();
 
         // Get event from database
         const { prisma } = await import('@/lib/db');

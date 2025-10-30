@@ -1,0 +1,12 @@
+# Don't ignore generated Prisma client
+!src/generated/prisma
+
+# Ignore development files
+node_modules
+.git
+.env
+.env.local
+*.log
+coverage
+.next/cache
+

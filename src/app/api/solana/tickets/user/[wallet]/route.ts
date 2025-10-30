@@ -3,9 +3,13 @@ import { SolanaService } from '@/lib/solana/SolanaService';
 import { CollectionService } from '@/lib/solana/CollectionService';
 import { CandyMachineService } from '@/lib/solana/CandyMachineService';
 
-const solanaService = new SolanaService();
-const collectionService = new CollectionService();
-const candyMachineService = new CandyMachineService(solanaService, collectionService);
+// Lazy initialization to avoid instantiation during build time
+function getServices() {
+    const solanaService = new SolanaService();
+    const collectionService = new CollectionService();
+    const candyMachineService = new CandyMachineService(solanaService, collectionService);
+    return { solanaService, collectionService, candyMachineService };
+}
 
 export async function GET(
     request: NextRequest,
@@ -15,6 +19,7 @@ export async function GET(
         const { wallet } = await params;
         const { searchParams } = new URL(request.url);
         const collectionId = searchParams.get('collectionId');
+        const { solanaService, candyMachineService } = getServices();
 
         // Validate wallet address
         const isValidWallet = await solanaService.isWalletValid(wallet);

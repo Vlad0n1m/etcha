@@ -74,7 +74,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     const [showMintModal, setShowMintModal] = useState(false)
     const [derivedAddress, setDerivedAddress] = useState<string | null>(null)
     const [copiedAddress, setCopiedAddress] = useState(false)
-    
+
     const { connected, publicKey, signMessage, sendTransaction, wallet } = useWallet()
     const { connection } = useConnection()
     const router = useRouter()

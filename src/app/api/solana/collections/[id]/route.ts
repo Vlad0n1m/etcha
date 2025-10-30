@@ -3,9 +3,13 @@ import { SolanaService } from '@/lib/solana/SolanaService';
 import { CollectionService } from '@/lib/solana/CollectionService';
 import { CandyMachineService } from '@/lib/solana/CandyMachineService';
 
-const solanaService = new SolanaService();
-const collectionService = new CollectionService();
-const candyMachineService = new CandyMachineService(solanaService, collectionService);
+// Lazy initialization to avoid instantiation during build time
+function getServices() {
+    const solanaService = new SolanaService();
+    const collectionService = new CollectionService();
+    const candyMachineService = new CandyMachineService(solanaService, collectionService);
+    return { solanaService, collectionService, candyMachineService };
+}
 
 export async function GET(
     request: NextRequest,
@@ -13,6 +17,7 @@ export async function GET(
 ) {
     try {
         const { id } = await params;
+        const { collectionService } = getServices();
         const collection = await collectionService.getCollectionById(id);
 
         if (!collection) {
@@ -42,6 +47,7 @@ export async function PUT(
     try {
         const { id } = await params;
         const updates = await request.json();
+        const { collectionService } = getServices();
 
         const collection = await collectionService.updateCollection(id, updates);
 
@@ -72,6 +78,7 @@ export async function DELETE(
 ) {
     try {
         const { id } = await params;
+        const { collectionService } = getServices();
         const deleted = await collectionService.deleteCollection(id);
 
         if (!deleted) {

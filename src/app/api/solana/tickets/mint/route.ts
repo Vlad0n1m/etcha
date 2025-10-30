@@ -4,9 +4,13 @@ import { CollectionService } from '@/lib/solana/CollectionService';
 import { CandyMachineService } from '@/lib/solana/CandyMachineService';
 import Joi from 'joi';
 
-const solanaService = new SolanaService();
-const collectionService = new CollectionService();
-const candyMachineService = new CandyMachineService(solanaService, collectionService);
+// Lazy initialization to avoid instantiation during build time
+function getServices() {
+    const solanaService = new SolanaService();
+    const collectionService = new CollectionService();
+    const candyMachineService = new CandyMachineService(solanaService, collectionService);
+    return { solanaService, collectionService, candyMachineService };
+}
 
 const validateMintTicket = Joi.object({
     collectionId: Joi.string().required(),
@@ -27,6 +31,7 @@ export async function POST(request: NextRequest) {
         }
 
         const { collectionId, userWallet, quantity } = value;
+        const { solanaService, collectionService, candyMachineService } = getServices();
 
         // Validate wallet address
         const isValidWallet = await solanaService.isWalletValid(userWallet);
