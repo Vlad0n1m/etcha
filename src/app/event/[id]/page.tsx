@@ -417,7 +417,13 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             </div>
 
             <div className="relative h-56 w-full">
-                <Image src={event.imageUrl || "/no-ticket-svgrepo-com.svg"} alt={event.title} fill className="object-cover" />
+                <Image
+                    src={event.imageUrl || "/no-ticket-svgrepo-com.svg"}
+                    alt={event.title ? `${event.title} event cover image` : "Event cover image"}
+                    fill
+                    className="object-cover"
+                    priority
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
 
                 <div className="absolute top-4 left-4">

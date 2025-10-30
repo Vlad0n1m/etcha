@@ -46,6 +46,21 @@ CLOUDINARY_API_SECRET=ваш_api_secret
 
 ## Что изменилось в коде
 
+### `/next.config.ts` - Добавлен Cloudinary домен
+```typescript
+images: {
+  remotePatterns: [
+    {
+      protocol: 'https',
+      hostname: 'res.cloudinary.com',
+      port: '',
+      pathname: '/**',
+    },
+  ],
+}
+```
+Это необходимо для работы Next.js Image компонента с внешними изображениями.
+
 ### `/src/app/api/upload/route.ts` (основной endpoint для создания событий)
 - ❌ Убрано: сохранение файлов в `public/uploads/` (не работает на Vercel)
 - ❌ Убрано: обработка Sharp (вызывала ошибки с HEIC/HEIF форматами)
