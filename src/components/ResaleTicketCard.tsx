@@ -1,17 +1,18 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Image from 'next/image'
-import Link from 'next/link'
 import { CardContent } from '@/components/ui/card'
 import { ArrowDownCircle, ArrowUpCircle, Equal } from 'lucide-react'
 import EventCardSkeleton from './EventCardSkeleton'
 import { motion } from 'framer-motion'
+import BuyResaleTicketModal from './BuyResaleTicketModal'
 
 interface ResaleTicketCardProps {
     id: string
+    listingId: string
     title: string
     company: string
-    price: number
-    originalPrice: number
+    price: number // price in SOL
+    originalPrice: number // original price in SOL
     date: string
     time?: string
     ticketsAvailable: number
@@ -19,10 +20,12 @@ interface ResaleTicketCardProps {
     category: string
     seats: string
     isLoading?: boolean
+    onPurchaseSuccess?: () => void
 }
 
 const ResaleTicketCard: React.FC<ResaleTicketCardProps> = ({
     id,
+    listingId,
     title,
     company,
     price,
@@ -32,8 +35,11 @@ const ResaleTicketCard: React.FC<ResaleTicketCardProps> = ({
     imageUrl,
     category,
     seats,
-    isLoading = false
+    isLoading = false,
+    onPurchaseSuccess,
 }) => {
+    const [showBuyModal, setShowBuyModal] = useState(false)
+
     if (isLoading) {
         return <EventCardSkeleton />
     }
@@ -71,7 +77,7 @@ const ResaleTicketCard: React.FC<ResaleTicketCardProps> = ({
     }
 
     return (
-        <Link href={`/event/${id}`} className="block">
+        <div className="block">
             <motion.div
                 className="w-full overflow-hidden border border-slate-200 rounded-lg bg-white shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer h-full flex flex-col"
                 whileHover={{
@@ -116,19 +122,47 @@ const ResaleTicketCard: React.FC<ResaleTicketCardProps> = ({
                     <div className="mt-auto flex flex-col gap-2">
                         <div className="flex justify-between items-center text-xs sm:text-sm mb-2">
                             <span className="text-lg font-bold text-primary flex items-center">
-                                ${price}
+                                {price.toFixed(4)} SOL
                                 {getPriceBadge()}
                             </span>
                         </div>
 
                         {/* Buy Button - Compact on mobile */}
-                        <button className="w-full bg-primary text-primary-foreground py-1.5 sm:py-2 px-3 sm:px-4 rounded-md hover:bg-primary/90 transition-colors text-xs sm:text-sm font-medium">
+                        <button 
+                            onClick={(e) => {
+                                e.preventDefault();
+                                setShowBuyModal(true);
+                            }}
+                            className="w-full bg-primary text-primary-foreground py-1.5 sm:py-2 px-3 sm:px-4 rounded-md hover:bg-primary/90 transition-colors text-xs sm:text-sm font-medium"
+                        >
                             Buy Now
                         </button>
                     </div>
                 </CardContent>
             </motion.div>
-        </Link>
+
+            {/* Buy Modal */}
+            <BuyResaleTicketModal
+                open={showBuyModal}
+                onClose={() => setShowBuyModal(false)}
+                listingId={listingId}
+                ticketData={{
+                    title,
+                    price,
+                    originalPrice,
+                    imageUrl,
+                    date,
+                    time,
+                    sellerName: company,
+                }}
+                onSuccess={() => {
+                    setShowBuyModal(false);
+                    if (onPurchaseSuccess) {
+                        onPurchaseSuccess();
+                    }
+                }}
+            />
+        </div>
     )
 }
 

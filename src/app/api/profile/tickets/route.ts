@@ -5,17 +5,19 @@ import { isValidSolanaAddress } from '@/lib/utils/wallet'
 const prisma = new PrismaClient()
 
 /**
- * GET /api/profile/tickets?walletAddress=<external_wallet>
- * Get all NFT tickets minted to user's internal wallet
+ * POST /api/profile/tickets
+ * Get all NFT tickets from database for the user
+ * Body: { walletAddress: string, signature: string (hex) }
+ * Returns tickets stored in database, not from blockchain
  */
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
     try {
-        const searchParams = request.nextUrl.searchParams
-        const walletAddress = searchParams.get('walletAddress')
+        const body = await request.json()
+        const { walletAddress, signature } = body
 
-        if (!walletAddress) {
+        if (!walletAddress || !signature) {
             return NextResponse.json(
-                { success: false, message: 'walletAddress is required' },
+                { success: false, message: 'walletAddress and signature are required' },
                 { status: 400 }
             )
         }
@@ -28,14 +30,13 @@ export async function GET(request: NextRequest) {
             )
         }
 
-        // Find user by external wallet address
+        // Find user by external wallet address (just to verify user exists)
         const user = await prisma.user.findUnique({
             where: {
                 walletAddress: walletAddress,
             },
             select: {
                 id: true,
-                internalWalletAddress: true,
             },
         })
 
@@ -47,7 +48,27 @@ export async function GET(request: NextRequest) {
             })
         }
 
-        // Get all tickets for this user with related data
+        // Always derive internal wallet from signature for verification
+        const { deriveKeypairFromSignature, getDerivationSalt } = await import('@/lib/utils/keyDerivation.server')
+        
+        console.log('=== Profile Tickets Request ===')
+        console.log('Signature format: string (hex)')
+        console.log('Signature length (hex):', signature.length)
+        console.log('Signature first 20 chars:', signature.substring(0, 20))
+        console.log('Wallet address:', walletAddress)
+        
+        const salt = getDerivationSalt()
+        console.log('Using salt (first 10 chars):', salt.substring(0, 10))
+        
+        const userKeypair = deriveKeypairFromSignature(signature, walletAddress, salt)
+        const internalWalletAddress = userKeypair.publicKey.toBase58()
+
+        console.log('Derived internal wallet from signature:', internalWalletAddress)
+        console.log('=== End Profile Tickets Request ===')
+
+        // Get tickets from database for this user
+        console.log('Fetching tickets from database for user:', user.id)
+        
         const tickets = await prisma.ticket.findMany({
             where: {
                 userId: user.id,
@@ -55,16 +76,19 @@ export async function GET(request: NextRequest) {
             include: {
                 event: {
                     include: {
-                        category: true,
+                        category: {
+                            select: {
+                                name: true,
+                            },
+                        },
                     },
                 },
                 order: {
                     select: {
-                        totalPrice: true,
-                        quantity: true,
-                        status: true,
                         transactionHash: true,
                         createdAt: true,
+                        totalPrice: true,
+                        quantity: true,
                     },
                 },
             },
@@ -72,6 +96,8 @@ export async function GET(request: NextRequest) {
                 createdAt: 'desc',
             },
         })
+
+        console.log(`Found ${tickets.length} tickets in database`)
 
         // Get all listings to check which tickets are on resale
         const allListings = await prisma.listing.findMany({
@@ -90,7 +116,7 @@ export async function GET(request: NextRequest) {
             allListings.map(listing => [listing.nftMintAddress, listing])
         )
 
-        // Transform tickets to include listing info and determine status
+        // Transform tickets to response format
         const now = new Date()
         const transformedTickets = tickets.map(ticket => {
             const listing = listingsMap.get(ticket.nftMintAddress)
@@ -105,26 +131,26 @@ export async function GET(request: NextRequest) {
             } else if (isPastEvent) {
                 status = 'passed'
             } else {
-                // Active tickets that are not on resale - use 'bought' or 'nft' depending on your preference
-                // Using 'bought' for consistency with original mock data
                 status = 'bought'
             }
 
+            // Calculate price per ticket
+            let pricePerTicket = ticket.event.price
+            if (ticket.order.totalPrice > 0 && ticket.order.quantity > 0) {
+                pricePerTicket = ticket.order.totalPrice / ticket.order.quantity
+            }
+
             return {
-                id: ticket.id,
+                id: ticket.nftMintAddress, // Use NFT mint address as ID for URL links
                 nftId: ticket.nftMintAddress,
                 eventTitle: ticket.event.title,
                 eventImage: ticket.event.imageUrl,
                 date: ticket.event.date.toISOString().split('T')[0], // Format as YYYY-MM-DD
                 time: ticket.event.time,
                 location: ticket.event.fullAddress,
-                // Calculate price per ticket
-                // If order.totalPrice is 0 or invalid, fall back to event price
-                price: (ticket.order.totalPrice > 0 && ticket.order.quantity > 0)
-                    ? ticket.order.totalPrice / ticket.order.quantity 
-                    : ticket.event.price, // Price per ticket
+                price: listing ? listing.price : pricePerTicket, // Current price (listing or calculated price)
                 originalPrice: ticket.event.price,
-                marketPrice: listing ? listing.price : ticket.event.price,
+                marketPrice: listing ? listing.price : pricePerTicket,
                 status: status,
                 tokenId: ticket.tokenId,
                 isValid: ticket.isValid,
@@ -132,6 +158,13 @@ export async function GET(request: NextRequest) {
                 createdAt: ticket.createdAt.toISOString(),
                 transactionHash: ticket.order.transactionHash,
             }
+        })
+
+        // Sort by date (newest first) - already sorted by DB query, but double-check
+        transformedTickets.sort((a, b) => {
+            const dateA = new Date(a.date).getTime()
+            const dateB = new Date(b.date).getTime()
+            return dateB - dateA
         })
 
         return NextResponse.json({

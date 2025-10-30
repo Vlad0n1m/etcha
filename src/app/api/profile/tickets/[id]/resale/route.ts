@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@/generated/prisma'
 import { isValidSolanaAddress } from '@/lib/utils/wallet'
+import { deriveKeypairFromSignature, getDerivationSalt } from '@/lib/utils/keyDerivation.server'
+import { Connection, PublicKey } from '@solana/web3.js'
+import { Metaplex } from '@metaplex-foundation/js'
 
 const prisma = new PrismaClient()
 
@@ -18,6 +21,12 @@ export async function POST(
         const ticketId = resolvedParams.id
         const body = await request.json()
         const { price, walletAddress } = body
+
+        // Log request to create resale listing
+        console.log('=== Resale Listing Request ===')
+        console.log('Ticket ID:', ticketId)
+        console.log('Wallet Address (external):', walletAddress)
+        console.log('Price:', price, 'SOL')
 
         // Validation
         if (!walletAddress) {
@@ -41,6 +50,16 @@ export async function POST(
             )
         }
 
+        // Seller signature is required for future NFT transfers
+        // We'll store it and use it when someone buys the ticket
+        const { signature } = body
+        if (!signature) {
+            return NextResponse.json(
+                { success: false, message: 'Signature is required for resale listing' },
+                { status: 400 }
+            )
+        }
+
         // Find user by external wallet address
         const user = await prisma.user.findUnique({
             where: {
@@ -53,11 +72,15 @@ export async function POST(
         })
 
         if (!user) {
+            console.log('User not found for wallet:', walletAddress)
             return NextResponse.json(
                 { success: false, message: 'User not found' },
                 { status: 404 }
             )
         }
+
+        console.log('User found - User ID:', user.id)
+        console.log('User internal wallet address (current):', user.internalWalletAddress)
 
         // Get ticket with event information
         const ticket = await prisma.ticket.findUnique({
@@ -75,11 +98,15 @@ export async function POST(
         })
 
         if (!ticket) {
+            console.log('Ticket not found:', ticketId)
             return NextResponse.json(
                 { success: false, message: 'Ticket not found' },
                 { status: 404 }
             )
         }
+
+        console.log('Ticket found - NFT Mint Address:', ticket.nftMintAddress)
+        console.log('Event ID:', ticket.eventId)
 
         // Verify ownership
         if (ticket.userId !== user.id) {
@@ -118,8 +145,94 @@ export async function POST(
         const listingAddress = `listing_${ticketId}_${Date.now()}`
         const auctionHouseAddress = process.env.AUCTION_HOUSE_ADDRESS || 'placeholder_auction_house_address'
 
+        // Store seller signature for future NFT transfers
+        // This allows the system to transfer NFT from seller to buyer without seller being online
+        const sellerSignatureHex = typeof signature === 'string'
+            ? signature
+            : Array.from(signature).map(b => b.toString(16).padStart(2, '0')).join('')
+
+        console.log('Signature format:', typeof signature === 'string' ? 'string' : 'Uint8Array')
+        console.log('Signature length (hex):', sellerSignatureHex.length)
+        console.log('Signature first 20 chars:', sellerSignatureHex.substring(0, 20))
+        console.log('Wallet address:', walletAddress)
+
+        // Derive seller keypair from signature to verify/update internalWalletAddress
+        // This ensures the signature will derive the same address that's stored in the database
+        const salt = getDerivationSalt()
+        console.log('Using salt (first 10 chars):', salt.substring(0, 10))
+
+        const sellerKeypair = deriveKeypairFromSignature(sellerSignatureHex, walletAddress, salt)
+        const derivedInternalAddress = sellerKeypair.publicKey.toBase58()
+
+        console.log('Derived internal wallet address from signature:', derivedInternalAddress)
+
+        // Check if derived address matches existing internalWalletAddress
+        // If not, update it to ensure consistency for future purchases
+        let updatedUser = user
+        if (user.internalWalletAddress !== derivedInternalAddress) {
+            console.log(`Updating seller internalWalletAddress: ${user.internalWalletAddress} -> ${derivedInternalAddress}`)
+            updatedUser = await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                    internalWalletAddress: derivedInternalAddress,
+                },
+                select: {
+                    id: true,
+                    internalWalletAddress: true,
+                },
+            })
+        } else {
+            console.log('Internal wallet address matches - no update needed')
+        }
+
+        // Verify NFT ownership on blockchain before creating listing
+        console.log('Verifying NFT ownership on blockchain...')
+        try {
+            const connection = new Connection(
+                process.env.SOLANA_RPC_URL || process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
+                { commitment: 'confirmed' }
+            )
+            const metaplex = Metaplex.make(connection)
+
+            // Get all NFTs owned by seller's internal wallet
+            const sellerNfts = await metaplex.nfts().findAllByOwner({
+                owner: sellerKeypair.publicKey,
+            })
+
+            console.log(`Seller has ${sellerNfts.length} NFTs in wallet`)
+
+            // Check if the NFT is actually in seller's wallet
+            const sellerOwnsNFT = sellerNfts.some(nft =>
+                nft.address.toBase58() === ticket.nftMintAddress ||
+                nft.mint.address.toBase58() === ticket.nftMintAddress
+            )
+
+            if (!sellerOwnsNFT) {
+                console.error('NFT not found in seller wallet:', {
+                    searchedNFT: ticket.nftMintAddress,
+                    sellerWallet: derivedInternalAddress,
+                    sellerNFTs: sellerNfts.map(n => ({ address: n.address.toBase58(), mint: n.mint.address.toBase58() }))
+                })
+                return NextResponse.json(
+                    {
+                        success: false,
+                        message: `Cannot list NFT for resale: NFT ${ticket.nftMintAddress} is not in your wallet. The NFT may have been transferred or is in a different wallet.`,
+                    },
+                    { status: 400 }
+                )
+            }
+
+            console.log('NFT ownership verified on blockchain')
+        } catch (blockchainError: unknown) {
+            console.error('Error verifying NFT ownership on blockchain:', blockchainError)
+            // Don't fail the listing creation, but log the error
+            // In production, you might want to require blockchain verification
+            console.warn('Continuing with listing creation despite blockchain verification error')
+        }
+
         // Create listing in database
         // Note: Blockchain integration will be added later via AuctionHouseService
+        console.log('Creating resale listing in database...')
         const listing = await prisma.listing.create({
             data: {
                 nftMintAddress: ticket.nftMintAddress,
@@ -130,6 +243,7 @@ export async function POST(
                 price: price,
                 originalPrice: ticket.event.price,
                 status: 'active',
+                sellerSignature: sellerSignatureHex, // Store signature for future NFT transfers
                 // transactionHash will be set when blockchain transaction is completed
             },
             include: {
@@ -141,6 +255,10 @@ export async function POST(
                 },
             },
         })
+
+        console.log('Resale listing created successfully - Listing ID:', listing.id)
+        console.log('Listing Address:', listingAddress)
+        console.log('=== End Resale Listing Request ===')
 
         return NextResponse.json({
             success: true,
@@ -162,7 +280,7 @@ export async function POST(
         })
     } catch (error: any) {
         console.error('Error creating resale listing:', error)
-        
+
         // Handle unique constraint violation (ticket already listed)
         if (error.code === 'P2002') {
             return NextResponse.json(

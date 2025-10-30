@@ -4,7 +4,7 @@ import { useState, useEffect, use } from "react"
 import { useWallet } from "@solana/wallet-adapter-react"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, Calendar, MapPin, Clock, Copy, ExternalLink, CheckCircle2, AlertCircle, Loader2, Tag } from "lucide-react"
+import { Calendar, MapPin, Clock, Copy, ExternalLink, CheckCircle2, AlertCircle, Loader2, Tag, ChevronDown } from "lucide-react"
 import MobileHeader from "@/components/MobileHeader"
 import TicketDetailDrawer from "@/components/TicketDetailDrawer"
 import { Button } from "@/components/ui/button"
@@ -58,7 +58,7 @@ interface TicketDetail {
 export default function TicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const resolvedParams = use(params)
     const ticketId = resolvedParams.id
-    const { connected, publicKey } = useWallet()
+    const { connected, publicKey, signMessage } = useWallet()
     const router = useRouter()
 
     const [ticket, setTicket] = useState<TicketDetail | null>(null)
@@ -66,10 +66,11 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     const [error, setError] = useState<string | null>(null)
     const [copied, setCopied] = useState<string | null>(null)
     const [showResaleDrawer, setShowResaleDrawer] = useState(false)
+    const [isDetailsOpen, setIsDetailsOpen] = useState(false)
 
     useEffect(() => {
         const loadTicket = async () => {
-            if (!connected || !publicKey) {
+            if (!connected || !publicKey || !signMessage) {
                 setError("Please connect your wallet")
                 setIsLoading(false)
                 return
@@ -78,7 +79,26 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
             try {
                 setIsLoading(true)
                 setError(null)
-                const response = await fetch(`/api/profile/tickets/${ticketId}?walletAddress=${publicKey.toString()}`)
+
+                // Get signature for deriving internal wallet
+                const message = new TextEncoder().encode("etcha-mint-auth-v1")
+                const signature = await signMessage(message)
+
+                // Convert signature to hex
+                const signatureHex = Array.from(signature)
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('')
+
+                // POST request with signature to derive internal wallet and fetch NFT from blockchain
+                const response = await fetch(`/api/profile/tickets/${ticketId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        walletAddress: publicKey.toString(),
+                        signature: signatureHex,
+                    }),
+                })
+
                 const data = await response.json()
 
                 if (!response.ok || !data.success) {
@@ -86,16 +106,17 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                 }
 
                 setTicket(data.ticket)
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error("Error loading ticket:", err)
-                setError(err.message || "Failed to load ticket details")
+                const message = err instanceof Error ? err.message : "Failed to load ticket details"
+                setError(message)
             } finally {
                 setIsLoading(false)
             }
         }
 
         loadTicket()
-    }, [ticketId, connected, publicKey])
+    }, [ticketId, connected, publicKey, signMessage])
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString)
@@ -120,17 +141,36 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         }
     }
 
-    const handleResaleSuccess = () => {
+    const handleResaleSuccess = async () => {
         // Reload ticket data to get updated status
-        if (connected && publicKey) {
-            fetch(`/api/profile/tickets/${ticketId}?walletAddress=${publicKey.toString()}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        setTicket(data.ticket)
-                    }
+        if (connected && publicKey && signMessage) {
+            try {
+                // Get signature for deriving internal wallet
+                const message = new TextEncoder().encode("etcha-mint-auth-v1")
+                const signature = await signMessage(message)
+
+                // Convert signature to hex
+                const signatureHex = Array.from(signature)
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('')
+
+                const response = await fetch(`/api/profile/tickets/${ticketId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        walletAddress: publicKey.toString(),
+                        signature: signatureHex,
+                    }),
                 })
-                .catch(err => console.error("Error reloading ticket:", err))
+
+                const data = await response.json()
+
+                if (data.success) {
+                    setTicket(data.ticket)
+                }
+            } catch (err) {
+                console.error("Error reloading ticket:", err)
+            }
         }
     }
 
@@ -179,34 +219,30 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     return (
         <div className="min-h-screen bg-background pb-24">
             <MobileHeader />
-            
-            {/* Header */}
-            <div className="bg-surface/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-50">
-                <div className="flex items-center justify-between px-4 py-3 max-w-2xl mx-auto">
-                    <Link href="/profile" className="flex items-center gap-2 text-foreground hover:text-primary transition-colors">
-                        <ChevronLeft className="w-5 h-5" />
-                        <span className="font-medium text-sm">Back</span>
-                    </Link>
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                        {ticket.event.category}
-                    </span>
-                </div>
-            </div>
+
+            {/* Removed sticky header to avoid double navbar */}
 
             {/* Event Image */}
             <div className="relative h-56 w-full">
                 <Image src={ticket.event.imageUrl || "/placeholder.svg"} alt={ticket.event.title} fill className="object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-background via-background/20 to-transparent" />
             </div>
 
             <div className="px-4 max-w-2xl mx-auto">
+                {/* Inline Back button within page content
+                <div className="pt-3">
+                    <Link href="/profile" className="inline-flex items-center gap-2 text-foreground hover:text-primary transition-colors">
+                        <ChevronLeft className="w-5 h-5" />
+                        <span className="font-medium text-sm">Back</span>
+                    </Link>
+                </div> */}
+
                 {/* Status Badge */}
                 <div className="-mt-4 relative z-10">
-                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                        ticket.status === "on_resale" ? "bg-yellow-100 text-yellow-800" :
+                    <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${ticket.status === "on_resale" ? "bg-yellow-100 text-yellow-800" :
                         ticket.status === "passed" ? "bg-gray-100 text-gray-800" :
-                        "bg-green-100 text-green-800"
-                    }`}>
+                            "bg-green-100 text-green-800"
+                        }`}>
                         {ticket.status === "on_resale" && <Tag className="w-3 h-3 mr-1.5" />}
                         {ticket.status === "on_resale" && "On Resale"}
                         {ticket.status === "passed" && "Event Passed"}
@@ -226,9 +262,14 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
 
                     <p className="text-sm text-muted-foreground mb-4">{ticket.event.description}</p>
 
+                    <Link href={`/event/${ticket.event.id}`} className="inline-flex items-center gap-1 text-primary text-sm font-medium hover:underline">
+                        View event
+                        <ExternalLink className="w-3.5 h-3.5" />
+                    </Link>
+
                     <div className="grid grid-cols-2 gap-3 pt-4 border-t border-border">
                         <div className="flex items-start gap-2">
-                            <Calendar className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                            <Calendar className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                             <div className="min-w-0">
                                 <div className="text-xs text-muted-foreground">Date</div>
                                 <div className="text-sm font-medium text-foreground">{formatDate(ticket.event.date)}</div>
@@ -236,7 +277,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                         </div>
 
                         <div className="flex items-start gap-2">
-                            <Clock className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                            <Clock className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                             <div className="min-w-0">
                                 <div className="text-xs text-muted-foreground">Time</div>
                                 <div className="text-sm font-medium text-foreground">{ticket.event.time}</div>
@@ -244,7 +285,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                         </div>
 
                         <div className="flex items-start gap-2 col-span-2">
-                            <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                            <MapPin className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                             <div className="min-w-0">
                                 <div className="text-xs text-muted-foreground">Location</div>
                                 <div className="text-sm font-medium text-foreground">{ticket.event.fullAddress}</div>
@@ -253,76 +294,53 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                     </div>
                 </div>
 
-                {/* Ticket Information */}
-                <div className="bg-surface rounded-2xl p-5 mt-4 border border-border">
-                    <h2 className="text-base font-bold text-foreground mb-4">Ticket Details</h2>
+                {/* Ticket Information (Accordion) */}
+                <div className="bg-surface rounded-2xl mt-4 border border-border overflow-hidden">
+                    <button
+                        type="button"
+                        onClick={() => setIsDetailsOpen(prev => !prev)}
+                        className="w-full flex items-center justify-between px-5 py-4"
+                    >
+                        <h2 className="text-base font-bold text-foreground">Ticket Details</h2>
+                        <ChevronDown className={`w-4 h-4 transition-transform ${isDetailsOpen ? "rotate-180" : "rotate-0"}`} />
+                    </button>
 
-                    <div className="space-y-4">
-                        {/* Price Information */}
-                        <div className="bg-muted/50 rounded-xl p-4">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm text-muted-foreground">Purchase Price</span>
-                                <span className="text-sm font-semibold text-foreground">{ticket.price.toFixed(4)} SOL</span>
-                            </div>
-                            {ticket.listing && (
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm text-muted-foreground">Listed Price</span>
-                                    <span className="text-sm font-semibold text-yellow-600">{ticket.listing.price.toFixed(4)} SOL</span>
+                    <div className={`grid transition-all duration-300 ease-out ${isDetailsOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
+                        <div className="overflow-hidden px-5 pb-5 space-y-4">
+                            {/* Price Information */}
+                            <div className="bg-muted/50 rounded-xl p-4">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-sm text-muted-foreground">Purchase Price</span>
+                                    <span className="text-sm font-semibold text-foreground">{ticket.price.toFixed(4)} SOL</span>
                                 </div>
-                            )}
-                        </div>
-
-                        {/* NFT Information */}
-                        <div>
-                            <div className="text-xs text-muted-foreground mb-2">NFT Mint Address</div>
-                            <div className="flex items-center justify-between bg-background rounded-lg p-3 border border-border">
-                                <p className="text-sm font-mono text-foreground truncate flex-1">
-                                    {formatAddress(ticket.nftMintAddress)}
-                                </p>
-                                <div className="flex items-center gap-2 ml-2">
-                                    <button
-                                        onClick={() => handleCopy(ticket.nftMintAddress, "nft")}
-                                        className="p-2 hover:bg-muted rounded-lg transition-colors"
-                                    >
-                                        {copied === "nft" ? (
-                                            <CheckCircle2 className="w-4 h-4 text-green-500" />
-                                        ) : (
-                                            <Copy className="w-4 h-4 text-muted-foreground" />
-                                        )}
-                                    </button>
-                                    <a
-                                        href={`https://explorer.solana.com/address/${ticket.nftMintAddress}?cluster=${network}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="p-2 hover:bg-muted rounded-lg transition-colors"
-                                    >
-                                        <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                                    </a>
-                                </div>
+                                {ticket.listing && (
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-sm text-muted-foreground">Listed Price</span>
+                                        <span className="text-sm font-semibold text-yellow-600">{ticket.listing.price.toFixed(4)} SOL</span>
+                                    </div>
+                                )}
                             </div>
-                        </div>
 
-                        {/* Transaction Information */}
-                        {ticket.order.transactionHash && (
+                            {/* NFT Information */}
                             <div>
-                                <div className="text-xs text-muted-foreground mb-2">Purchase Transaction</div>
+                                <div className="text-xs text-muted-foreground mb-2">NFT Mint Address</div>
                                 <div className="flex items-center justify-between bg-background rounded-lg p-3 border border-border">
                                     <p className="text-sm font-mono text-foreground truncate flex-1">
-                                        {formatAddress(ticket.order.transactionHash)}
+                                        {formatAddress(ticket.nftMintAddress)}
                                     </p>
                                     <div className="flex items-center gap-2 ml-2">
                                         <button
-                                            onClick={() => handleCopy(ticket.order.transactionHash!, "tx")}
+                                            onClick={() => handleCopy(ticket.nftMintAddress, "nft")}
                                             className="p-2 hover:bg-muted rounded-lg transition-colors"
                                         >
-                                            {copied === "tx" ? (
+                                            {copied === "nft" ? (
                                                 <CheckCircle2 className="w-4 h-4 text-green-500" />
                                             ) : (
                                                 <Copy className="w-4 h-4 text-muted-foreground" />
                                             )}
                                         </button>
                                         <a
-                                            href={`https://explorer.solana.com/tx/${ticket.order.transactionHash}?cluster=${network}`}
+                                            href={`https://explorer.solana.com/address/${ticket.nftMintAddress}?cluster=${network}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="p-2 hover:bg-muted rounded-lg transition-colors"
@@ -332,22 +350,54 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                                     </div>
                                 </div>
                             </div>
-                        )}
 
-                        {/* Ticket Status */}
-                        <div className="flex items-center justify-between pt-2 border-t border-border">
-                            <span className="text-sm text-muted-foreground">Status</span>
-                            <div className="flex items-center gap-2">
-                                {ticket.isValid && !ticket.isUsed && (
-                                    <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
-                                        Valid
-                                    </span>
-                                )}
-                                {ticket.isUsed && (
-                                    <span className="text-xs font-medium text-gray-600 bg-gray-50 px-2 py-1 rounded">
-                                        Used
-                                    </span>
-                                )}
+                            {/* Transaction Information */}
+                            {ticket.order.transactionHash && (
+                                <div>
+                                    <div className="text-xs text-muted-foreground mb-2">Purchase Transaction</div>
+                                    <div className="flex items-center justify-between bg-background rounded-lg p-3 border border-border">
+                                        <p className="text-sm font-mono text-foreground truncate flex-1">
+                                            {formatAddress(ticket.order.transactionHash)}
+                                        </p>
+                                        <div className="flex items-center gap-2 ml-2">
+                                            <button
+                                                onClick={() => handleCopy(ticket.order.transactionHash!, "tx")}
+                                                className="p-2 hover:bg-muted rounded-lg transition-colors"
+                                            >
+                                                {copied === "tx" ? (
+                                                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                                ) : (
+                                                    <Copy className="w-4 h-4 text-muted-foreground" />
+                                                )}
+                                            </button>
+                                            <a
+                                                href={`https://explorer.solana.com/tx/${ticket.order.transactionHash}?cluster=${network}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="p-2 hover:bg-muted rounded-lg transition-colors"
+                                            >
+                                                <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Ticket Status */}
+                            <div className="flex items-center justify-between pt-2 border-t border-border">
+                                <span className="text-sm text-muted-foreground">Status</span>
+                                <div className="flex items-center gap-2">
+                                    {ticket.isValid && !ticket.isUsed && (
+                                        <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
+                                            Valid
+                                        </span>
+                                    )}
+                                    {ticket.isUsed && (
+                                        <span className="text-xs font-medium text-gray-600 bg-gray-50 px-2 py-1 rounded">
+                                            Used
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -370,7 +420,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                                 <span className="text-sm font-medium text-yellow-800">Ticket Listed for Resale</span>
                             </div>
                             <p className="text-xs text-yellow-700">
-                                This ticket is currently listed at {ticket.listing.price.toFixed(4)} SOL. 
+                                This ticket is currently listed at {ticket.listing.price.toFixed(4)} SOL.
                                 It will be removed from resale when sold or cancelled.
                             </p>
                         </div>

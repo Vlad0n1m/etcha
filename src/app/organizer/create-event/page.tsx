@@ -263,16 +263,19 @@ export default function CreateEventPage() {
                                 {/* Title */}
                                 <div>
                                     <label className="block text-sm font-medium text-foreground mb-2">
-                                        Event Title *
+                                        Event Title * <span className="text-xs text-muted-foreground">(max 10 characters)</span>
                                     </label>
                                     <input
                                         type="text"
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
                                         className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                                        placeholder="Arcium's <encrypted> Side Track"
-                                        maxLength={100}
+                                        placeholder="Event Name"
+                                        maxLength={10}
                                     />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        {title.length}/10 characters
+                                    </p>
                                 </div>
 
                                 {/* Description */}

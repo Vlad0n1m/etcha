@@ -10199,6 +10199,7 @@ export namespace Prisma {
     transactionHash: string | null
     soldTo: string | null
     soldAt: Date | null
+    sellerSignature: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -10216,6 +10217,7 @@ export namespace Prisma {
     transactionHash: string | null
     soldTo: string | null
     soldAt: Date | null
+    sellerSignature: string | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -10233,6 +10235,7 @@ export namespace Prisma {
     transactionHash: number
     soldTo: number
     soldAt: number
+    sellerSignature: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -10262,6 +10265,7 @@ export namespace Prisma {
     transactionHash?: true
     soldTo?: true
     soldAt?: true
+    sellerSignature?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -10279,6 +10283,7 @@ export namespace Prisma {
     transactionHash?: true
     soldTo?: true
     soldAt?: true
+    sellerSignature?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -10296,6 +10301,7 @@ export namespace Prisma {
     transactionHash?: true
     soldTo?: true
     soldAt?: true
+    sellerSignature?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -10400,6 +10406,7 @@ export namespace Prisma {
     transactionHash: string | null
     soldTo: string | null
     soldAt: Date | null
+    sellerSignature: string | null
     createdAt: Date
     updatedAt: Date
     _count: ListingCountAggregateOutputType | null
@@ -10436,6 +10443,7 @@ export namespace Prisma {
     transactionHash?: boolean
     soldTo?: boolean
     soldAt?: boolean
+    sellerSignature?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     event?: boolean | EventDefaultArgs<ExtArgs>
@@ -10455,6 +10463,7 @@ export namespace Prisma {
     transactionHash?: boolean
     soldTo?: boolean
     soldAt?: boolean
+    sellerSignature?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     event?: boolean | EventDefaultArgs<ExtArgs>
@@ -10474,6 +10483,7 @@ export namespace Prisma {
     transactionHash?: boolean
     soldTo?: boolean
     soldAt?: boolean
+    sellerSignature?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     event?: boolean | EventDefaultArgs<ExtArgs>
@@ -10493,11 +10503,12 @@ export namespace Prisma {
     transactionHash?: boolean
     soldTo?: boolean
     soldAt?: boolean
+    sellerSignature?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type ListingOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nftMintAddress" | "eventId" | "sellerId" | "listingAddress" | "auctionHouseAddress" | "price" | "originalPrice" | "status" | "transactionHash" | "soldTo" | "soldAt" | "createdAt" | "updatedAt", ExtArgs["result"]["listing"]>
+  export type ListingOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "nftMintAddress" | "eventId" | "sellerId" | "listingAddress" | "auctionHouseAddress" | "price" | "originalPrice" | "status" | "transactionHash" | "soldTo" | "soldAt" | "sellerSignature" | "createdAt" | "updatedAt", ExtArgs["result"]["listing"]>
   export type ListingInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     event?: boolean | EventDefaultArgs<ExtArgs>
     seller?: boolean | UserDefaultArgs<ExtArgs>
@@ -10530,6 +10541,7 @@ export namespace Prisma {
       transactionHash: string | null
       soldTo: string | null
       soldAt: Date | null
+      sellerSignature: string | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["listing"]>
@@ -10969,6 +10981,7 @@ export namespace Prisma {
     readonly transactionHash: FieldRef<"Listing", 'String'>
     readonly soldTo: FieldRef<"Listing", 'String'>
     readonly soldAt: FieldRef<"Listing", 'DateTime'>
+    readonly sellerSignature: FieldRef<"Listing", 'String'>
     readonly createdAt: FieldRef<"Listing", 'DateTime'>
     readonly updatedAt: FieldRef<"Listing", 'DateTime'>
   }
@@ -13674,6 +13687,7 @@ export namespace Prisma {
     transactionHash: 'transactionHash',
     soldTo: 'soldTo',
     soldAt: 'soldAt',
+    sellerSignature: 'sellerSignature',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -14386,6 +14400,7 @@ export namespace Prisma {
     transactionHash?: StringNullableFilter<"Listing"> | string | null
     soldTo?: StringNullableFilter<"Listing"> | string | null
     soldAt?: DateTimeNullableFilter<"Listing"> | Date | string | null
+    sellerSignature?: StringNullableFilter<"Listing"> | string | null
     createdAt?: DateTimeFilter<"Listing"> | Date | string
     updatedAt?: DateTimeFilter<"Listing"> | Date | string
     event?: XOR<EventScalarRelationFilter, EventWhereInput>
@@ -14405,6 +14420,7 @@ export namespace Prisma {
     transactionHash?: SortOrderInput | SortOrder
     soldTo?: SortOrderInput | SortOrder
     soldAt?: SortOrderInput | SortOrder
+    sellerSignature?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     event?: EventOrderByWithRelationInput
@@ -14427,6 +14443,7 @@ export namespace Prisma {
     transactionHash?: StringNullableFilter<"Listing"> | string | null
     soldTo?: StringNullableFilter<"Listing"> | string | null
     soldAt?: DateTimeNullableFilter<"Listing"> | Date | string | null
+    sellerSignature?: StringNullableFilter<"Listing"> | string | null
     createdAt?: DateTimeFilter<"Listing"> | Date | string
     updatedAt?: DateTimeFilter<"Listing"> | Date | string
     event?: XOR<EventScalarRelationFilter, EventWhereInput>
@@ -14446,6 +14463,7 @@ export namespace Prisma {
     transactionHash?: SortOrderInput | SortOrder
     soldTo?: SortOrderInput | SortOrder
     soldAt?: SortOrderInput | SortOrder
+    sellerSignature?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: ListingCountOrderByAggregateInput
@@ -14471,6 +14489,7 @@ export namespace Prisma {
     transactionHash?: StringNullableWithAggregatesFilter<"Listing"> | string | null
     soldTo?: StringNullableWithAggregatesFilter<"Listing"> | string | null
     soldAt?: DateTimeNullableWithAggregatesFilter<"Listing"> | Date | string | null
+    sellerSignature?: StringNullableWithAggregatesFilter<"Listing"> | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Listing"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Listing"> | Date | string
   }
@@ -15289,6 +15308,7 @@ export namespace Prisma {
     transactionHash?: string | null
     soldTo?: string | null
     soldAt?: Date | string | null
+    sellerSignature?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     event: EventCreateNestedOneWithoutListingsInput
@@ -15308,6 +15328,7 @@ export namespace Prisma {
     transactionHash?: string | null
     soldTo?: string | null
     soldAt?: Date | string | null
+    sellerSignature?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -15323,6 +15344,7 @@ export namespace Prisma {
     transactionHash?: NullableStringFieldUpdateOperationsInput | string | null
     soldTo?: NullableStringFieldUpdateOperationsInput | string | null
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sellerSignature?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     event?: EventUpdateOneRequiredWithoutListingsNestedInput
@@ -15342,6 +15364,7 @@ export namespace Prisma {
     transactionHash?: NullableStringFieldUpdateOperationsInput | string | null
     soldTo?: NullableStringFieldUpdateOperationsInput | string | null
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sellerSignature?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -15359,6 +15382,7 @@ export namespace Prisma {
     transactionHash?: string | null
     soldTo?: string | null
     soldAt?: Date | string | null
+    sellerSignature?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -15374,6 +15398,7 @@ export namespace Prisma {
     transactionHash?: NullableStringFieldUpdateOperationsInput | string | null
     soldTo?: NullableStringFieldUpdateOperationsInput | string | null
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sellerSignature?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -15391,6 +15416,7 @@ export namespace Prisma {
     transactionHash?: NullableStringFieldUpdateOperationsInput | string | null
     soldTo?: NullableStringFieldUpdateOperationsInput | string | null
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sellerSignature?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -16099,6 +16125,7 @@ export namespace Prisma {
     transactionHash?: SortOrder
     soldTo?: SortOrder
     soldAt?: SortOrder
+    sellerSignature?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -16121,6 +16148,7 @@ export namespace Prisma {
     transactionHash?: SortOrder
     soldTo?: SortOrder
     soldAt?: SortOrder
+    sellerSignature?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -16138,6 +16166,7 @@ export namespace Prisma {
     transactionHash?: SortOrder
     soldTo?: SortOrder
     soldAt?: SortOrder
+    sellerSignature?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -17247,6 +17276,7 @@ export namespace Prisma {
     transactionHash?: string | null
     soldTo?: string | null
     soldAt?: Date | string | null
+    sellerSignature?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     event: EventCreateNestedOneWithoutListingsInput
@@ -17264,6 +17294,7 @@ export namespace Prisma {
     transactionHash?: string | null
     soldTo?: string | null
     soldAt?: Date | string | null
+    sellerSignature?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -17444,6 +17475,7 @@ export namespace Prisma {
     transactionHash?: StringNullableFilter<"Listing"> | string | null
     soldTo?: StringNullableFilter<"Listing"> | string | null
     soldAt?: DateTimeNullableFilter<"Listing"> | Date | string | null
+    sellerSignature?: StringNullableFilter<"Listing"> | string | null
     createdAt?: DateTimeFilter<"Listing"> | Date | string
     updatedAt?: DateTimeFilter<"Listing"> | Date | string
   }
@@ -17883,6 +17915,7 @@ export namespace Prisma {
     transactionHash?: string | null
     soldTo?: string | null
     soldAt?: Date | string | null
+    sellerSignature?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     seller: UserCreateNestedOneWithoutListingsInput
@@ -17900,6 +17933,7 @@ export namespace Prisma {
     transactionHash?: string | null
     soldTo?: string | null
     soldAt?: Date | string | null
+    sellerSignature?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -18843,6 +18877,7 @@ export namespace Prisma {
     transactionHash?: string | null
     soldTo?: string | null
     soldAt?: Date | string | null
+    sellerSignature?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -18937,6 +18972,7 @@ export namespace Prisma {
     transactionHash?: NullableStringFieldUpdateOperationsInput | string | null
     soldTo?: NullableStringFieldUpdateOperationsInput | string | null
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sellerSignature?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     event?: EventUpdateOneRequiredWithoutListingsNestedInput
@@ -18954,6 +18990,7 @@ export namespace Prisma {
     transactionHash?: NullableStringFieldUpdateOperationsInput | string | null
     soldTo?: NullableStringFieldUpdateOperationsInput | string | null
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sellerSignature?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -18970,6 +19007,7 @@ export namespace Prisma {
     transactionHash?: NullableStringFieldUpdateOperationsInput | string | null
     soldTo?: NullableStringFieldUpdateOperationsInput | string | null
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sellerSignature?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -19183,6 +19221,7 @@ export namespace Prisma {
     transactionHash?: string | null
     soldTo?: string | null
     soldAt?: Date | string | null
+    sellerSignature?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -19277,6 +19316,7 @@ export namespace Prisma {
     transactionHash?: NullableStringFieldUpdateOperationsInput | string | null
     soldTo?: NullableStringFieldUpdateOperationsInput | string | null
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sellerSignature?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     seller?: UserUpdateOneRequiredWithoutListingsNestedInput
@@ -19294,6 +19334,7 @@ export namespace Prisma {
     transactionHash?: NullableStringFieldUpdateOperationsInput | string | null
     soldTo?: NullableStringFieldUpdateOperationsInput | string | null
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sellerSignature?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -19310,6 +19351,7 @@ export namespace Prisma {
     transactionHash?: NullableStringFieldUpdateOperationsInput | string | null
     soldTo?: NullableStringFieldUpdateOperationsInput | string | null
     soldAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    sellerSignature?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

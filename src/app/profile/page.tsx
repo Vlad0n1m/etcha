@@ -1,7 +1,7 @@
 "use client"
 import { useWallet } from "@solana/wallet-adapter-react"
 import { useState, useEffect } from "react"
-import { Copy, Edit, Eye, TrendingUp, TrendingDown, MoreHorizontal, Wallet } from "lucide-react"
+import { Copy, Edit, Eye, TrendingUp, TrendingDown, MoreHorizontal, Wallet, RefreshCw } from "lucide-react"
 import WalletDrawer from "@/components/WalletDrawer"
 import MobileHeader from "@/components/MobileHeader"
 import { Button } from "@/components/ui/button"
@@ -26,7 +26,7 @@ interface Ticket {
 }
 
 export default function ProfilePage() {
-    const { connected, publicKey } = useWallet()
+    const { connected, publicKey, signMessage } = useWallet()
     const [activeTab, setActiveTab] = useState("bought")
     const [copied, setCopied] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
@@ -38,44 +38,92 @@ export default function ProfilePage() {
     const [copiedInternalAddress, setCopiedInternalAddress] = useState(false)
     const [tickets, setTickets] = useState<Ticket[]>([])
     const [isLoadingTickets, setIsLoadingTickets] = useState(false)
+    const [savedSignature, setSavedSignature] = useState<string | null>(null) // Store signature to avoid repeated requests
 
-    // Load internal wallet balance and address
-    useEffect(() => {
-        const loadBalance = async () => {
-            if (!connected || !publicKey) {
-                setInternalWalletBalance(null)
-                setInternalWalletAddress(null)
-                return
-            }
-
-            try {
-                setIsLoadingBalance(true)
-                const response = await fetch(`/api/wallet/balance?walletAddress=${publicKey.toString()}`)
-                const data = await response.json()
-                
-                if (data.success) {
-                    setInternalWalletBalance(data.balance ?? 0)
-                    setInternalWalletAddress(data.internalWalletAddress)
-                } else {
-                    setInternalWalletBalance(0)
-                    setInternalWalletAddress(null)
-                }
-            } catch (error) {
-                console.error('Error loading balance:', error)
-                setInternalWalletBalance(0)
-                setInternalWalletAddress(null)
-            } finally {
-                setIsLoadingBalance(false)
-            }
+    // Function to load balance - can be called manually or on mount
+    const loadBalance = async (useSavedSignature = false) => {
+        if (!connected || !publicKey) {
+            setInternalWalletBalance(null)
+            setInternalWalletAddress(null)
+            return
         }
 
-        loadBalance()
-        // Refresh balance every 10 seconds
-        const interval = setInterval(loadBalance, 10000)
-        return () => clearInterval(interval)
-    }, [connected, publicKey])
+        try {
+            setIsLoadingBalance(true)
+            
+            let signatureHex = savedSignature
+            
+            // Get signature only if not using saved one or if saved one doesn't exist
+            if (!useSavedSignature || !signatureHex) {
+                // Wait for signMessage to be available
+                if (!signMessage) {
+                    console.log('Waiting for signMessage to be available...')
+                    setIsLoadingBalance(false)
+                    return
+                }
+                
+                // Get signature for deriving internal wallet (only once)
+                const message = new TextEncoder().encode("etcha-mint-auth-v1")
+                const signature = await signMessage(message)
+                
+                // Convert signature to hex and save it
+                signatureHex = Array.from(signature)
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('')
+                
+                // Save signature for future use
+                setSavedSignature(signatureHex)
+            }
+            
+            // POST request with signature to derive internal wallet
+            const response = await fetch('/api/wallet/balance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    walletAddress: publicKey.toString(),
+                    signature: signatureHex,
+                }),
+            })
+            
+            const data = await response.json()
+            
+            if (data.success) {
+                setInternalWalletBalance(data.balance ?? 0)
+                setInternalWalletAddress(data.internalWalletAddress)
+                console.log('Internal wallet loaded:', data.internalWalletAddress, 'Balance:', data.balance)
+            } else {
+                console.error('Failed to load balance:', data.message)
+                setInternalWalletBalance(0)
+                setInternalWalletAddress(null)
+            }
+        } catch (error: any) {
+            console.error('Error loading balance:', error)
+            // Don't clear on user rejection - just log
+            if (error?.message?.includes('User rejected') || error?.message?.includes('cancelled')) {
+                console.log('User rejected signature request')
+                // Keep previous values or show message
+            } else {
+                setInternalWalletBalance(0)
+                setInternalWalletAddress(null)
+            }
+        } finally {
+            setIsLoadingBalance(false)
+        }
+    }
 
-    // Load tickets
+    // Load balance only once on mount (when wallet is connected and signMessage is available)
+    useEffect(() => {
+        if (connected && publicKey && signMessage && !savedSignature) {
+            loadBalance(false) // Request signature on first load
+        } else if (!connected || !publicKey) {
+            setInternalWalletBalance(null)
+            setInternalWalletAddress(null)
+            setSavedSignature(null) // Clear signature when wallet disconnects
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [connected, publicKey, signMessage]) // Wait for signMessage to be available
+
+    // Load tickets - use saved signature if available
     useEffect(() => {
         const loadTickets = async () => {
             if (!connected || !publicKey) {
@@ -83,9 +131,31 @@ export default function ProfilePage() {
                 return
             }
 
+            // Use saved signature if available, otherwise wait for signMessage
+            if (!savedSignature) {
+                if (!signMessage) {
+                    return // Wait for signMessage
+                }
+                // Signature will be saved by loadBalance, wait for it
+                return
+            }
+
             try {
                 setIsLoadingTickets(true)
-                const response = await fetch(`/api/profile/tickets?walletAddress=${publicKey.toString()}`)
+                
+                // Use saved signature (no need to request again)
+                const signatureHex = savedSignature
+                
+                // POST request with signature to derive internal wallet
+                const response = await fetch('/api/profile/tickets', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        walletAddress: publicKey.toString(),
+                        signature: signatureHex,
+                    }),
+                })
+                
                 const data = await response.json()
                 
                 if (data.success) {
@@ -103,7 +173,20 @@ export default function ProfilePage() {
         }
 
         loadTickets()
-    }, [connected, publicKey])
+        
+        // Also refresh tickets when page becomes visible (user returns from purchase)
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && connected && publicKey && savedSignature) {
+                loadTickets()
+            }
+        }
+        
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+        
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange)
+        }
+    }, [connected, publicKey, savedSignature]) // Depend on savedSignature instead of signMessage
 
     const formatAddress = (address: string) => {
         return `${address.slice(0, 4)}...${address.slice(-4)}`
@@ -264,7 +347,24 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-between mb-3">
                     <div>
                         <div className="text-gray-500 text-xs mb-1 flex items-center gap-1">
-                            INTERNAL WALLET BALANCE <button onClick={() => setShowValue(!showValue)} className="p-0.5 hover:bg-gray-100 rounded"><Eye className="w-3 h-3" /></button>
+                            INTERNAL WALLET BALANCE 
+                            <button 
+                                onClick={() => setShowValue(!showValue)} 
+                                className="p-0.5 hover:bg-gray-100 rounded"
+                                title={showValue ? "Hide balance" : "Show balance"}
+                            >
+                                <Eye className="w-3 h-3" />
+                            </button>
+                            {internalWalletAddress && (
+                                <button 
+                                    onClick={() => loadBalance(true)} 
+                                    disabled={isLoadingBalance}
+                                    className="p-0.5 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title="Refresh balance"
+                                >
+                                    <RefreshCw className={`w-3 h-3 ${isLoadingBalance ? 'animate-spin' : ''}`} />
+                                </button>
+                            )}
                         </div>
                         <div className="text-gray-900 font-bold">
                             {isLoadingBalance ? (

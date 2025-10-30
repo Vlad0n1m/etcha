@@ -2,94 +2,40 @@
 
 import ResaleTicketCard from '@/components/ResaleTicketCard';
 import ResaleCategoryFilter from '@/components/ResaleCategoryFilter';
-import { Search } from 'lucide-react';
+import { Search, AlertCircle } from 'lucide-react';
 import React from 'react';
 import EventCardSkeleton from '@/components/EventCardSkeleton';
 import { Button } from '@/components/ui/button';
 import MobileHeader from '@/components/MobileHeader';
 
-const mockResaleTickets = [
-    {
-        id: '1',
-        title: 'Concert: The Stars',
-        company: 'User123',
-        price: 150,
-        date: '2025-11-15',
-        location: 'Madison Square Garden',
-        ticketsAvailable: 1,
-        imageUrl: '/banner1.png',
-        category: 'Music',
-        originalPrice: 150,
-        seats: 'Section A, Row 5',
-    },
-    {
-        id: '2',
-        title: 'Tech Conference 2025',
-        company: 'TechFan456',
-        price: 180,
-        date: '2025-12-01',
-        location: 'San Francisco Convention Center',
-        ticketsAvailable: 1,
-        imageUrl: '/etcha.png',
-        category: 'Tech',
-        originalPrice: 200,
-        seats: 'VIP Lounge',
-    },
-    {
-        id: '3',
-        title: 'Sports Game: Lakers vs Warriors',
-        company: 'SportsLover789',
-        price: 150,
-        date: '2025-10-30',
-        location: 'Staples Center',
-        ticketsAvailable: 1,
-        imageUrl: '/logo.png',
-        category: 'Sports',
-        originalPrice: 100,
-        seats: 'Courtside',
-    },
-    {
-        id: '4',
-        title: 'Art Exhibition Opening',
-        company: 'ArtCollector101',
-        price: 50,
-        date: '2025-11-10',
-        location: 'Modern Art Museum',
-        ticketsAvailable: 1,
-        imageUrl: '/banner1.png',
-        category: 'Art',
-        originalPrice: 50,
-        seats: 'General Admission',
-    },
-    {
-        id: '5',
-        title: 'Music Festival Day 2',
-        company: 'FestivalGoer222',
-        price: 140,
-        date: '2025-12-05',
-        location: 'Central Park',
-        ticketsAvailable: 1,
-        imageUrl: '/etcha.png',
-        category: 'Music',
-        originalPrice: 120,
-        seats: 'Stage Front',
-    },
-    {
-        id: '6',
-        title: 'Theater Play: Hamlet',
-        company: 'TheaterBuff333',
-        price: 70,
-        date: '2025-11-20',
-        location: 'Broadway Theater',
-        ticketsAvailable: 1,
-        imageUrl: '/logo.png',
-        category: 'Theater',
-        originalPrice: 80,
-        seats: 'Orchestra Center',
-    },
-];
+interface ResaleTicket {
+    listingId: string
+    nftMintAddress: string
+    price: number // в SOL
+    originalPrice: number // в SOL
+    event: {
+        id: string
+        title: string
+        imageUrl: string
+        date: string // ISO format
+        time: string
+        fullAddress: string
+        category: string
+        organizer: {
+            name: string
+            walletAddress: string
+        } | null
+    }
+    seller: {
+        walletAddress: string
+        nickname?: string
+        organizer?: {
+            companyName: string
+        }
+    }
+}
 
-function ResaleClient({ tickets }: { tickets: typeof mockResaleTickets }) {
+function ResaleClient() {
     "use client";
 
     const [activeFilter, setActiveFilter] = React.useState('all');
@@ -97,6 +43,35 @@ function ResaleClient({ tickets }: { tickets: typeof mockResaleTickets }) {
     const [priceFilter, setPriceFilter] = React.useState('all');
     const [priceComparison, setPriceComparison] = React.useState('all');
     const [isLoading, setIsLoading] = React.useState(true);
+    const [resaleTickets, setResaleTickets] = React.useState<ResaleTicket[]>([]);
+    const [error, setError] = React.useState<string | null>(null);
+
+    // Load resale tickets from API
+    const loadResaleTickets = React.useCallback(async () => {
+        try {
+            setIsLoading(true);
+            setError(null);
+            const response = await fetch('/api/resale');
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Failed to load resale tickets');
+            }
+
+            setResaleTickets(data.listings || []);
+        } catch (err: unknown) {
+            console.error('Error loading resale tickets:', err);
+            const message = err instanceof Error ? err.message : 'Failed to load resale tickets';
+            setError(message);
+            setResaleTickets([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    React.useEffect(() => {
+        loadResaleTickets();
+    }, [loadResaleTickets]);
 
     const handleFilterChange = (filter: string) => {
         setActiveFilter(filter);
@@ -110,14 +85,20 @@ function ResaleClient({ tickets }: { tickets: typeof mockResaleTickets }) {
         setPriceComparison(comparison);
     };
 
-    React.useEffect(() => {
-        setIsLoading(true);
-        const timer = setTimeout(() => {
-            setIsLoading(false);
-        }, 800);
+    // Format date like on profile page
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString("en-US", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+        });
+    };
 
-        return () => clearTimeout(timer);
-    }, [activeFilter, searchQuery, priceFilter, priceComparison]);
+    // Format address like on ticket detail page
+    const formatAddress = (address: string) => {
+        return `${address.slice(0, 6)}...${address.slice(-6)}`;
+    };
 
     const handleResetFilters = () => {
         setSearchQuery('');
@@ -126,9 +107,37 @@ function ResaleClient({ tickets }: { tickets: typeof mockResaleTickets }) {
         setPriceComparison('all');
     };
 
-    const filteredTickets = tickets.filter(ticket =>
+    // Transform resale tickets to format expected by ResaleTicketCard
+    const transformedTickets = resaleTickets.map((ticket) => {
+        // Get seller display name
+        let sellerName = ticket.seller.walletAddress;
+        if (ticket.seller.organizer?.companyName) {
+            sellerName = ticket.seller.organizer.companyName;
+        } else if (ticket.seller.nickname) {
+            sellerName = ticket.seller.nickname;
+        } else {
+            sellerName = formatAddress(ticket.seller.walletAddress);
+        }
+
+        return {
+            id: ticket.listingId,
+            listingId: ticket.listingId,
+            title: ticket.event.title,
+            company: sellerName,
+            price: ticket.price,
+            originalPrice: ticket.originalPrice,
+            date: formatDate(ticket.event.date),
+            time: ticket.event.time,
+            imageUrl: ticket.event.imageUrl,
+            category: ticket.event.category,
+            seats: 'General Admission',
+            ticketsAvailable: 1,
+        };
+    });
+
+    const filteredTickets = transformedTickets.filter(ticket =>
         ticket.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ticket.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        ticket.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
         ticket.company.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -159,9 +168,9 @@ function ResaleClient({ tickets }: { tickets: typeof mockResaleTickets }) {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-background ">
+            <div className="min-h-screen bg-background">
                 <MobileHeader />
-                <div className="container mx-auto px-4 ">
+                <div className="container mx-auto px-4">
                     <div className="mb-8 pt-24">
                         <h1 className="text-3xl font-bold text-foreground mb-2">Ticket Resale Marketplace</h1>
                         <p className="text-muted-foreground">Discover and buy resale tickets for your favorite events. Sellers set their own prices.</p>
@@ -294,20 +303,37 @@ function ResaleClient({ tickets }: { tickets: typeof mockResaleTickets }) {
                         <ResaleTicketCard
                             key={ticket.id}
                             id={ticket.id}
+                            listingId={ticket.listingId}
                             title={ticket.title}
                             company={ticket.company}
                             price={ticket.price}
                             originalPrice={ticket.originalPrice}
                             date={ticket.date}
+                            time={ticket.time}
                             ticketsAvailable={ticket.ticketsAvailable}
                             imageUrl={ticket.imageUrl}
                             category={ticket.category}
                             seats={ticket.seats}
+                            onPurchaseSuccess={loadResaleTickets}
                         />
                     ))}
                 </div>
 
-                {!isLoading && categoryFilteredTickets.length === 0 && (
+                {error && (
+                    <div className="text-center py-12">
+                        <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+                        <p className="text-muted-foreground">{error}</p>
+                        <Button
+                            onClick={() => window.location.reload()}
+                            variant="outline"
+                            className="mt-4"
+                        >
+                            Retry
+                        </Button>
+                    </div>
+                )}
+
+                {!isLoading && !error && categoryFilteredTickets.length === 0 && (
                     <div className="text-center py-12">
                         <p className="text-muted-foreground">No resale tickets match your search or filters.</p>
                     </div>
@@ -318,5 +344,5 @@ function ResaleClient({ tickets }: { tickets: typeof mockResaleTickets }) {
 }
 
 export default function ResalePage() {
-    return <ResaleClient tickets={mockResaleTickets} />;
+    return <ResaleClient />;
 }

@@ -41,25 +41,48 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Step 1: Find or create user
+        // Validate title length (max 10 characters)
+        if (title.length > 10) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: "Event title must be 10 characters or less",
+                },
+                { status: 400 }
+            )
+        }
+
+        // Step 1: Find or create organizer
+        // Note: We use organizerWallet directly - internalWalletAddress will be derived later when user signs a message
+        // First, try to find existing user and organizer
         let user = await prisma.user.findUnique({
             where: { walletAddress: organizerWallet },
             include: { organizer: true },
         })
 
-        if (!user) {
-            // Create user if doesn't exist
-            user = await prisma.user.create({
-                data: {
-                    walletAddress: organizerWallet,
-                },
-                include: { organizer: true },
-            })
-        }
+        let organizer = user?.organizer
 
-        // Step 2: Find or create organizer
-        let organizer = user.organizer
         if (!organizer) {
+            // Need to create organizer, which requires a user
+            if (!user) {
+                // Create user with temporary internalWalletAddress placeholder
+                // This will be updated later when user actually signs a message (during mint/purchase)
+                // Using walletAddress as temporary placeholder ensures uniqueness
+                user = await prisma.user.create({
+                    data: {
+                        walletAddress: organizerWallet,
+                        internalWalletAddress: `temp_${organizerWallet}_${Date.now()}`, // Temporary placeholder
+                    },
+                    include: { organizer: true },
+                })
+            }
+
+            // Ensure user exists (should never be null here, but TypeScript needs assurance)
+            if (!user) {
+                throw new Error("Failed to create or find user")
+            }
+
+            // Create organizer for this user
             organizer = await prisma.organizer.create({
                 data: {
                     userId: user.id,

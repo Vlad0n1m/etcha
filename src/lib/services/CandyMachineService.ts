@@ -75,7 +75,7 @@ export async function createCollection(params: {
         })
 
         const signature = response.signature
-        const collectionAddress = nft.address.toString()
+        const collectionAddress = nft.address.toBase58()
 
         console.log('Collection NFT created successfully!')
         console.log('NFT Address:', collectionAddress)
@@ -276,7 +276,8 @@ export async function mintNFT(params: {
     buyerWallet: string
     quantity: number
     platformSigner?: Keypair
-    userKeypair?: Keypair // Derived keypair from signature
+    userKeypair?: Keypair // Derived keypair from signature (must match ownerAddress)
+    ownerAddress?: string // Explicit owner address from DB (should match userKeypair.publicKey)
     pricePerNFT?: number // Optional price from database (fallback if guards don't have price)
 }): Promise<{
     nftMintAddresses: string[]
@@ -293,6 +294,15 @@ export async function mintNFT(params: {
             throw new Error('User keypair is required for minting. Please provide signature.')
         }
         
+        // Verify owner address matches keypair address if provided
+        const ownerAddress = params.ownerAddress || userKeypair.publicKey.toString()
+        if (ownerAddress !== userKeypair.publicKey.toString()) {
+            throw new Error(
+                `Owner address (${ownerAddress}) doesn't match keypair address (${userKeypair.publicKey.toString()}). ` +
+                `They must match for proper minting.`
+            )
+        }
+        
         // Create Metaplex instance with derived user keypair
         const buyerMetaplex = Metaplex.make(connection)
             .use(keypairIdentity(userKeypair))
@@ -301,6 +311,7 @@ export async function mintNFT(params: {
         console.log('Candy Machine:', params.candyMachineAddress)
         console.log('Buyer wallet (Phantom):', params.buyerWallet)
         console.log('Derived wallet (for minting):', userKeypair.publicKey.toString())
+        console.log('Owner address (from DB):', ownerAddress)
 
         // Check balance of derived wallet before minting
         const derivedBalance = await connection.getBalance(userKeypair.publicKey)
@@ -402,9 +413,10 @@ export async function mintNFT(params: {
             })
 
             lastSignature = response.signature
-            nftMintAddresses.push(nft.address.toString())
+            const mintAddress = nft.address.toBase58()
+            nftMintAddresses.push(mintAddress)
 
-            console.log(`Minted NFT ${i + 1}/${params.quantity}:`, nft.address.toString())
+            console.log(`Minted NFT ${i + 1}/${params.quantity}:`, mintAddress)
         }
 
         // Calculate total paid (price already fetched above for balance check)

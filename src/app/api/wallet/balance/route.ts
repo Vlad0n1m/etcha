@@ -10,56 +10,46 @@ const network = WalletAdapterNetwork.Devnet
 const connection = new Connection(clusterApiUrl(network), 'confirmed')
 
 /**
- * GET /api/wallet/balance?walletAddress=<external_wallet>
+ * POST /api/wallet/balance
  * Get the internal wallet balance for a user
+ * Body: { walletAddress: string, signature: string (hex) }
+ * Internal wallet is always derived from signature, not stored in DB
  */
-export async function GET(request: NextRequest) {
+export async function POST(request: NextRequest) {
     try {
-        const searchParams = request.nextUrl.searchParams
-        const walletAddress = searchParams.get('walletAddress')
+        const body = await request.json()
+        const { walletAddress, signature } = body
 
-        if (!walletAddress) {
+        if (!walletAddress || !signature) {
             return NextResponse.json(
-                { success: false, message: 'walletAddress is required' },
+                { success: false, message: 'walletAddress and signature are required' },
                 { status: 400 }
             )
         }
 
-        // Find user by external wallet address
-        const user = await prisma.user.findUnique({
-            where: {
-                walletAddress: walletAddress,
-            },
-            select: {
-                internalWalletAddress: true,
-            },
-        })
-
-        if (!user || !user.internalWalletAddress) {
-            return NextResponse.json({
-                success: true,
-                balance: 0,
-                internalWalletAddress: null,
-            })
-        }
+        // Always derive internal wallet from signature (never use DB)
+        const { deriveKeypairFromSignature, getDerivationSalt } = await import('@/lib/utils/keyDerivation.server')
+        const salt = getDerivationSalt()
+        const userKeypair = deriveKeypairFromSignature(signature, walletAddress, salt)
+        const internalWalletAddress = userKeypair.publicKey.toString()
 
         // Get balance of internal wallet
         try {
-            const publicKey = new PublicKey(user.internalWalletAddress)
+            const publicKey = new PublicKey(internalWalletAddress)
             const balance = await connection.getBalance(publicKey)
             const balanceSOL = balance / LAMPORTS_PER_SOL
 
             return NextResponse.json({
                 success: true,
                 balance: balanceSOL,
-                internalWalletAddress: user.internalWalletAddress,
+                internalWalletAddress: internalWalletAddress,
             })
         } catch (error: any) {
             console.error('Error getting balance:', error)
             return NextResponse.json({
                 success: true,
                 balance: 0,
-                internalWalletAddress: user.internalWalletAddress,
+                internalWalletAddress: internalWalletAddress,
             })
         }
     } catch (error: any) {

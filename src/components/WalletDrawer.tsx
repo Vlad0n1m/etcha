@@ -131,10 +131,10 @@ const WalletDrawer: React.FC<WalletDrawerProps> = ({ children, open, onOpenChang
 
                 setIsLinking(true)
                 
-                // Create a message to sign
-                const message = new TextEncoder().encode(
-                    `Connect your wallet to Etcha\n\nWallet: ${walletKey}\nTimestamp: ${Date.now()}`
-                )
+                // Create a standardized message to sign
+                // This message must be consistent across all operations to ensure signature-derived keypair matches
+                // IMPORTANT: Must use same message as profile page ("etcha-mint-auth-v1") to get same internal wallet
+                const message = new TextEncoder().encode("etcha-mint-auth-v1")
 
                 // Request signature from wallet
                 const signature = await signMessage(message)

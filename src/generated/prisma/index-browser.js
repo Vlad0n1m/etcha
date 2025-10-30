@@ -220,6 +220,7 @@ exports.Prisma.ListingScalarFieldEnum = {
   transactionHash: 'transactionHash',
   soldTo: 'soldTo',
   soldAt: 'soldAt',
+  sellerSignature: 'sellerSignature',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };

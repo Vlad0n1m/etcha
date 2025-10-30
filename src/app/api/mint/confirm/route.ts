@@ -131,82 +131,70 @@ export async function POST(request: NextRequest) {
             platformShare,
         })
 
-        // Create order in database
-        console.log('Creating order in database...')
-        const order = await prisma.order.create({
-            data: {
-                eventId,
-                userId: user.id,
-                quantity,
-                totalPrice,
-                status: 'confirmed',
-                transactionHash: transactionSignature,
-            },
-        })
-
-        // Create ticket records
-        console.log('Creating ticket records...')
-        
-        // Check which tickets already exist to avoid duplicates
+        // Check if tickets already exist (they should be created by /api/mint endpoint)
+        console.log('Checking if tickets already exist in database...')
         const existingTickets = await prisma.ticket.findMany({
             where: {
                 nftMintAddress: {
                     in: nftMintAddresses,
                 },
             },
-            select: {
-                nftMintAddress: true,
+            include: {
+                order: true,
             },
         })
         
-        const existingAddresses = new Set(existingTickets.map(t => t.nftMintAddress))
-        const newNftAddresses = nftMintAddresses.filter(
-            (addr: string) => !existingAddresses.has(addr)
-        )
-        
-        if (existingTickets.length > 0) {
-            console.log(`Warning: ${existingTickets.length} ticket(s) already exist, skipping duplicates`)
-        }
-        
-        if (newNftAddresses.length > 0) {
-            const ticketData = newNftAddresses.map((nftMintAddress: string, index: number) => {
-                // Find the original index in nftMintAddresses array
-                const originalIndex = nftMintAddresses.indexOf(nftMintAddress)
-                return {
-                    eventId,
-                    orderId: order.id,
-                    userId: user.id,
-                    nftMintAddress,
-                    tokenId: originalIndex + 1,
-                    isValid: true,
-                    isUsed: false,
-                }
-            })
-
-            await prisma.ticket.createMany({
-                data: ticketData,
-                skipDuplicates: true, // Additional safety
-            })
+        if (existingTickets.length === nftMintAddresses.length) {
+            console.log(`All ${existingTickets.length} ticket(s) already exist in database (created by /api/mint)`)
             
-            console.log(`Created ${newNftAddresses.length} new ticket record(s)`)
-        } else {
-            console.log('All tickets already exist in database, skipping creation')
-        }
-
-        // Create payment distribution record (note: actual payment happened through Candy Guard)
-        console.log('Creating payment distribution record...')
-        await (prisma as any).paymentDistribution.create({
-            data: {
+            // Get the order from existing tickets
+            const order = existingTickets[0]?.order
+            
+            if (!order) {
+                return NextResponse.json(
+                    { success: false, message: 'Tickets exist but order not found' },
+                    { status: 500 }
+                )
+            }
+            
+            // Just verify and return success
+            return NextResponse.json({
+                success: true,
+                nftMintAddresses,
+                transactionSignature,
+                organizerPayment: {
+                    amount: organizerShare,
+                    transactionHash: transactionSignature,
+                },
+                platformFee: {
+                    amount: platformShare,
+                },
                 orderId: order.id,
-                totalAmount: totalPrice,
-                organizerShare: organizerShare,
-                platformShare: platformShare,
-                organizerWallet,
-                platformWallet: process.env.PLATFORM_WALLET_PUBLIC_KEY || 'Unknown',
-                transactionHash: transactionSignature,
-                status: 'completed',
-            },
-        })
+                message: 'NFT tickets already confirmed in database',
+            })
+        } else if (existingTickets.length > 0) {
+            console.log(`Warning: Only ${existingTickets.length} out of ${nftMintAddresses.length} tickets exist. Some tickets may be missing.`)
+        } else {
+            console.log('Warning: No tickets found in database. They should have been created by /api/mint endpoint.')
+            // Don't create tickets here - they should be created by /api/mint
+            // Return error to indicate that minting flow should use /api/mint
+            return NextResponse.json(
+                { 
+                    success: false, 
+                    message: 'Tickets not found in database. Please use /api/mint endpoint for minting.' 
+                },
+                { status: 400 }
+            )
+        }
+        
+        // If we reach here, get the order from existing tickets
+        const order = existingTickets[0]?.order
+        if (!order) {
+            return NextResponse.json(
+                { success: false, message: 'Order not found for existing tickets' },
+                { status: 500 }
+            )
+        }
 
         // Update event tickets sold
         console.log('Updating event tickets sold...')

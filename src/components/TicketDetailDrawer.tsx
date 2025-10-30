@@ -6,6 +6,7 @@ import { Drawer } from "vaul"
 import { DrawerTitle } from "@/components/ui/drawer"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import { useWallet } from "@solana/wallet-adapter-react"
 
 interface TicketDetailDrawerProps {
     open: boolean
@@ -26,6 +27,7 @@ export default function TicketDetailDrawer({
     walletAddress,
     onSuccess,
 }: TicketDetailDrawerProps) {
+    const { signMessage } = useWallet()
     const [price, setPrice] = useState<string>("")
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -35,6 +37,11 @@ export default function TicketDetailDrawer({
         
         if (!walletAddress) {
             setError("Please connect your wallet first")
+            return
+        }
+
+        if (!signMessage) {
+            setError("Your wallet does not support message signing. Please use a different wallet.")
             return
         }
 
@@ -48,6 +55,16 @@ export default function TicketDetailDrawer({
         setError(null)
 
         try {
+            // Get seller signature for future NFT transfers
+            // This allows instant purchase without seller being online
+            // Use standardized message to ensure signature-derived keypair matches internalWalletAddress
+            // IMPORTANT: Must use same message as profile page ("etcha-mint-auth-v1") to get same internal wallet
+            const message = new TextEncoder().encode("etcha-mint-auth-v1")
+            const signature = await signMessage(message)
+            const signatureHex = Array.from(signature)
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join('')
+
             const response = await fetch(`/api/profile/tickets/${ticketId}/resale`, {
                 method: "POST",
                 headers: {
@@ -56,6 +73,7 @@ export default function TicketDetailDrawer({
                 body: JSON.stringify({
                     price: priceValue,
                     walletAddress: walletAddress,
+                    signature: signatureHex,
                 }),
             })
 

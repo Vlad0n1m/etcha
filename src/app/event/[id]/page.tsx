@@ -100,7 +100,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     // useEffect(() => {
     //     if (!event?.candyMachineAddress) return;
     //     mint(event.candyMachineAddress)
-        
+
     // }, [event])
 
 
@@ -139,40 +139,14 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             }
 
             try {
-                // Step 1: First check if user already has an internal wallet address in database
-                const balanceResponse = await fetch(`/api/wallet/balance?walletAddress=${publicKey.toBase58()}`)
-                const balanceData = await balanceResponse.json()
-                
-                if (balanceData.success && balanceData.internalWalletAddress) {
-                    // User already has an internal wallet - use it
-                    setDerivedAddress(balanceData.internalWalletAddress)
-                    console.log('Using existing internal wallet from database:', balanceData.internalWalletAddress)
-                    
-                    // Still need to get signature for minting, but we'll use the existing address
-                    if (signMessage || (wallet && wallet.adapter && wallet.adapter.signMessage)) {
-                        const message = new TextEncoder().encode("etcha-mint-auth-v1")
-                        let signature: Uint8Array
-                        if (signMessage) {
-                            signature = await signMessage(message)
-                        } else if (wallet?.adapter?.signMessage) {
-                            signature = await wallet.adapter.signMessage(message)
-                        } else {
-                            console.warn("Cannot get signature: wallet does not support message signing")
-                            return
-                        }
-                        setSignature(signature) // Save signature for minting
-                    }
-                    return
-                }
-
-                // Step 2: User doesn't have internal wallet yet - derive new one from signature
+                // Always derive address from signature (never use DB)
                 if (!signMessage && (!wallet || !wallet.adapter || !wallet.adapter.signMessage)) {
                     console.warn("Cannot derive address: wallet does not support message signing")
                     return
                 }
 
                 const message = new TextEncoder().encode("etcha-mint-auth-v1")
-                
+
                 let signature: Uint8Array
                 if (signMessage) {
                     signature = await signMessage(message)
@@ -183,7 +157,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     return
                 }
 
-                // Step 3: Send signature to server to derive address (salt stays secret on server)
+                // Send signature to server to derive address (salt stays secret on server)
                 const signatureHex = Array.from(signature)
                     .map(b => b.toString(16).padStart(2, '0'))
                     .join('')
@@ -202,7 +176,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 if (data.success) {
                     setDerivedAddress(data.derivedPublicKey)
                     setSignature(signature) // Save signature for later use
-                    console.log('Derived new address from server:', data.derivedPublicKey)
+                    console.log('Derived internal wallet address from Phantom signature:', data.derivedPublicKey)
                 } else {
                     throw new Error(data.message || 'Failed to derive address')
                 }
@@ -306,7 +280,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             }
 
             console.log('Using saved signature for minting...')
-            
+
             setMintStatus("minting")
             setMintProgress(`Minting ${ticketQuantity} ticket${ticketQuantity > 1 ? 's' : ''}... Please approve the transaction in your wallet.`)
 
@@ -414,7 +388,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             </div>
 
             <div className="relative h-56 w-full">
-                <Image src={event.imageUrl || "/placeholder.svg"} alt={event.title} fill className="object-cover" />
+                <Image src={event.imageUrl || "/no-ticket-svgrepo-com.svg"} alt={event.title} fill className="object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
 
                 <div className="absolute top-4 left-4">

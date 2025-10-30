@@ -161,6 +161,7 @@ model Listing {
     transactionHash     String?
     soldTo              String? // Buyer wallet address
     soldAt              DateTime?
+    sellerSignature     String? // Seller signature for deriving internal wallet keypair
     createdAt           DateTime  @default(now())
     updatedAt           DateTime  @updatedAt
 

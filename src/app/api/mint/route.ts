@@ -115,68 +115,44 @@ export async function POST(request: NextRequest) {
         console.log(`Available tickets: ${candyMachineData.itemsRemaining}`)
         console.log(`Candy Machine is fully loaded and ready for minting`)
 
-        // Step 2: Get or create user first to check existing internal wallet
-        console.log('Step 2: Getting/creating user...')
+        // Step 2: Derive internal wallet address first (always derive from signature)
+        console.log('Step 2: Deriving user keypair from signature...')
+        const { deriveKeypairFromSignature, getDerivationSalt } = await import('@/lib/utils/keyDerivation.server')
+
+        const salt = getDerivationSalt()
+        const userKeypair = deriveKeypairFromSignature(signature, buyerWallet, salt)
+        const internalWalletAddress = userKeypair.publicKey.toBase58()
+
+        console.log('User keypair derived from Phantom signature:', internalWalletAddress)
+
+        // Step 3: Get or create user (store internal wallet address in DB for ticket lookup)
+        console.log('Step 3: Getting/creating user...')
         let user = await prisma.user.findUnique({
             where: { walletAddress: buyerWallet },
         })
 
-        let userKeypair: any
-        let internalWalletAddress: string
-
-        // Step 3: Derive user keypair from signature
-        console.log('Step 3: Deriving user keypair from signature...')
-        const { deriveKeypairFromSignature, getDerivationSalt } = await import('@/lib/utils/keyDerivation.server')
-        
-        const salt = getDerivationSalt()
-        const derivedKeypair = deriveKeypairFromSignature(signature, buyerWallet, salt)
-        const derivedAddress = derivedKeypair.publicKey.toString()
-        
-        console.log('User keypair derived:', derivedAddress)
-
         if (!user) {
-            // Create new user with derived address
-            internalWalletAddress = derivedAddress
+            // Create new user WITH internal wallet address stored in DB
             user = await prisma.user.create({
                 data: {
                     walletAddress: buyerWallet,
                     internalWalletAddress: internalWalletAddress,
                 },
             })
-            userKeypair = derivedKeypair
-            console.log('New user created with internal wallet:', internalWalletAddress)
-        } else if (user.internalWalletAddress) {
-            // User already exists with internal wallet - use existing one
-            internalWalletAddress = user.internalWalletAddress
-            
-            // Re-derive keypair from signature to ensure we have the keypair for minting
-            // Note: This assumes the signature is consistent (same message signed each time)
-            // If derived address doesn't match existing one, update it
-            if (derivedAddress !== internalWalletAddress) {
-                console.warn(`Derived address (${derivedAddress}) doesn't match existing (${internalWalletAddress}). Updating...`)
-                internalWalletAddress = derivedAddress
+            console.log('New user created with internal wallet address:', internalWalletAddress)
+        } else {
+            // Update existing user's internal wallet address if it's missing or different
+            if (!user.internalWalletAddress || user.internalWalletAddress !== internalWalletAddress) {
                 user = await prisma.user.update({
                     where: { id: user.id },
                     data: {
-                        internalWalletAddress: derivedAddress,
+                        internalWalletAddress: internalWalletAddress,
                     },
                 })
+                console.log('Updated user internal wallet address:', internalWalletAddress)
             }
-            userKeypair = derivedKeypair
-            console.log('Using existing internal wallet:', internalWalletAddress)
-        } else {
-            // User exists but has no internal wallet - create one
-            internalWalletAddress = derivedAddress
-            user = await prisma.user.update({
-                where: { id: user.id },
-                data: {
-                    internalWalletAddress: derivedAddress,
-                },
-            })
-            userKeypair = derivedKeypair
-            console.log('Updated user with internal wallet:', internalWalletAddress)
         }
-        
+
         // Temporary: Show seed in console (will be removed later)
         const seedHex = Buffer.from(userKeypair.secretKey.slice(0, 32)).toString('hex')
         console.log('Derived seed (hex):', seedHex)
@@ -194,7 +170,8 @@ export async function POST(request: NextRequest) {
             buyerWallet,
             quantity,
             platformSigner,
-            userKeypair, // Pass derived keypair
+            userKeypair, // Pass derived keypair (matches internalWalletAddress from DB)
+            ownerAddress: internalWalletAddress, // Pass derived internal wallet address as owner
             pricePerNFT: event.price, // Pass price from database as fallback
         })
 
