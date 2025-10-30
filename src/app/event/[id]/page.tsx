@@ -92,8 +92,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 throw new Error(errorData.error || 'Failed to fetch event')
             }
 
-            const eventData = await response.json()
-            setEvent(eventData)
+            const responseData = await response.json()
+            setEvent(responseData.event)
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to fetch event')
         } finally {
