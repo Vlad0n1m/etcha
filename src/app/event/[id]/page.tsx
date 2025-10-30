@@ -484,7 +484,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     <div className="bg-muted/50 rounded-xl p-4 mb-4">
                         <div className="flex items-baseline gap-2 mb-1">
                             <span className="text-3xl font-bold text-foreground">{formatPrice(event.price)}</span>
-                            <span className="text-sm font-medium text-muted-foreground">USDC</span>
+                            <span className="text-sm font-medium text-muted-foreground">SOL</span>
                         </div>
                         <div className="text-xs text-muted-foreground">per ticket</div>
                     </div>

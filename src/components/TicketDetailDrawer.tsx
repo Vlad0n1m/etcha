@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { X, Loader2, AlertCircle } from "lucide-react"
 import { Drawer } from "vaul"
+import { DrawerTitle } from "@/components/ui/drawer"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
@@ -99,7 +100,7 @@ export default function TicketDetailDrawer({
                         {/* Header */}
                         <div className="flex items-start justify-between mb-6">
                             <div>
-                                <h2 className="text-xl font-bold text-foreground">List Ticket for Resale</h2>
+                                <DrawerTitle className="text-xl font-bold text-foreground">List Ticket for Resale</DrawerTitle>
                                 <p className="text-sm text-muted-foreground mt-1">{eventTitle}</p>
                             </div>
                             <button
