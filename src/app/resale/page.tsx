@@ -147,15 +147,18 @@ function ResaleClient() {
     );
 
     const categoryFiltered = activeFilter !== 'all'
-        ? filteredTickets.filter(listing => listing.event.category.value.toLowerCase() === activeFilter.toLowerCase())
+        ? filteredTickets.filter(listing => listing.category.toLowerCase() === activeFilter.toLowerCase())
         : filteredTickets;
 
     const comparisonFiltered = priceComparison !== 'all'
         ? categoryFiltered.filter((listing) => {
-            if (priceComparison === 'cheaper') return listing.priceComparison === 'cheaper';
-            if (priceComparison === 'more') return listing.priceComparison === 'higher';
-            if (priceComparison === 'same') return listing.priceComparison === 'same';
-            return false;
+            const cmp = listing.price === listing.originalPrice
+                ? 'same'
+                : (listing.price < listing.originalPrice ? 'cheaper' : 'more');
+            if (priceComparison === 'cheaper') return cmp === 'cheaper';
+            if (priceComparison === 'more') return cmp === 'more';
+            if (priceComparison === 'same') return cmp === 'same';
+            return true;
         })
         : categoryFiltered;
 
@@ -308,7 +311,7 @@ function ResaleClient() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                    {categoryFilteredTickets.map((listing) => (
+                    {categoryFilteredTickets.map((ticket) => (
                         <ResaleTicketCard
                             key={ticket.id}
                             id={ticket.id}

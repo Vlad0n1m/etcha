@@ -3,14 +3,12 @@
 import { useState, use, useEffect, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { ChevronLeft, Calendar, MapPin, Clock, Plus, Minus, Share2, Loader2, Copy, Check } from "lucide-react"
-import { useWallet, useConnection } from "@solana/wallet-adapter-react"
+import { useWallet } from "@solana/wallet-adapter-react"
 import WalletDrawer from "@/components/WalletDrawer"
 import CollectionStatus from "@/components/CollectionStatus"
 import MintProgress, { MintStatus } from "@/components/MintProgress"
 import MintResultModal from "@/components/MintResultModal"
-import { Transaction, VersionedTransaction } from "@solana/web3.js"
 
 
 interface Event {
@@ -67,17 +65,15 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     const [isWalletDrawerOpen, setIsWalletDrawerOpen] = useState(false)
     const [candyMachineData, setCandyMachineData] = useState<CandyMachineData | null>(null)
     const [isMinting, setIsMinting] = useState(false)
-    const [isPurchasing, setIsPurchasing] = useState(false)
-    const [mintStatus] = useState<MintStatus>("preparing")
-    const [mintProgress] = useState<string>("")
+    const [mintStatus, setMintStatus] = useState<MintStatus>("preparing")
+    const [mintProgress, setMintProgress] = useState<string>("")
     const [mintResult, setMintResult] = useState<EventMintResult | null>(null)
     const [showMintModal, setShowMintModal] = useState(false)
     const [derivedAddress, setDerivedAddress] = useState<string | null>(null)
+    const [signature, setSignature] = useState<Uint8Array | null>(null)
     const [copiedAddress, setCopiedAddress] = useState(false)
 
-    const { connected, publicKey, signMessage, sendTransaction, wallet } = useWallet()
-    const { connection } = useConnection()
-    const router = useRouter()
+    const { connected, publicKey, signTransaction, wallet, signMessage } = useWallet()
     const resolvedParams = use(params)
 
     const fetchEvent = useCallback(async () => {
@@ -148,175 +144,115 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     }
 
     const handleBuyClick = async () => {
-        // Prevent double-clicks and concurrent purchases
-        if (isPurchasing) {
-            console.log('⚠️ Purchase already in progress, ignoring click')
-            return
-        }
-
-        if (!connected) {
+        if (!connected || !publicKey || !wallet || !signTransaction) {
             setIsWalletDrawerOpen(true)
             return
         }
 
-        if (!event || !publicKey || !sendTransaction) {
-            setError('Unable to process purchase')
+        if (!event.candyMachineAddress) {
+            alert("This event does not have an active NFT collection")
             return
         }
 
-        setIsPurchasing(true)
-        setError('')
+        setIsMinting(true)
+        setMintStatus("preparing")
+        setMintProgress("Requesting signature...")
 
         try {
-            // Step 1: Get authentication token
-            const message = `Purchase ${ticketQuantity} tickets for ${event.title} at ${new Date().toISOString()}`
-            if (!signMessage) {
-                throw new Error('Wallet not properly connected')
-            }
-            const signature = await signMessage(new TextEncoder().encode(message))
-
-            const authResponse = await fetch('/api/auth/verify', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    walletAddress: publicKey.toString(),
-                    signature: Buffer.from(signature).toString('base64'),
-                    message
-                })
-            })
-
-            if (!authResponse.ok) {
-                throw new Error('Authentication failed')
+            // Step 1: Use saved signature (already requested when wallet connected)
+            if (!signature) {
+                throw new Error('Please wait for wallet address to be generated. Sign the message when prompted.')
             }
 
-            const { token } = await authResponse.json()
+            console.log('Using saved signature for minting...')
 
-            // Step 2: Prepare purchase transaction
-            console.log('📝 Preparing purchase transaction...')
-            const prepareResponse = await fetch(`/api/events/${resolvedParams.id}/prepare-purchase`, {
+            setMintStatus("minting")
+            setMintProgress(`Minting ${ticketQuantity} ticket${ticketQuantity > 1 ? 's' : ''}... Please approve the transaction in your wallet.`)
+
+            console.log('Starting mint via API route...')
+
+            // Step 2: Send signature to server for minting
+            // Convert signature to hex string for transmission
+            const signatureHex = Array.from(signature)
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join('')
+
+            // Use API route directly to avoid bundling Metaplex on client
+            const mintResponse = await fetch('/api/mint', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    eventId: event.id,
+                    candyMachineAddress: event.candyMachineAddress,
+                    buyerWallet: publicKey.toBase58(),
                     quantity: ticketQuantity,
-                    walletAddress: publicKey.toString()
-                })
+                    signature: signatureHex, // Send signature for key derivation
+                }),
             })
 
-            if (!prepareResponse.ok) {
-                const errorData = await prepareResponse.json()
-                throw new Error(errorData.error || 'Failed to prepare purchase')
+            const mintResult = await mintResponse.json()
+
+            if (!mintResult.success) {
+                throw new Error(mintResult.message || 'Failed to mint NFT tickets')
             }
 
-            const { transaction: base64Transaction, totalPrice } = await prepareResponse.json()
+            const nftMintAddresses = mintResult.nftMintAddresses || []
+            const txSignature = mintResult.transactionSignature || ''
 
-            // Step 3: Deserialize and send transaction
-            console.log('💳 Processing transaction...')
-            console.log(`💰 Total cost: ${totalPrice} SOL`)
-            console.log('🔏 Transaction is partially signed by backend (NFT mint + collection authority)')
-            console.log('✍️ User will sign and pay through wallet')
+            console.log('Mint successful!', { nftMintAddresses, txSignature })
 
-            const transactionBuffer = Buffer.from(base64Transaction, 'base64')
-            let transaction: Transaction | VersionedTransaction
+            // Step 3: Save to database
+            setMintProgress("Saving ticket information...")
 
-            // Umi framework creates versioned transactions
-            try {
-                transaction = VersionedTransaction.deserialize(transactionBuffer)
-                console.log('🔍 Versioned transaction detected')
-                console.log('🔍 Backend signatures:', transaction.signatures.length)
-            } catch (error) {
-                console.error('❌ Failed to deserialize as versioned transaction:', error)
-                // If it fails, try as legacy transaction
-                try {
-                    transaction = Transaction.from(transactionBuffer)
-                    console.log('🔍 Legacy transaction detected')
-                } catch (legacyError) {
-                    console.error('❌ Failed to deserialize as legacy transaction:', legacyError)
-                    throw new Error('Failed to deserialize transaction. Invalid transaction format.')
-                }
-            }
-
-            console.log(`✍️ User wallet: ${publicKey?.toBase58()}`)
-            console.log('📤 Sending transaction (wallet will sign and submit)...')
-
-            // Use sendTransaction which handles both signing and sending
-            // It will work with partially-signed transactions
-            let transactionSignature: string
-            try {
-                transactionSignature = await sendTransaction(transaction, connection, {
-                    skipPreflight: false,
-                    preflightCommitment: 'confirmed',
-                })
-                console.log('✅ Transaction sent:', transactionSignature)
-            } catch (sendError: unknown) {
-                console.error('❌ Failed to send transaction:', sendError)
-                const errorMessage = sendError instanceof Error ? sendError.message : String(sendError)
-
-                // Better error messages
-                if (errorMessage.includes('User rejected') || errorMessage.includes('rejected') || errorMessage.includes('cancelled')) {
-                    throw new Error('Transaction cancelled by user')
-                } else if (errorMessage.includes('insufficient funds') || errorMessage.includes('Insufficient')) {
-                    throw new Error('Insufficient SOL balance for purchase')
-                } else if (errorMessage.includes('Unexpected error')) {
-                    throw new Error('Wallet error. Please try refreshing the page or using a different wallet.')
-                } else {
-                    throw new Error(`Transaction failed: ${errorMessage}`)
-                }
-            }
-
-            console.log('⏳ Waiting for confirmation...')
-
-            // Step 4: Wait for confirmation
-            const confirmation = await connection.confirmTransaction(transactionSignature, 'confirmed')
-
-            if (confirmation.value.err) {
-                throw new Error('Transaction failed on blockchain')
-            }
-
-            console.log('✅ Transaction confirmed on blockchain')
-
-            // Step 5: Confirm purchase on backend
-            console.log('📝 Recording purchase in database...')
-            const confirmResponse = await fetch(`/api/events/${resolvedParams.id}/confirm-purchase`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
+            const response = await fetch("/api/mint/confirm", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    transactionSignature,
-                    walletAddress: publicKey.toString(),
-                    quantity: ticketQuantity
-                })
+                    eventId: event.id,
+                    candyMachineAddress: event.candyMachineAddress,
+                    buyerWallet: publicKey.toBase58(),
+                    quantity: ticketQuantity,
+                    nftMintAddresses,
+                    transactionSignature: txSignature,
+                }),
             })
 
-            if (!confirmResponse.ok) {
-                const errorData = await confirmResponse.json()
-                throw new Error(errorData.error || 'Failed to confirm purchase')
+            const result = await response.json()
+
+            if (result.success) {
+                setMintStatus("complete")
+                setMintProgress("Minted successfully!")
+                setMintResult({
+                    ...result,
+                    nftMintAddresses,
+                    transactionSignature: txSignature,
+                })
+                setShowMintModal(true)
+
+                // Refresh Candy Machine data
+                // Note: Candy Machine data refresh handled by CollectionStatus component
+            } else {
+                setMintStatus("error")
+                setMintProgress(result.message || "Failed to save ticket information")
+                setTimeout(() => setIsMinting(false), 3000)
+            }
+        } catch (error: unknown) {
+            console.error("Mint error:", error)
+            setMintStatus("error")
+            let errorMessage = "Failed to mint NFT tickets"
+
+            if (error instanceof Error) {
+                errorMessage = error.message
+                // Handle specific error cases
+                if (errorMessage.includes('User rejected')) {
+                    errorMessage = "Transaction cancelled by user"
+                } else if (errorMessage.includes('insufficient funds')) {
+                    errorMessage = "Insufficient SOL balance"
+                }
             }
 
-            const confirmData = await confirmResponse.json()
-            console.log('🎉 Purchase confirmed!', confirmData)
-
-            // Update event data to reflect new ticket count
-            setEvent((prev: Event | null) => {
-                if (!prev) return null
-                return {
-                    ...prev,
-                    ticketsAvailable: prev.ticketsAvailable - ticketQuantity
-                }
-            })
-
-            // Redirect to profile page
-            router.push('/profile')
-        } catch (err) {
-            console.error('❌ Purchase error:', err)
-            setError(err instanceof Error ? err.message : 'Purchase failed')
-        } finally {
-            setIsPurchasing(false)
+            setMintProgress(errorMessage)
+            setTimeout(() => setIsMinting(false), 3000)
         }
     }
 
@@ -326,6 +262,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         const deriveAddressFromSignature = async () => {
             if (!publicKey || !connected) {
                 setDerivedAddress(null)
+                setSignature(null)
                 return
             }
 
@@ -339,6 +276,9 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 const message = new TextEncoder().encode("etcha-mint-auth-v1")
 
                 const signature: Uint8Array = await signMessage(message)
+
+                // Save signature for later use in minting
+                setSignature(signature)
 
                 // Send signature to server to derive address (salt stays secret on server)
                 const signatureHex = Array.from(signature)
@@ -366,6 +306,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 console.error("Failed to derive address from signature:", err)
                 // Don't show error to user, just don't show address
                 setDerivedAddress(null)
+                setSignature(null)
             }
         }
 
@@ -566,10 +507,10 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
 
                     <button
                         onClick={handleBuyClick}
-                        disabled={isMinting || isPurchasing}
+                        disabled={isMinting}
                         className="w-full bg-primary text-primary-foreground font-semibold py-3.5 rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isMinting ? "Minting..." : isPurchasing ? 'Processing...' : event.price === 0 ? 'Get Ticket' : `Buy for ${formatPrice(totalPrice)} SOL`}
+                        {isMinting ? "Minting..." : event.price === 0 ? 'Get Ticket' : `Buy for ${formatPrice(totalPrice)} SOL`}
                     </button>
                 </div>
 
@@ -636,6 +577,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     setShowMintModal(false)
                     setIsMinting(false)
                     setMintResult(null)
+                    setMintStatus('preparing')
+                    setMintProgress('')
                 }}
                 result={mintResult}
             />

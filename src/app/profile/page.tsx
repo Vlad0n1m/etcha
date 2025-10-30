@@ -44,7 +44,6 @@ export default function ProfilePage() {
     const [tickets, setTickets] = useState<Ticket[]>([])
     const [isLoadingTickets, setIsLoadingTickets] = useState(false)
     const [savedSignature, setSavedSignature] = useState<string | null>(null) // Store signature to avoid repeated requests
-    const [isListingModalOpen, setIsListingModalOpen] = useState(false)
 
     // Function to load balance - can be called manually or on mount
     const loadBalance = async (useSavedSignature = false) => {
@@ -102,10 +101,10 @@ export default function ProfilePage() {
                 setInternalWalletBalance(0)
                 setInternalWalletAddress(null)
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error loading balance:', error)
             // Don't clear on user rejection - just log
-            if (error?.message?.includes('User rejected') || error?.message?.includes('cancelled')) {
+            if (error instanceof Error && (error.message.includes('User rejected') || error.message.includes('cancelled'))) {
                 console.log('User rejected signature request')
                 // Keep previous values or show message
             } else {
@@ -265,14 +264,11 @@ export default function ProfilePage() {
     }
 
     const ownedTickets = tickets.filter(ticket => ["bought", "on_resale", "nft"].includes(ticket.status))
-    const totalValue = ownedTickets.reduce((sum, ticket) => sum + ticket.price, 0)
     const totalTickets = ownedTickets.length
 
     const filteredTickets = tickets.filter(ticket => {
         if (activeTab === "bought") return ticket.status === "bought"
-        if (activeTab === "on_resale") return ticket.status === "on_resale"
-        if (activeTab === "passed") return ticket.status === "passed"
-        if (activeTab === "nft") return ticket.status === "nft"
+        if (activeTab === "used") return ticket.status === "passed"
         return true
     })
 
@@ -492,23 +488,17 @@ export default function ProfilePage() {
                                         href={`/profile/ticket/${ticket.id}`}
                                         className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-md transition-all duration-200 shadow-sm flex flex-col cursor-pointer"
                                     >
-                                        <div className="aspect-square bg-gray-50 relative shrink-0">
-                                            {ticket.image ? (
-                                                <Image
-                                                    src={ticket.image}
-                                                    alt={ticket.name}
-                                                    fill
-                                                    className="object-cover"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 text-white font-bold text-2xl">
-                                                    {ticket.symbol || 'NFT'}
-                                                </div>
-                                            )}
+                                        <div className="aspect-square bg-gray-50 relative flex-shrink-0">
+                                            <Image
+                                                src={ticket.eventImage || "/placeholder.svg"}
+                                                alt={ticket.eventTitle}
+                                                fill
+                                                className="object-cover"
+                                            />
                                         </div>
                                         <div className="flex-1 flex flex-col p-3 justify-between">
                                             <div className="mb-auto">
-                                                <div className="text-gray-900 text-sm font-semibold line-clamp-2">{ticket.name}</div>
+                                                <div className="text-gray-900 text-sm font-semibold line-clamp-2">{ticket.eventTitle}</div>
                                             </div>
                                             <div className="space-y-1">
                                                 <div className="flex items-center justify-between">
@@ -516,9 +506,8 @@ export default function ProfilePage() {
                                                     <span className="text-gray-600 text-xs font-medium">{ticket.price.toFixed(4)} SOL</span>
                                                 </div>
                                                 <div className="flex items-center gap-1">
-                                                    <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-600">
-                                                        Owned
-                                                    </span>
+                                                    {isPositive ? <TrendingUp className="w-3 h-3 text-green-600" /> : <TrendingDown className="w-3 h-3 text-red-600" />}
+                                                    <span className={`text-xs font-medium ${isPositive ? "text-green-600" : "text-red-600"}`}>{priceChange.toFixed(1)}%</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -537,11 +526,7 @@ export default function ProfilePage() {
                                     className="w-64 h-48 object-contain opacity-50"
                                 />
                             </div>
-                            <h3 className="text-gray-900 text-xl font-bold mb-2">No NFT tickets found</h3>
-                            <p className="text-gray-600 mb-4 text-sm text-center px-4">Purchase event tickets to see them here as NFTs in your wallet</p>
-                            <Link href="/" className="text-blue-600 hover:text-blue-700 font-medium">
-                                Browse Events
-                            </Link>
+                            <h3 className="text-gray-900 text-xl font-bold mb-2">No {activeTab} tickets yet</h3>
                         </div>
                     )}
                 </div>
@@ -549,14 +534,7 @@ export default function ProfilePage() {
 
             <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 p-3">
                 <div className="flex items-center gap-2">
-                    <Link href="/resale/submit/1" className="flex-1">
-                        <Button
-                            disabled={tickets.length === 0}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm"
-                        >
-                            List items
-                        </Button>
-                    </Link>
+                    <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm">List items</Button>
                     <Button variant="outline" className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 bg-white text-sm">
                         Accept offers
                     </Button>

@@ -531,7 +531,7 @@ export async function distributePayment(params: {
         console.log(`Distributing payment: ${params.totalAmount} SOL`)
         console.log(`  Organizer (97.5%): ${organizerShareLamports / LAMPORTS_PER_SOL} SOL`)
         console.log(`  Platform (2.5%): ${platformShareLamports / LAMPORTS_PER_SOL} SOL`)
-
+        
         // Simple transfer - in production, this should be more sophisticated
         // This is a placeholder - actual implementation depends on how payments are handled
         // TODO: Implement actual SOL transfer using Metaplex or web3.js

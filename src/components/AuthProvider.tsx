@@ -33,8 +33,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setError(null)
 
         try {
-            // Create auth message and get signature
-            const message = `Authenticate at ${new Date().toISOString()}`
+            // Create auth message and get signature (constant message, no timestamp)
+            const message = 'etcha-auth-v1'
             const messageBytes = new TextEncoder().encode(message)
             const signature = await signMessage(messageBytes)
 
