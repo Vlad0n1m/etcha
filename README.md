@@ -1,259 +1,155 @@
-# Etcha - Decentralized Event Ticketing Platform
+<div align="center">
 
-## Overview
+# Etcha — secure blockchain-based ticket resale platform
 
-Etcha is a modern web application built with Next.js, designed as a decentralized event ticketing and resale marketplace. It leverages Solana blockchain for wallet integration, allowing users to buy, sell, and manage event tickets securely. The platform features event discovery, category-based filtering, ticket resale with dynamic pricing, and a mobile-responsive UI.
+![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?logo=prisma)
+![Solana](https://img.shields.io/badge/Solana-Devnet-14F195?logo=solana&logoColor=black)
+![Vercel](https://img.shields.io/badge/Deploy%20on-Vercel-000000?logo=vercel)
 
-Key functionalities include:
-- Browsing upcoming events categorized by topics like Blockchain, AI/ML, Web3, Marketing, etc.
-- Ticket resale marketplace where users can list and purchase secondary market tickets.
-- Solana wallet connection for secure transactions (currently set to Devnet).
-- Responsive design with mobile-first components like drawers and carousels.
+<br/>
 
-The project was bootstrapped with Create Next App and enhanced with UI components from shadcn/ui, Solana wallet adapters, and custom event/ticket management logic using mock data.
+<img src="./public/etcha.png" alt="Etcha" width="640" />
 
-## Tech Stack
+</div>
 
-- **Framework**: Next.js 15.5.6 (App Router, TypeScript)
-- **UI Library**: React 19.1.0, Tailwind CSS 4, shadcn/ui components (Button, Card, Drawer, Input, etc.)
-- **Styling**: Tailwind CSS with custom animations (framer-motion), class-variance-authority (CVA) for variants
-- **Blockchain Integration**: @solana/web3.js, @solana/wallet-adapter-react (Phantom, Solflare, Torus wallets)
-- **Other Dependencies**:
-  - Embla Carousel for banner carousels
-  - Lucide React for icons
-  - Vaul for drawers
-  - Math.js (unused in current implementation)
-- **Dev Tools**: ESLint 9, TypeScript 5, PostCSS
+### What is it
+Etcha is a mobile first web platform for primary and secondary ticket sales powered by Solana. Users connect crypto wallets, create event collections, mint NFT tickets, buy/sell them on a marketplace, and manage ownership securely and transparently.
 
-## Project Structure
+### Key features
+- 🪪 NFT tickets on Solana: minting, holding, and ownership verification
+- 💱 Resale marketplace: listing, purchasing, and price comparison vs original
+- 👛 Wallet connection: SOLANA SEEKER, Phantom, Solflare and others via wallet adapter
 
-```
-etcha/
-├── components.json          # shadcn/ui configuration
-├── eslint.config.mjs       # ESLint configuration
-├── next.config.ts          # Next.js configuration
-├── package.json            # Dependencies and scripts
-├── postcss.config.mjs      # PostCSS config for Tailwind
-├── public/                 # Static assets (logos, banners, SVGs)
-├── README.md               # This file
-├── src/
-│   ├── app/                # App Router pages and layouts
-│   │   ├── event/[id]/     # Dynamic event detail page
-│   │   │   └── page.tsx
-│   │   ├── globals.css     # Global styles (Tailwind imports, wallet adapter styles)
-│   │   ├── layout.tsx      # Root layout with fonts, WalletProvider, NavigationProvider
-│   │   ├── page.tsx        # Home page: Event listing with filters and carousel
-│   │   ├── profile/        # User profile page (basic/placeholder)
-│   │   │   └── page.tsx
-│   │   ├── resale/         # Resale marketplace page
-│   │   │   └── page.tsx
-│   │   └── tickets/        # Tickets page (empty/not implemented)
-│   ├── components/         # Reusable React components
-│   │   ├── BannerCarousel.tsx  # Rotating banner carousel
-│   │   ├── BottomNav.tsx       # Bottom navigation (mobile)
-│   │   ├── EventCard.tsx       # Event card display
-│   │   ├── EventCardSkeleton.tsx # Loading skeleton for events
-│   │   ├── EventFilters.tsx     # Category filters for events
-│   │   ├── JoinDrawer.tsx       # Join community drawer
-│   │   ├── MobileHeader.tsx     # Mobile-specific header
-│   │   ├── NavigationProvider.tsx # Navigation context provider
-│   │   ├── PageTransition.tsx   # Page transition animations
-│   │   ├── ResaleCategoryFilter.tsx # Filters for resale page
-│   │   ├── ResaleTicketCard.tsx # Resale ticket card
-│   │   ├── TicketCard.tsx       # Standard ticket card
-│   │   ├── ui/                  # shadcn/ui components
-│   │   │   ├── button.tsx
-│   │   │   ├── card.tsx
-│   │   │   ├── carousel.tsx
-│   │   │   ├── drawer.tsx
-│   │   │   └── input.tsx
-│   │   ├── WalletDrawer.tsx     # Wallet connection drawer
-│   │   └── WalletProvider.tsx   # Solana wallet context provider
-└── lib/
-    └── utils.ts                # Utility functions (e.g., cn for class merging)
-```
+---
 
-## Key Features
+## Tech stack
+- Next.js 15 (App Router, React 19, TypeScript)
+- Prisma + PostgreSQL (SQLite for local development only)
+- Solana / Metaplex (UMI, Candy Machine, Auction House)
+- Tailwind CSS 4, shadcn/ui, framer‑motion
+- Cloudinary for media uploads (images, HEIC → PNG)
 
-### Home Page (/app/page.tsx)
-- **Banner Carousel**: Rotating promotional banners for sponsorships and wallet connection.
-- **Event Listing**: Displays mock events grouped by date (Today/Tomorrow/Weekday). Supports filtering by category (All, Blockchain, AI/ML, Web3, etc.).
-- **Loading States**: Skeleton cards during filter changes.
-- **Empty States**: Handles no events found gracefully.
-- Uses test data for events with details like title, price (in some unit, e.g., $ or tokens), date/time, location, organizer.
+Full dependency list is in `package.json`.
 
-### Resale Marketplace (/app/resale/page.tsx)
-- **Ticket Search and Filters**: Search by event/venue/seller, category filters (Music, Tech, Sports, Art, etc.), price sorting (low-high/high-low), resale price comparison (cheaper/more expensive/same as original).
-- **Resale Tickets**: Displays secondary market tickets with seller info, original vs. resale price, seats, and availability (mock data).
-- **Reset Filters**: Clears all filters.
-- Responsive grid layout with loading skeletons.
+---
 
-### Event Details (/app/event/[id]/page.tsx)
-- Dynamic route for individual event pages (content not read, assumed to display event details and ticket purchase).
-
-### Profile (/app/profile/page.tsx)
-- Basic user profile page (placeholder, details not read).
-
-### Tickets (/app/tickets/)
-- Empty directory; likely planned for user's purchased tickets management.
-
-### Wallet Integration
-- **WalletProvider**: Wraps the app with Solana connection (Devnet), supports Phantom, Solflare, Torus wallets.
-- **WalletDrawer**: UI for connecting/disconnecting wallets.
-- Auto-connect on load; modal for wallet selection.
-
-### Mobile Features
-- MobileHeader for top navigation.
-- BottomNav for bottom tabs.
-- Drawers for modals (e.g., Join, Wallet).
-
-## Setup and Installation
-
-### Prerequisites
-- Node.js 20+ (with npm, yarn, pnpm, or bun)
-- Solana wallet (e.g., Phantom) for testing blockchain features
-
-### Getting Started
-
-First, clone or download the repository and install dependencies:
-
+## Quick start
+1) Install dependencies:
 ```bash
 npm install
-# or
-yarn install
-# or
-pnpm install
-# or
-bun install
 ```
 
-Then, run the development server:
+2) Create `.env.local` (minimal for local dev):
+```env
+DATABASE_URL="postgresql://"
 
+NEXTAUTH_URL=""
+NEXTAUTH_SECRET="your-secret-key-here"
+
+SOLANA_NETWORK="devnet"
+SOLANA_RPC_URL="https://api.devnet.solana.com"
+
+JWT_SECRET="your-jwt-secret-here"
+PLATFORM_WALLET_PRIVATE_KEY="[]"
+SOLANA_PRIVATE_KEY="[]"
+SOLANA_RPC_URL=https://api.devnet.solana.com
+
+NEXT_PUBLIC_SOLANA_RPC_URL="https://api.devnet.solana.com"
+DERIVATION_SALT=etcha-platform-salt
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+```
+
+3) Start Postgres (for example, with Docker):
+```bash
+docker run --name etcha-postgres \
+  -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=etcha \
+  -p 5432:5432 -d postgres:15
+```
+
+4) Apply schema and generate client:
+```bash
+npx prisma migrate dev
+npx prisma generate
+```
+
+5) (Optional) Seed data:
+```bash
+npm run db:seed
+```
+
+6) Start the dev server:
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to see the home page.
+Open `http://localhost:3000`.
 
-### Available Scripts
+---
 
-From `package.json`:
-- `npm run dev`: Start development server with Turbopack.
-- `npm run build`: Build for production.
-- `npm run start`: Run production server.
-- `npm run lint`: Run ESLint for code quality.
+## Scripts
+- `dev` — development (Turbopack)
+- `build` — `prisma generate && next build`
+- `start` — production server
+- `postinstall` — `prisma generate`
+- `db:seed` — seeder `prisma/seed.ts`
 
-### Environment Variables
-- No custom env vars required for basic setup (uses Devnet by default).
-- For mainnet, update `network` in `WalletProvider.tsx`.
+For production, apply migrations with:
+```bash
+npx prisma migrate deploy
+```
 
-### Testing Wallet Integration
-1. Navigate to the app.
-2. Click "Connect Wallet" in the banner or drawer.
-3. Select a wallet (Phantom recommended).
-4. Approve connection (Devnet for testing).
+---
 
-## Usage
+## Environment (ENV)
+Minimum variables required:
+- `DATABASE_URL` — PostgreSQL connection string
+- `NEXT_PUBLIC_SOLANA_NETWORK` — `devnet` | `mainnet-beta`
+- `SOLANA_RPC_ENDPOINT` — Solana RPC endpoint
+- `CLOUDINARY_*` — if media uploads are enabled
 
-### Browsing Events
-- On the home page, use category filters to narrow down events.
-- Events are grouped by date with timelines.
-- Click an event to view details (route: `/event/[id]`).
+See also `CLOUDINARY_SETUP.md`, `HEIC_FIX.md`, `TRANSACTION_SIGNING_FIX.md`.
 
-## Database Setup
+---
 
-This project uses **PostgreSQL** as the database (required for Vercel deployment).
+## Architecture and directories
+- `src/app` — App Router routes and API routes (`/api/*`)
+- `src/components` — UI components (wallet, marketplace, modals, etc.)
+- `src/lib` — services (Solana, Candy Machine, Metadata, Auction House), utilities
+- `prisma` — database schema, migrations, and seeds
 
-### Local Development
+APIs live in `src/app/api/...` and cover profiles, tickets, minting, resale, wallets, uploads, and more.
 
-1. Set up a PostgreSQL database (Docker, local installation, or Neon):
-   ```bash
-   # Using Docker
-   docker run --name etcha-postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=etcha -p 5432:5432 -d postgres:15
-   ```
+---
 
-2. Create `.env.local` file:
-   ```env
-   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/etcha?schema=public"
-   ```
+## Solana, Candy Machine, and Marketplace
+- Metaplex modules: Candy Machine, Token Metadata, Auction House
+- Services: `src/lib/services/*`
 
-3. Run migrations:
-   ```bash
-   npm run db:migrate
-   ```
+Also see signature and wallet verification utilities: `src/lib/blockchain/wallet-verifier.ts`.
 
-4. Seed the database (optional):
-   ```bash
-   npm run db:seed
-   ```
-
-### Production Deployment on Vercel
-
-⚠️ **Important**: Vercel does not support SQLite. You must use a remote PostgreSQL database.
-
-See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
-
-**Quick setup:**
-1. Create a PostgreSQL database (recommended: [Neon](https://neon.tech) or Vercel Postgres)
-2. Add `DATABASE_URL` environment variable in Vercel
-3. Migrations run automatically during build
-
-For more details, see:
-- [DEPLOYMENT.md](./DEPLOYMENT.md) - Complete deployment guide
-- [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) - SQLite to PostgreSQL migration guide
-
-## Components Breakdown
-
-- **EventCard / ResaleTicketCard / TicketCard**: Core display components for events/tickets with images, prices, dates, and CTAs.
-- **BannerCarousel**: Embla-based slider for promotional content.
-- **EventFilters / ResaleCategoryFilter**: Pill-based category selectors.
-- **MobileHeader / BottomNav**: Mobile navigation.
-- **WalletProvider / WalletDrawer**: Blockchain wallet management.
-- **UI Components** (shadcn): Reusable primitives with Tailwind variants.
-- **PageTransition**: Framer Motion for smooth page changes.
-
-For full component details, refer to source files in `/src/components/`.
+---
 
 ## Deployment
+Vercel is recommended for the frontend. Use PostgreSQL in production (SQLite is not supported by Vercel).
 
-The easiest way to deploy is using Vercel (integrated with v0.app):
+In production, run:
+```bash
+npx prisma migrate deploy
+```
 
-1. Push to GitHub.
-2. Import to Vercel dashboard.
-3. Deploy automatically.
+---
 
-Live demo: [https://vercel.com/vlad0n1ms-projects/v0-etcha](https://vercel.com/vlad0n1ms-projects/v0-etcha)
+## Screenshots
+The `public/` folder contains images (banners, logos). Add UI screenshots for a more illustrative README.
 
-Built with [v0.app](https://v0.app) for rapid UI prototyping.
-
-For custom deployments:
-- Build: `npm run build`
-- Start: `npm start`
-- Ensure Solana RPC endpoint is configured for production (mainnet-beta).
+---
 
 ## Contributing
-
-1. Fork the repo.
-2. Create a feature branch.
-3. Commit changes with conventional commits.
-4. Run `npm run lint` before pushing.
-5. Open a PR.
-
-## License
-
-This project is unlicensed (or MIT by default from Create Next App). See original template for details.
-
-## Learn More
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Solana Wallet Adapter](https://github.com/solana-labs/wallet-adapter)
-- [shadcn/ui](https://ui.shadcn.com)
-- [Tailwind CSS](https://tailwindcss.com)
-
-*This documentation was generated automatically based on project analysis.*
+1. Create a branch from `main`
+2. Make changes with clear commit messages
+3. Run lints/build
+4. Open a PR
