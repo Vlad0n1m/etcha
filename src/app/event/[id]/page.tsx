@@ -528,7 +528,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             {/* Confirm Buy Modal */}
             {showBuyConfirm && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="bg-surface rounded-2xl w-full max-w-sm border border-border shadow-xl">
+                    <div className="bg-white rounded-2xl w-full max-w-sm border border-border shadow-xl">
                         <div className="p-5">
                             <h3 className="text-base font-bold text-foreground mb-2">Confirm Purchase</h3>
                             <p className="text-sm text-muted-foreground mb-4">
