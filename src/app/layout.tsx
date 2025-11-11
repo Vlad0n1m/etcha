@@ -5,6 +5,12 @@ import { WalletContextProvider } from "@/components/WalletProvider";
 import { NavigationProvider } from "@/components/NavigationProvider";
 import { AuthProvider } from "@/components/AuthProvider";
 import { SignatureProvider } from "@/components/SignatureProvider";
+import { useMemo } from "react";
+import { mplCandyMachine } from "@metaplex-foundation/mpl-candy-machine";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
+import { walletAdapterIdentity } from '@metaplex-foundation/umi-signer-wallet-adapters';
+import { useWallet } from "@solana/wallet-adapter-react";
+import { UmiProvider } from "@/components/UmiProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,6 +32,15 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const endpoint = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com';
+  // const { wallet } = useWallet();
+  // const umi = useMemo(
+  //   () =>
+  //     createUmi(endpoint)
+  //       .use(walletAdapterIdentity(wallet?.adapter))
+  //       .use(mplCandyMachine()),
+  //   [endpoint, wallet?.adapter]
+  // );
   return (
     <html lang="en">
       <body
@@ -35,7 +50,9 @@ export default function RootLayout({
           <AuthProvider>
             <SignatureProvider>
               <NavigationProvider>
-                {children}
+                <UmiProvider endpoint={endpoint}>
+                  {children}
+                </UmiProvider>
               </NavigationProvider>
             </SignatureProvider>
           </AuthProvider>

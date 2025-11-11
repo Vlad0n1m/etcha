@@ -156,18 +156,18 @@ export class CandyMachineService {
                     updateAuthority: this.solanaService.getKeypair(),
                 },
                 // ✅ Правильное использование guards для цены
-                guards: {
-                    solPayment: {
-                        amount: {
-                            basisPoints: BigInt(Math.floor(collection.ticketPrice * 1e9)), // Convert SOL to lamports
-                            currency: {
-                                symbol: 'SOL',
-                                decimals: 9,
-                            },
-                        },
-                        destination: organizerPublicKey, // ✅ Платежи идут организатору
-                    },
-                },
+                // guards: {
+                //     solPayment: {
+                //         amount: {
+                //             basisPoints: BigInt(Math.floor(collection.ticketPrice * 1e9)), // Convert SOL to lamports
+                //             currency: {
+                //                 symbol: 'SOL',
+                //                 decimals: 9,
+                //             },
+                //         },
+                //         destination: organizerPublicKey, // ✅ Платежи идут организатору
+                //     },
+                // },
             });
 
             console.log('🔍 Debug: createResult structure:', JSON.stringify(createResult, null, 2));

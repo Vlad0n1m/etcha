@@ -41,7 +41,7 @@ export async function createCollection(params: {
     signature: string
 }> {
     try {
-        const authority = params.authority || loadPlatformWallet()
+        const authority = loadPlatformWallet()
         const metaplex = initializeMetaplex(authority)
 
         console.log('Creating Collection NFT with Metaplex JS SDK...')
@@ -172,6 +172,7 @@ export async function createCandyMachineV3(params: {
                 },
             },
         })
+        console.log("GUAAAAAAAAAAARDSSSS")
 
         const candyMachineAddress = candyMachine.address.toString()
         const signature = response.signature

@@ -1,6 +1,6 @@
 "use client"
 
-import { useWallet } from "@solana/wallet-adapter-react"
+import { useConnection, useWallet } from "@solana/wallet-adapter-react"
 import { useState, useEffect } from "react"
 import { Copy, Edit, Eye, MoreHorizontal, Wallet, RefreshCw, Save, X } from "lucide-react"
 import WalletDrawer from "@/components/WalletDrawer"
@@ -12,6 +12,8 @@ import Image from "next/image"
 import EventCard from "@/components/EventCard"
 import { useAuth } from "@/components/AuthProvider"
 import { useSignature } from "@/components/SignatureProvider"
+import { LAMPORTS_PER_SOL } from "@solana/web3.js"
+import { getBalance } from "@/components/solana/utilities"
 
 type TicketStatus = "bought" | "on_resale" | "passed" | "nft"
 
@@ -49,6 +51,17 @@ export default function ProfilePage() {
     const [tickets, setTickets] = useState<Ticket[]>([])
     const [isLoadingTickets, setIsLoadingTickets] = useState(false)
     // Signature and derived address are provided by SignatureProvider
+    const [walletBalance, setWalletBalance] = useState<number | null>(null);
+    const {connection} = useConnection();
+
+    useEffect(() => {
+        if (!connection || ! publicKey) return
+        const loadBalance = async () => {
+            setWalletBalance(await getBalance(connection, publicKey))
+            
+        }
+        void loadBalance()
+    }, [connection, publicKey])
 
     // Function to load balance - can be called manually or on mount
     const loadBalance = async () => {
@@ -391,7 +404,7 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Internal Wallet Section */}
-                    {internalWalletAddress && (
+                    {/* {internalWalletAddress && (
                         <div className="w-full mb-3 p-3 bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
@@ -427,13 +440,13 @@ export default function ProfilePage() {
                                 </p>
                             )}
                         </div>
-                    )}
+                    )} */}
                 </div>
 
                 <div className="flex items-center justify-between mb-3">
                     <div>
                         <div className="text-gray-500 text-xs mb-1 flex items-center gap-1">
-                            INTERNAL WALLET BALANCE
+                            WALLET BALANCE
                             <button
                                 onClick={() => setShowValue(!showValue)}
                                 className="p-0.5 hover:bg-gray-100 rounded"
@@ -456,7 +469,7 @@ export default function ProfilePage() {
                             {isLoadingBalance ? (
                                 <span className="text-sm">Loading...</span>
                             ) : (
-                                showValue ? (internalWalletBalance !== null ? internalWalletBalance.toFixed(4) : "0.0000") : "***"
+                                showValue ? (walletBalance !== null ? walletBalance.toFixed(4) : "0.0000") : "***"
                             )} SOL
                         </div>
                     </div>

@@ -148,18 +148,18 @@ export class CandyMachineService {
         creators: candyMachineConfig.creators,
         collection: candyMachineConfig.collection,
         // Set price through guards
-        guards: {
-          solPayment: {
-            amount: {
-              basisPoints: BigInt(Math.floor(candyMachineConfig.price * 1e9)), // Convert SOL to lamports
-              currency: {
-                symbol: 'SOL',
-                decimals: 9,
-              },
-            },
-            destination: this.solanaService.getKeypair().publicKey,
-          },
-        },
+        // guards: {
+        //   solPayment: {
+        //     amount: {
+        //       basisPoints: BigInt(Math.floor(candyMachineConfig.price * 1e9)), // Convert SOL to lamports
+        //       currency: {
+        //         symbol: 'SOL',
+        //         decimals: 9,
+        //       },
+        //     },
+        //     destination: this.solanaService.getKeypair().publicKey,
+        //   },
+        // },
       });
 
       console.log('🎉 Candy Machine created successfully!');

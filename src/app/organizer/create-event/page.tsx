@@ -6,6 +6,14 @@ import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { ChevronLeft, Upload, Loader2, Calendar, MapPin, Tag, Ticket } from "lucide-react"
+import { useUmi } from "@/components/UmiProvider"
+import {
+    createNft,
+    TokenStandard,
+} from '@metaplex-foundation/mpl-token-metadata'
+import { create } from '@metaplex-foundation/mpl-candy-machine'
+import { generateSigner, percentAmount, some, sol } from '@metaplex-foundation/umi'
+import { publicKey as umiPublicKey } from '@metaplex-foundation/umi'
 
 interface Category {
     id: string
@@ -13,8 +21,21 @@ interface Category {
     value: string
 }
 
+interface TicketMetadata {
+    name: string
+    symbol: string
+    description: string
+    image: string
+    attributes: Array<{ trait_type: string; value: string }>
+    properties: {
+        files: Array<{ uri: string; type: string }>
+        category: string
+    }
+}
+
 export default function CreateEventPage() {
     const { connected, connecting, publicKey } = useWallet()
+    const umi = useUmi()
     const router = useRouter()
 
     // Wallet check state
@@ -104,14 +125,17 @@ export default function CreateEventPage() {
     }
 
     const handleCreateEvent = async () => {
-        if (!publicKey) return
+        if (!publicKey || !umi) {
+            setError("Wallet not connected")
+            return
+        }
 
         setCreating(true)
         setError("")
         setProgress("Uploading event image...")
 
         try {
-            // Step 1: Upload image
+            // Step 1: Upload image (unchanged)
             let uploadedImageUrl = ""
             if (image) {
                 const formData = new FormData()
@@ -130,30 +154,159 @@ export default function CreateEventPage() {
                 const uploadData = await uploadResponse.json()
                 uploadedImageUrl = uploadData.url
             }
+            const defaultImage = "/logo.png"
+            const eventImageUrl = uploadedImageUrl || defaultImage
 
-            setProgress("Creating event and NFT collection...")
+            console.log("Event image URL:", eventImageUrl)
 
-            // Step 2: Create event + collection
+            // Step 2: Generate collection metadata (placeholder, no upload)
+            setProgress("Generating collection metadata (placeholder)...")
+
+            // Placeholder URI for collection metadata (no upload to Cloudinary)
+            const collectionMetadataUri = eventImageUrl // Using image URL as dummy metadata URI
+
+            console.log("Collection metadata placeholder URI:", collectionMetadataUri)
+
+            setProgress("Creating collection NFT...")
+
+            // Step 3: Create collection NFT (now with placeholder metadata URI)
+            const collectionMint = generateSigner(umi)
+            await createNft(umi, {
+                mint: collectionMint,
+                authority: umi.identity,
+                name: title,
+                uri: 'https://example.com/path/to/some/json/metadata.json',
+                sellerFeeBasisPoints: percentAmount(2.5, 2), // 2.5% royalty
+                isCollection: true,
+                // collectionDetails: { __kind: 'V1', size: ticketsAvailable },
+                // creators: [{ address: umi.identity.publicKey, verified: true, share: 100 }],
+            }).sendAndConfirm(umi)
+
+            console.log("Collection created:", collectionMint.publicKey.toString())
+
+            setProgress("Creating candy machine...")
+
+            // Step 5: Create Candy Machine
+            const candyMachine = generateSigner(umi)
+            const platformWalletAddress = process.env.NEXT_PUBLIC_PLATFORM_WALLET!
+
+            if (!platformWalletAddress) {
+                throw new Error("Platform wallet address is not configured. Please set NEXT_PUBLIC_PLATFORM_WALLET in your environment variables.")
+            }
+
+            const platformDestination = umiPublicKey(platformWalletAddress)
+            console.log("Creating candy machine...")
+
+            // Create candy machine without collection first to avoid delegation issues
+            const builder = await create(umi, {
+                candyMachine,
+                collectionMint: collectionMint.publicKey,
+                collectionUpdateAuthority: umi.identity,
+                tokenStandard: TokenStandard.NonFungible,
+                sellerFeeBasisPoints: percentAmount(2.5, 2), // 2.5% royalty
+                itemsAvailable: ticketsAvailable,
+                creators: [
+                    {
+                        address: umi.identity.publicKey,
+                        verified: true,
+                        percentageShare: 100,
+                    },
+                ],
+                // configLineSettings: some({
+                //     prefixName: "",
+                //     nameLength: 32,
+                //     prefixUri: "",
+                //     uriLength: 200,
+                //     isSequential: false,
+                // }),
+                // guards: {
+                //     solPayment: {
+                //         lamports: sol(price),
+                //         destination: platformDestination,
+                //     },
+                // },
+            });
+
+            // Send and confirm the transaction
+            await builder.sendAndConfirm(umi);
+
+            const candyMachineAddress = candyMachine.publicKey
+            console.log("Candy Machine created:", candyMachineAddress.toString())
+
+            setProgress("Generating ticket metadata (placeholders, no upload)...")
+
+            // Step 4: Generate ticket metadata (but no upload yet)
+            const ticketMetadatas: TicketMetadata[] = []
+            const ticketUris: string[] = [] // Placeholders only
+            for (let i = 1; i <= ticketsAvailable; i++) {
+                const ticketMetadata: TicketMetadata = {
+                    name: `${title} Ticket #${i}`,
+                    symbol: symbol,
+                    description: `Admission ticket for ${title} on ${date} at ${time} in ${fullAddress}`,
+                    image: eventImageUrl,
+                    attributes: [
+                        { trait_type: "Event", value: title },
+                        { trait_type: "Date", value: date },
+                        { trait_type: "Time", value: time },
+                        { trait_type: "Location", value: fullAddress },
+                        { trait_type: "Category", value: categories.find(c => c.id === categoryId)?.name || "" },
+                        { trait_type: "Ticket Number", value: i.toString() },
+                    ],
+                    properties: {
+                        files: [{ uri: eventImageUrl, type: "image/jpeg" }],
+                        category: "image",
+                    },
+                }
+                ticketMetadatas.push(ticketMetadata)
+
+                // Temporary placeholder URI (no real upload)
+                const placeholderUri = `${eventImageUrl}?ticket=${i}&name=${encodeURIComponent(ticketMetadata.name)}`
+                ticketUris.push(placeholderUri)
+                console.warn(`Ticket ${i} placeholder URI: ${placeholderUri} (implement real metadata upload)`)
+            }
+
+            setProgress("Skipping item insertion (placeholders, implement real metadata first)...")
+
+            // Step 6: Skip insertItems for now (placeholders not suitable for real insertion)
+            // TODO: Once metadata upload is ready, uncomment and use real URIs
+            /*
+            const insertBatchSize = 5
+            for (let i = 0; i < ticketUris.length; i += insertBatchSize) {
+                const batchUris = ticketUris.slice(i, i + insertBatchSize)
+                const batchItems = batchUris.map((uri, idx) => ({
+                    name: ticketMetadatas[i + idx].name,
+                    uri,
+                }))
+
+                await insertItems(umi, {
+                    candyMachine: candyMachineAddress,
+                    items: batchItems,
+                }).sendAndConfirm(umi)
+
+                setProgress(`Added items ${Math.min(i + insertBatchSize, ticketsAvailable)}/${ticketsAvailable}...`)
+                if (i + insertBatchSize < ticketsAvailable) {
+                    await new Promise(r => setTimeout(r, 1000))
+                }
+            }
+            */
+            console.warn("Item insertion skipped - using placeholders. Implement metadata upload for full functionality.")
+
+            setProgress("Saving event to database...")
+
+            // Step 7: Save event to database
             const eventData = {
-                // Event data
                 title,
                 description,
                 date,
                 time,
                 fullAddress,
                 categoryId,
-                imageUrl: uploadedImageUrl || "/logo.png",
+                imageUrl: eventImageUrl,
                 ticketsAvailable,
                 price,
                 organizerWallet: publicKey.toBase58(),
-
-                // Collection metadata
-                collectionMetadata: {
-                    name: title,
-                    symbol: symbol,
-                    description: description,
-                    image: uploadedImageUrl || "/logo.png",
-                },
+                collectionAddress: collectionAddress.toString(),
+                candyMachineAddress: candyMachineAddress.toString(),
             }
 
             const response = await fetch("/api/events/create", {
@@ -165,7 +318,7 @@ export default function CreateEventPage() {
             const result = await response.json()
 
             if (result.success) {
-                setProgress("Event and collection created successfully!")
+                setProgress("Event and collection created successfully! (Note: Metadata placeholders used)")
                 setTimeout(() => {
                     router.push(`/event/${result.eventId}`)
                 }, 2000)
