@@ -2,7 +2,8 @@
 
 import { useWallet } from "@solana/wallet-adapter-react"
 import { useState, useEffect } from "react"
-import { Copy, Edit, Eye, MoreHorizontal, Wallet, RefreshCw, Save, X } from "lucide-react"
+import { Copy, Edit, Eye, MoreHorizontal, Wallet, RefreshCw, Save, X, AlertCircle } from "lucide-react"
+import { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } from "@solana/web3.js"
 import WalletDrawer from "@/components/WalletDrawer"
 import MobileHeader from "@/components/MobileHeader"
 import { Button } from "@/components/ui/button"
@@ -32,7 +33,7 @@ interface Ticket {
 }
 
 export default function ProfilePage() {
-    const { connected, publicKey } = useWallet()
+    const { connected, publicKey, wallet } = useWallet()
     const { isLoading: authLoading, error: authError, refreshToken } = useAuth()
     const { signature, derivedAddress } = useSignature()
     const [activeTab, setActiveTab] = useState("bought")
@@ -48,6 +49,10 @@ export default function ProfilePage() {
     const [copiedInternalAddress, setCopiedInternalAddress] = useState(false)
     const [tickets, setTickets] = useState<Ticket[]>([])
     const [isLoadingTickets, setIsLoadingTickets] = useState(false)
+    const [isTransferring, setIsTransferring] = useState(false)
+    const [transferError, setTransferError] = useState<string | null>(null)
+    const [isAirdropping, setIsAirdropping] = useState(false)
+    const [airdropError, setAirdropError] = useState<string | null>(null)
     // Signature and derived address are provided by SignatureProvider
 
     // Function to load balance - can be called manually or on mount
@@ -196,19 +201,82 @@ export default function ProfilePage() {
     }
 
     const handleTopUp = async () => {
-        if (internalWalletAddress) {
-            try {
-                // Copy address to clipboard
-                await navigator.clipboard.writeText(internalWalletAddress)
-                setCopiedInternalAddress(true)
+        if (!internalWalletAddress || !connected || !publicKey || !wallet?.adapter) {
+            setTransferError('Wallet not connected or internal wallet address not available')
+            return
+        }
 
-                // Show notification (optional - you could add a toast here)
-                setTimeout(() => {
-                    setCopiedInternalAddress(false)
-                }, 3000)
-            } catch (error) {
-                console.error('Failed to copy address:', error)
+        setIsTransferring(true)
+        setTransferError(null)
+
+        try {
+            const connection = new Connection(
+                process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
+                'confirmed'
+            )
+
+            // Create transfer transaction for 1 SOL
+            const transferTransaction = new Transaction().add(
+                SystemProgram.transfer({
+                    fromPubkey: publicKey,
+                    toPubkey: new PublicKey(internalWalletAddress),
+                    lamports: Math.floor(1 * LAMPORTS_PER_SOL),
+                })
+            )
+
+            const { blockhash } = await connection.getLatestBlockhash('confirmed')
+            transferTransaction.recentBlockhash = blockhash
+            transferTransaction.feePayer = publicKey
+
+            // Send transaction using wallet adapter
+            const signature = await wallet.adapter.sendTransaction(transferTransaction, connection)
+            await connection.confirmTransaction(signature, 'confirmed')
+
+            // Refresh balance after successful transfer
+            await loadBalance()
+            
+            console.log('1 SOL transferred successfully. Signature:', signature)
+        } catch (error: unknown) {
+            console.error('Error transferring SOL:', error)
+            setTransferError(error instanceof Error ? error.message : 'Failed to transfer SOL. Please try again.')
+        } finally {
+            setIsTransferring(false)
+        }
+    }
+
+    const handleAirdrop = async () => {
+        if (!internalWalletAddress) {
+            setAirdropError('Internal wallet address not available')
+            return
+        }
+
+        setIsAirdropping(true)
+        setAirdropError(null)
+
+        try {
+            const response = await fetch('/api/wallet/airdrop', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    recipientAddress: internalWalletAddress,
+                }),
+            })
+
+            const data = await response.json()
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.error || 'Failed to process airdrop')
             }
+
+            // Refresh balance after successful airdrop
+            await loadBalance()
+            
+            console.log('Airdrop successful. Signature:', data.transactionSignature)
+        } catch (error: unknown) {
+            console.error('Error during airdrop:', error)
+            setAirdropError(error instanceof Error ? error.message : 'Failed to process airdrop. Please try again.')
+        } finally {
+            setIsAirdropping(false)
         }
     }
 
@@ -409,23 +477,58 @@ export default function ProfilePage() {
                             <div className="px-2 py-1.5 bg-gray-50 rounded text-xs text-gray-700 font-mono mb-2 break-all">
                                 {internalWalletAddress}
                             </div>
-                            <Button
-                                onClick={handleTopUp}
-                                className={`w-full text-white text-xs py-1.5 h-auto ${copiedInternalAddress
-                                    ? "bg-green-600 hover:bg-green-700"
-                                    : "bg-blue-600 hover:bg-blue-700"
-                                    }`}
-                                size="sm"
-                                disabled={copiedInternalAddress}
-                            >
-                                <Wallet className="w-3 h-3 mr-1.5" />
-                                {copiedInternalAddress ? "✓ Address Copied!" : "Top Up Wallet"}
-                            </Button>
-                            {copiedInternalAddress && (
-                                <p className="text-xs text-gray-600 mt-1 text-center">
-                                    Send SOL to this address from your external wallet
-                                </p>
+                            {transferError && (
+                                <div className="mb-2 p-2 bg-red-50 rounded flex items-start gap-2">
+                                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                                    <p className="text-xs text-red-600">{transferError}</p>
+                                </div>
                             )}
+                            {airdropError && (
+                                <div className="mb-2 p-2 bg-red-50 rounded flex items-start gap-2">
+                                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                                    <p className="text-xs text-red-600">{airdropError}</p>
+                                </div>
+                            )}
+                            <div className="flex gap-2">
+                                <Button
+                                    onClick={handleTopUp}
+                                    className="flex-1 text-white text-xs py-1.5 h-auto bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    size="sm"
+                                    disabled={isTransferring}
+                                >
+                                    {isTransferring ? (
+                                        <>
+                                            <div className="w-3 h-3 mr-1.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            Transferring...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Wallet className="w-3 h-3 mr-1.5" />
+                                            Top Up 1 SOL
+                                        </>
+                                    )}
+                                </Button>
+                                {internalWalletBalance === 0 && (
+                                    <Button
+                                        onClick={handleAirdrop}
+                                        className="flex-1 text-white text-xs py-1.5 h-auto bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        size="sm"
+                                        disabled={isAirdropping}
+                                    >
+                                        {isAirdropping ? (
+                                            <>
+                                                <div className="w-3 h-3 mr-1.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                Airdrop...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Wallet className="w-3 h-3 mr-1.5" />
+                                                Airdrop
+                                            </>
+                                        )}
+                                    </Button>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>
