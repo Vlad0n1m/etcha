@@ -294,8 +294,21 @@ export async function constructMintTransaction(params: {
         console.log('Candy Machine:', params.candyMachineAddress)
         console.log('Buyer:', params.buyerWallet)
 
-        // Create Metaplex instance for reading data (using platform identity)
-        const metaplex = initializeMetaplex(platformSigner)
+        // Create a dummy identity for the buyer so that the builder uses it as the payer
+        // This ensures that the generated instructions (including SOL payment) use the buyer as the payer
+        const buyerIdentity = {
+            publicKey: buyerPublicKey,
+            signMessage: async () => Promise.reject(new Error('Not implemented')),
+            signTransaction: async () => Promise.reject(new Error('Not implemented')),
+            signAllTransactions: async () => Promise.reject(new Error('Not implemented'))
+        }
+
+        // Create Metaplex instance with buyer identity
+        const metaplex = Metaplex.make(connection).use({
+            install: (m) => {
+                m.identity().setDriver(buyerIdentity as any)
+            }
+        })
 
         // Get Candy Machine
         const candyMachine = await metaplex.candyMachines().findByAddress({
@@ -307,55 +320,6 @@ export async function constructMintTransaction(params: {
             throw new Error('Candy Machine is not fully loaded')
         }
 
-        // Create a transaction builder
-        let builder = metaplex.candyMachines().builders().mint({
-            candyMachine,
-            collectionUpdateAuthority: platformSigner.publicKey,
-            guards: {
-                solPayment: {
-                    amount: {
-                        basisPoints: BigInt(0), // Will be overridden by actual guard settings
-                        currency: { symbol: 'SOL', decimals: 9 }
-                    },
-                    destination: platformSigner.publicKey // Placeholder
-                }
-            }
-        })
-
-        // We need to construct the transaction manually to allow multiple mints if quantity > 1
-        // The Metaplex builder above creates a transaction for a SINGLE mint.
-        // For multiple mints, we need to combine instructions or return multiple transactions.
-        // However, Solana transactions have size limits.
-        // For simplicity and reliability, we will stick to 1 mint per transaction for now,
-        // OR we can try to pack them.
-        // Given the user request "mint tickets" (plural), we should try to handle quantity.
-        // But `candyMachine().mint()` returns a builder for one NFT.
-
-        // Let's create a Transaction object and add instructions from the builder
-        // NOTE: The Metaplex SDK v0.19.0 `mint` builder returns a TransactionBuilder.
-        // We can use `toTransaction()` to get the web3.js Transaction.
-
-        // IMPORTANT: The `mint` builder assumes the identity in Metaplex is the payer/owner.
-        // We need to make sure the transaction is built with `buyerPublicKey` as the fee payer and nft owner.
-        // The `mint` method in SDK v0.19.0 takes `owner` as an option?
-        // Let's check the SDK usage. `mint` takes `newOwner`? No, it uses identity.
-        // We might need to use `mintV2` or similar if available, or just use the builder with correct accounts.
-
-        // Actually, looking at `mintNFT` implementation above, it uses `buyerMetaplex` with `userKeypair`.
-        // Here we don't have `userKeypair`. We only have `buyerPublicKey`.
-        // We need to build the transaction such that `buyerPublicKey` is the signer.
-
-        // The Metaplex SDK might be tricky here because it wants a Signer for identity.
-        // We can create a "Guest" identity or a "ReadOnlySigner" for the buyer.
-
-        // Strategy:
-        // 1. Create a transaction.
-        // 2. Loop `quantity` times.
-        // 3. For each mint, generate a Mint Keypair (we need to pass this to the frontend? No, we can generate it here and add it to the transaction as a signer, but we can't sign it here? Wait.
-        // The Mint Keypair MUST sign the transaction.
-        // If we generate it here, we have the private key, so we CAN sign it here (partial sign).
-        // Then the user signs for the payment.
-
         const transaction = new Transaction()
         const mintSigners: Keypair[] = []
 
@@ -363,35 +327,15 @@ export async function constructMintTransaction(params: {
             const mintKeypair = Keypair.generate()
             mintSigners.push(mintKeypair)
 
-            // We use the builder to get instructions
-            // We need to override the 'payer' and 'owner' in the builder context if possible.
-            // Or we just use the low-level `createMintInstruction` etc?
-            // Metaplex `builders().mint()` is high level.
-
-            // Let's try to use the builder but patch the accounts.
-            // The `mint` builder adds:
-            // 1. Create Mint Account
-            // 2. Initialize Mint
-            // 3. Create Associated Token Account
-            // 4. Mint To
-            // 5. Update Metadata
-            // 6. Verify Collection
-            // 7. Candy Machine Mint V2 instruction
-
-            // This is complex to replicate manually.
-            // Let's see if we can configure the builder to use `buyerPublicKey`.
-
             // In Metaplex SDK, we can pass `owner` to `mint`.
+            // We want the buyer to own the NFT and pay for the minting (SOL payment guard).
+            // Since we set the Metaplex identity to buyerIdentity, it will be used as the payer.
             const mintBuilder = await metaplex.candyMachines().builders().mint({
                 candyMachine,
                 collectionUpdateAuthority: platformSigner.publicKey,
                 mint: mintKeypair,
                 owner: buyerPublicKey,
             })
-
-            // The builder will use `metaplex.identity()` as the payer.
-            // We want `buyerPublicKey` to be the payer.
-            // We can set the fee payer on the final transaction.
 
             // Get instructions
             const instructions = mintBuilder.getInstructions()
@@ -406,11 +350,18 @@ export async function constructMintTransaction(params: {
         transaction.recentBlockhash = blockhash
 
         // Partially sign with the Mint Keypairs (and Platform Signer if needed for collection update)
-        // The `mint` builder requires `collectionUpdateAuthority` (platformSigner) to sign?
-        // Yes, if we are using it.
+        // We filter signers to only include those that are actually required by the transaction instructions
+        // This prevents "unknown signer" errors if the builder decided platformSigner is not needed
+        const potentialSigners = [platformSigner, ...mintSigners]
+        const requiredSigners = potentialSigners.filter(signer =>
+            transaction.instructions.some(ix =>
+                ix.keys.some(key => key.pubkey.equals(signer.publicKey) && key.isSigner)
+            )
+        )
 
-        const signers = [platformSigner, ...mintSigners]
-        transaction.partialSign(...signers)
+        if (requiredSigners.length > 0) {
+            transaction.partialSign(...requiredSigners)
+        }
 
         // Serialize
         const serializedTransaction = transaction.serialize({
