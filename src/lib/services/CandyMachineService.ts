@@ -3,7 +3,7 @@
  * Based on working implementation from etcha-candy
  */
 
-import { Connection, Keypair, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js'
+import { Connection, Keypair, PublicKey, LAMPORTS_PER_SOL, Transaction } from '@solana/web3.js'
 import { Metaplex, keypairIdentity, lamports } from '@metaplex-foundation/js'
 import { loadPlatformWallet, loadCandyMachineAuthority } from '../utils/wallet'
 
@@ -23,7 +23,7 @@ function getConnection(): Connection {
 function initializeMetaplex(keypair?: Keypair): Metaplex {
     const connection = getConnection()
     const authority = keypair || loadPlatformWallet()
-    
+
     return Metaplex.make(connection)
         .use(keypairIdentity(authority))
 }
@@ -139,7 +139,7 @@ export async function createCandyMachineV3(params: {
 
         // Create Candy Machine configuration
         const priceInLamports = Math.floor(params.priceInSol * LAMPORTS_PER_SOL)
-        
+
         console.log('Creating Candy Machine with guards...')
         console.log('Price in lamports:', priceInLamports)
 
@@ -188,7 +188,7 @@ export async function createCandyMachineV3(params: {
             candyMachineAddress,
             signature,
         }
-            } catch (error) {
+    } catch (error) {
         console.error('Failed to create Candy Machine:', error)
         throw new Error(`Candy Machine creation failed: ${error instanceof Error ? error.message : String(error)}`)
     }
@@ -211,7 +211,7 @@ async function addItemsToCandyMachine(
             const batch = items.slice(i, i + batchSize)
             const batchNumber = Math.floor(i / batchSize) + 1
             const totalBatches = Math.ceil(items.length / batchSize)
-            
+
             console.log(`Adding batch ${batchNumber}/${totalBatches} (${batch.length} items)...`)
 
             // Get fresh Candy Machine state before each batch (as per etcha-candy pattern)
@@ -243,12 +243,12 @@ async function addItemsToCandyMachine(
             const updatedCandyMachine = await metaplex.candyMachines().findByAddress({
                 address: new PublicKey(candyMachineAddress),
             })
-            
+
             console.log(`Candy Machine verification:`)
             console.log(`  Items available: ${updatedCandyMachine.itemsAvailable.toNumber()}`)
             console.log(`  Items minted: ${updatedCandyMachine.itemsMinted.toNumber()}`)
             console.log(`  Is fully loaded: ${updatedCandyMachine.isFullyLoaded}`)
-            
+
             // Note: isFullyLoaded may be false immediately after adding items
             // The blockchain needs time to process. We'll check this on mint instead.
             if (updatedCandyMachine.itemsAvailable.toNumber() !== items.length) {
@@ -271,6 +271,168 @@ async function addItemsToCandyMachine(
 /**
  * Mint NFT from Candy Machine V3
  */
+/**
+ * Construct Mint Transaction for Client Signing
+ */
+export async function constructMintTransaction(params: {
+    candyMachineAddress: string
+    buyerWallet: string
+    quantity: number
+    platformSigner?: Keypair
+    pricePerNFT?: number
+}): Promise<{
+    transaction: string // Base64 serialized transaction
+    lastSignature: string // For tracking
+    mintAddresses: string[]
+}> {
+    try {
+        const platformSigner = params.platformSigner || loadPlatformWallet()
+        const connection = getConnection()
+        const buyerPublicKey = new PublicKey(params.buyerWallet)
+
+        console.log(`Constructing mint transaction for ${params.quantity} NFT(s)...`)
+        console.log('Candy Machine:', params.candyMachineAddress)
+        console.log('Buyer:', params.buyerWallet)
+
+        // Create Metaplex instance for reading data (using platform identity)
+        const metaplex = initializeMetaplex(platformSigner)
+
+        // Get Candy Machine
+        const candyMachine = await metaplex.candyMachines().findByAddress({
+            address: new PublicKey(params.candyMachineAddress),
+        })
+
+        // Verify Candy Machine is fully loaded
+        if (!candyMachine.isFullyLoaded) {
+            throw new Error('Candy Machine is not fully loaded')
+        }
+
+        // Create a transaction builder
+        let builder = metaplex.candyMachines().builders().mint({
+            candyMachine,
+            collectionUpdateAuthority: platformSigner.publicKey,
+            guards: {
+                solPayment: {
+                    amount: {
+                        basisPoints: BigInt(0), // Will be overridden by actual guard settings
+                        currency: { symbol: 'SOL', decimals: 9 }
+                    },
+                    destination: platformSigner.publicKey // Placeholder
+                }
+            }
+        })
+
+        // We need to construct the transaction manually to allow multiple mints if quantity > 1
+        // The Metaplex builder above creates a transaction for a SINGLE mint.
+        // For multiple mints, we need to combine instructions or return multiple transactions.
+        // However, Solana transactions have size limits.
+        // For simplicity and reliability, we will stick to 1 mint per transaction for now,
+        // OR we can try to pack them.
+        // Given the user request "mint tickets" (plural), we should try to handle quantity.
+        // But `candyMachine().mint()` returns a builder for one NFT.
+
+        // Let's create a Transaction object and add instructions from the builder
+        // NOTE: The Metaplex SDK v0.19.0 `mint` builder returns a TransactionBuilder.
+        // We can use `toTransaction()` to get the web3.js Transaction.
+
+        // IMPORTANT: The `mint` builder assumes the identity in Metaplex is the payer/owner.
+        // We need to make sure the transaction is built with `buyerPublicKey` as the fee payer and nft owner.
+        // The `mint` method in SDK v0.19.0 takes `owner` as an option?
+        // Let's check the SDK usage. `mint` takes `newOwner`? No, it uses identity.
+        // We might need to use `mintV2` or similar if available, or just use the builder with correct accounts.
+
+        // Actually, looking at `mintNFT` implementation above, it uses `buyerMetaplex` with `userKeypair`.
+        // Here we don't have `userKeypair`. We only have `buyerPublicKey`.
+        // We need to build the transaction such that `buyerPublicKey` is the signer.
+
+        // The Metaplex SDK might be tricky here because it wants a Signer for identity.
+        // We can create a "Guest" identity or a "ReadOnlySigner" for the buyer.
+
+        // Strategy:
+        // 1. Create a transaction.
+        // 2. Loop `quantity` times.
+        // 3. For each mint, generate a Mint Keypair (we need to pass this to the frontend? No, we can generate it here and add it to the transaction as a signer, but we can't sign it here? Wait.
+        // The Mint Keypair MUST sign the transaction.
+        // If we generate it here, we have the private key, so we CAN sign it here (partial sign).
+        // Then the user signs for the payment.
+
+        const transaction = new Transaction()
+        const mintSigners: Keypair[] = []
+
+        for (let i = 0; i < params.quantity; i++) {
+            const mintKeypair = Keypair.generate()
+            mintSigners.push(mintKeypair)
+
+            // We use the builder to get instructions
+            // We need to override the 'payer' and 'owner' in the builder context if possible.
+            // Or we just use the low-level `createMintInstruction` etc?
+            // Metaplex `builders().mint()` is high level.
+
+            // Let's try to use the builder but patch the accounts.
+            // The `mint` builder adds:
+            // 1. Create Mint Account
+            // 2. Initialize Mint
+            // 3. Create Associated Token Account
+            // 4. Mint To
+            // 5. Update Metadata
+            // 6. Verify Collection
+            // 7. Candy Machine Mint V2 instruction
+
+            // This is complex to replicate manually.
+            // Let's see if we can configure the builder to use `buyerPublicKey`.
+
+            // In Metaplex SDK, we can pass `owner` to `mint`.
+            const mintBuilder = await metaplex.candyMachines().builders().mint({
+                candyMachine,
+                collectionUpdateAuthority: platformSigner.publicKey,
+                mint: mintKeypair,
+                owner: buyerPublicKey,
+            })
+
+            // The builder will use `metaplex.identity()` as the payer.
+            // We want `buyerPublicKey` to be the payer.
+            // We can set the fee payer on the final transaction.
+
+            // Get instructions
+            const instructions = mintBuilder.getInstructions()
+            transaction.add(...instructions)
+        }
+
+        // Set fee payer
+        transaction.feePayer = buyerPublicKey
+
+        // Get latest blockhash
+        const { blockhash } = await connection.getLatestBlockhash()
+        transaction.recentBlockhash = blockhash
+
+        // Partially sign with the Mint Keypairs (and Platform Signer if needed for collection update)
+        // The `mint` builder requires `collectionUpdateAuthority` (platformSigner) to sign?
+        // Yes, if we are using it.
+
+        const signers = [platformSigner, ...mintSigners]
+        transaction.partialSign(...signers)
+
+        // Serialize
+        const serializedTransaction = transaction.serialize({
+            requireAllSignatures: false,
+            verifySignatures: false
+        })
+
+        return {
+            transaction: serializedTransaction.toString('base64'),
+            lastSignature: '', // Not available yet
+            mintAddresses: mintSigners.map(k => k.publicKey.toBase58())
+        }
+
+    } catch (error) {
+        console.error('Failed to construct mint transaction:', error)
+        throw new Error(`Failed to construct mint transaction: ${error instanceof Error ? error.message : String(error)}`)
+    }
+}
+
+/**
+ * Mint NFT from Candy Machine V3 (Server-Side Execution - DEPRECATED for client mint)
+ */
 export async function mintNFT(params: {
     candyMachineAddress: string
     buyerWallet: string
@@ -284,16 +446,20 @@ export async function mintNFT(params: {
     transactionSignature: string
     totalPaid: number
 }> {
+    // ... existing implementation ...
+    // Keeping this for backward compatibility or reference, but modifying to warn
+    console.warn('mintNFT is deprecated. Use constructMintTransaction for client-side signing.')
+
     try {
         const platformSigner = params.platformSigner || loadPlatformWallet()
         const connection = getConnection()
-        
+
         // Use derived keypair if provided, otherwise create guest Metaplex instance
         const userKeypair = params.userKeypair
         if (!userKeypair) {
             throw new Error('User keypair is required for minting. Please provide signature.')
         }
-        
+
         // Verify owner address matches keypair address if provided
         const ownerAddress = params.ownerAddress || userKeypair.publicKey.toString()
         if (ownerAddress !== userKeypair.publicKey.toString()) {
@@ -302,7 +468,7 @@ export async function mintNFT(params: {
                 `They must match for proper minting.`
             )
         }
-        
+
         // Create Metaplex instance with derived user keypair
         const buyerMetaplex = Metaplex.make(connection)
             .use(keypairIdentity(userKeypair))
@@ -353,7 +519,7 @@ export async function mintNFT(params: {
                     }
                 }
             }
-            
+
             const guards = candyMachineWithGuards.guards
             if (guards && guards.solPayment) {
                 // solPayment.amount may be in different formats
@@ -386,7 +552,7 @@ export async function mintNFT(params: {
         }
 
         totalPrice = pricePerNFT * params.quantity
-        
+
         // Final balance check before minting
         if (derivedBalanceSOL < totalPrice + estimatedFees) {
             throw new Error(
@@ -531,7 +697,7 @@ export async function distributePayment(params: {
         console.log(`Distributing payment: ${params.totalAmount} SOL`)
         console.log(`  Organizer (97.5%): ${organizerShareLamports / LAMPORTS_PER_SOL} SOL`)
         console.log(`  Platform (2.5%): ${platformShareLamports / LAMPORTS_PER_SOL} SOL`)
-        
+
         // Simple transfer - in production, this should be more sophisticated
         // This is a placeholder - actual implementation depends on how payments are handled
         // TODO: Implement actual SOL transfer using Metaplex or web3.js

@@ -4,7 +4,7 @@ import { useState, use, useEffect, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ChevronLeft, Calendar, MapPin, Clock, Loader2 } from "lucide-react"
-import { useWallet } from "@solana/wallet-adapter-react"
+import { useWallet, useConnection } from "@solana/wallet-adapter-react"
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui"
 import WalletDrawer from "@/components/WalletDrawer"
 import CollectionStatus from "@/components/CollectionStatus"
@@ -78,7 +78,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     const { signature, derivedAddress } = useSignature()
     const [copiedAddress, setCopiedAddress] = useState(false)
 
-    const { connected, publicKey, signTransaction, wallet } = useWallet()
+    const { connected, publicKey, sendTransaction, wallet } = useWallet()
+    const { connection } = useConnection()
     const resolvedParams = use(params)
 
     const fetchEvent = useCallback(async () => {
@@ -149,7 +150,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     }
 
     const startMint = async () => {
-        if (!connected || !publicKey || !wallet || !signTransaction) {
+        if (!connected || !publicKey || !wallet || !sendTransaction) {
             setIsWalletDrawerOpen(true)
             return
         }
@@ -162,20 +163,10 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         setShowBuyConfirm(false)
         setIsMinting(true)
         setMintStatus("preparing")
-        setMintProgress("Requesting signature...")
+        setMintProgress("Preparing transaction...")
 
         try {
-            if (!signature) {
-                throw new Error('Please wait for wallet address to be generated. Sign the message when prompted.')
-            }
-
-            setMintStatus("minting")
-            setMintProgress(`Minting ${ticketQuantity} ticket${ticketQuantity > 1 ? 's' : ''}... Please approve the transaction in your wallet.`)
-
-            const signatureHex = Array.from(signature)
-                .map(b => b.toString(16).padStart(2, '0'))
-                .join('')
-
+            // Step 1: Get Mint Transaction from Backend
             const mintResponse = await fetch('/api/mint', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -184,19 +175,39 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     candyMachineAddress: event.candyMachineAddress,
                     buyerWallet: publicKey.toBase58(),
                     quantity: ticketQuantity,
-                    signature: signatureHex,
                 }),
             })
 
             const mintResult = await mintResponse.json()
 
             if (!mintResult.success) {
-                throw new Error(mintResult.message || 'Failed to mint NFT tickets')
+                throw new Error(mintResult.message || 'Failed to prepare mint transaction')
             }
 
-            const nftMintAddresses = mintResult.nftMintAddresses || []
-            const txSignature = mintResult.transactionSignature || ''
+            const transactionBase64 = mintResult.transaction
+            const mintAddresses = mintResult.mintAddresses || []
 
+            if (!transactionBase64) {
+                throw new Error('No transaction returned from server')
+            }
+
+            // Step 2: Deserialize and Sign Transaction
+            setMintStatus("minting")
+            setMintProgress("Please approve the transaction in your wallet...")
+
+            const { Transaction } = await import('@solana/web3.js')
+            const transaction = Transaction.from(Buffer.from(transactionBase64, 'base64'))
+
+            // Sign and Send
+            const signature = await sendTransaction(transaction, connection)
+
+            setMintStatus("confirming")
+            setMintProgress("Confirming transaction on blockchain...")
+
+            // Wait for confirmation
+            await connection.confirmTransaction(signature, 'confirmed')
+
+            // Step 3: Confirm Mint with Backend
             setMintProgress("Saving ticket information...")
 
             const response = await fetch("/api/mint/confirm", {
@@ -207,8 +218,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     candyMachineAddress: event.candyMachineAddress,
                     buyerWallet: publicKey.toBase58(),
                     quantity: ticketQuantity,
-                    nftMintAddresses,
-                    transactionSignature: txSignature,
+                    nftMintAddresses: mintAddresses,
+                    transactionSignature: signature,
                 }),
             })
 
@@ -219,8 +230,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 setMintProgress("Minted successfully!")
                 setMintResult({
                     ...result,
-                    nftMintAddresses,
-                    transactionSignature: txSignature,
+                    nftMintAddresses: mintAddresses,
+                    transactionSignature: signature,
                 })
                 setShowMintModal(true)
             } else {
@@ -228,6 +239,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 setMintProgress(result.message || "Failed to save ticket information")
                 setTimeout(() => setIsMinting(false), 3000)
             }
+
         } catch (error: unknown) {
             console.error("Mint error:", error)
             setMintStatus("error")

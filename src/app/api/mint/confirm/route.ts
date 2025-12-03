@@ -131,33 +131,12 @@ export async function POST(request: NextRequest) {
             platformShare,
         })
 
-        // Check if tickets already exist (they should be created by /api/mint endpoint)
-        console.log('Checking if tickets already exist in database...')
-        const existingTickets = await prisma.ticket.findMany({
-            where: {
-                nftMintAddress: {
-                    in: nftMintAddresses,
-                },
-            },
-            include: {
-                order: true,
-            },
+        // Check if order already exists (idempotency)
+        const existingOrder = await prisma.order.findFirst({
+            where: { transactionHash: transactionSignature }
         })
-        
-        if (existingTickets.length === nftMintAddresses.length) {
-            console.log(`All ${existingTickets.length} ticket(s) already exist in database (created by /api/mint)`)
-            
-            // Get the order from existing tickets
-            const order = existingTickets[0]?.order
-            
-            if (!order) {
-                return NextResponse.json(
-                    { success: false, message: 'Tickets exist but order not found' },
-                    { status: 500 }
-                )
-            }
-            
-            // Just verify and return success
+
+        if (existingOrder) {
             return NextResponse.json({
                 success: true,
                 nftMintAddresses,
@@ -169,32 +148,55 @@ export async function POST(request: NextRequest) {
                 platformFee: {
                     amount: platformShare,
                 },
-                orderId: order.id,
-                message: 'NFT tickets already confirmed in database',
+                orderId: existingOrder.id,
+                message: 'NFT tickets already confirmed',
             })
-        } else if (existingTickets.length > 0) {
-            console.log(`Warning: Only ${existingTickets.length} out of ${nftMintAddresses.length} tickets exist. Some tickets may be missing.`)
-        } else {
-            console.log('Warning: No tickets found in database. They should have been created by /api/mint endpoint.')
-            // Don't create tickets here - they should be created by /api/mint
-            // Return error to indicate that minting flow should use /api/mint
-            return NextResponse.json(
-                { 
-                    success: false, 
-                    message: 'Tickets not found in database. Please use /api/mint endpoint for minting.' 
-                },
-                { status: 400 }
-            )
         }
-        
-        // If we reach here, get the order from existing tickets
-        const order = existingTickets[0]?.order
-        if (!order) {
-            return NextResponse.json(
-                { success: false, message: 'Order not found for existing tickets' },
-                { status: 500 }
-            )
-        }
+
+        // Create order in database
+        console.log('Creating order in database...')
+        const order = await prisma.order.create({
+            data: {
+                eventId,
+                userId: user.id,
+                quantity,
+                totalPrice: totalPrice,
+                status: 'confirmed',
+                transactionHash: transactionSignature,
+            },
+        })
+
+        // Create ticket records
+        console.log('Creating ticket records...')
+        const ticketData = nftMintAddresses.map((nftMintAddress: string, index: number) => ({
+            eventId,
+            orderId: order.id,
+            userId: user.id,
+            nftMintAddress,
+            tokenId: index + 1,
+            isValid: true,
+            isUsed: false,
+        }))
+
+        await prisma.ticket.createMany({
+            data: ticketData,
+        })
+
+        // Create payment distribution record
+        console.log('Creating payment distribution record...')
+        // @ts-ignore - PaymentDistribution model exists but TypeScript doesn't recognize it yet
+        await (prisma as any).paymentDistribution.create({
+            data: {
+                orderId: order.id,
+                totalAmount: totalPrice,
+                organizerShare: organizerShare,
+                platformShare: platformShare,
+                organizerWallet,
+                platformWallet: 'platform_wallet', // Placeholder
+                transactionHash: transactionSignature,
+                status: 'completed',
+            },
+        })
 
         // Update event tickets sold
         console.log('Updating event tickets sold...')
