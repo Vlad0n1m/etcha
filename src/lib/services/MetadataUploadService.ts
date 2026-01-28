@@ -1,84 +1,108 @@
 /**
  * Metadata Upload Service
- * Handles uploading images and JSON metadata locally (no Arweave)
+ * Handles uploading images and JSON metadata to Cloudinary
  */
 
-import { writeFile } from 'fs/promises'
-import path from 'path'
+import { v2 as cloudinary, UploadApiResponse } from 'cloudinary'
 import { NFTMetadataOutput } from '../utils/nft-metadata'
 
-/**
- * Get base URL for the application
- */
-function getBaseUrl(): string {
-    return process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-}
+// Configure Cloudinary
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+})
 
 /**
- * Save an image buffer locally
+ * Upload an image buffer to Cloudinary
  * @param imageBuffer - Buffer containing image data
- * @param fileName - Original file name
- * @returns Local URI (e.g., "http://localhost:3000/uploads/...")
+ * @param fileName - Original file name (used for public_id)
+ * @returns Cloudinary URL
  */
 export async function uploadImage(
     imageBuffer: Buffer,
     fileName: string
 ): Promise<string> {
     try {
-        // Generate unique filename
         const timestamp = Date.now()
         const randomString = Math.random().toString(36).substring(2, 9)
-        const extension = path.extname(fileName)
-        const uniqueFileName = `nft-${timestamp}-${randomString}${extension}`
+        const baseName = fileName.replace(/\.[^/.]+$/, '') // Remove extension
+        const publicId = `nft-${baseName}-${timestamp}-${randomString}`
 
-        // Save to public/uploads directory
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads')
-        const filepath = path.join(uploadDir, uniqueFileName)
+        const uploadResponse = await new Promise<UploadApiResponse>((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                {
+                    folder: 'etcha-nft-images',
+                    public_id: publicId,
+                    resource_type: 'image',
+                    transformation: [
+                        {
+                            width: 1200,
+                            height: 1200,
+                            crop: 'limit',
+                            quality: 'auto:good',
+                        }
+                    ],
+                },
+                (error, result) => {
+                    if (error) reject(error)
+                    else if (result) resolve(result)
+                    else reject(new Error('No result from Cloudinary'))
+                }
+            )
+            uploadStream.end(imageBuffer)
+        })
 
-        await writeFile(filepath, imageBuffer)
-
-        // Return public URL
-        const uri = `${getBaseUrl()}/uploads/${uniqueFileName}`
-        console.log(`Image saved locally: ${uri}`)
-        return uri
+        console.log(`Image uploaded to Cloudinary: ${uploadResponse.secure_url}`)
+        return uploadResponse.secure_url
     } catch (error) {
-        console.error('Failed to save image:', error)
+        console.error('Failed to upload image to Cloudinary:', error)
         throw new Error(`Image upload failed: ${error}`)
     }
 }
 
 /**
- * Save JSON metadata locally
- * @param metadata - JSON object to save
- * @returns Local URI
+ * Upload JSON metadata to Cloudinary as a raw file
+ * @param metadata - JSON object to upload
+ * @returns Cloudinary URL for the JSON file
  */
 export async function uploadMetadata(
     metadata: object
 ): Promise<string> {
     try {
-        // Generate unique filename
         const timestamp = Date.now()
         const randomString = Math.random().toString(36).substring(2, 9)
-        const fileName = `metadata-${timestamp}-${randomString}.json`
+        const publicId = `metadata-${timestamp}-${randomString}`
 
-        // Save to public/uploads directory
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads')
-        const filepath = path.join(uploadDir, fileName)
+        const jsonString = JSON.stringify(metadata, null, 2)
+        const buffer = Buffer.from(jsonString, 'utf-8')
 
-        await writeFile(filepath, JSON.stringify(metadata, null, 2))
+        const uploadResponse = await new Promise<UploadApiResponse>((resolve, reject) => {
+            const uploadStream = cloudinary.uploader.upload_stream(
+                {
+                    folder: 'etcha-nft-metadata',
+                    public_id: publicId,
+                    resource_type: 'raw',
+                },
+                (error, result) => {
+                    if (error) reject(error)
+                    else if (result) resolve(result)
+                    else reject(new Error('No result from Cloudinary'))
+                }
+            )
+            uploadStream.end(buffer)
+        })
 
-        // Return public URL
-        const uri = `${getBaseUrl()}/uploads/${fileName}`
-        console.log(`Metadata saved locally: ${uri}`)
-        return uri
+        console.log(`Metadata uploaded to Cloudinary: ${uploadResponse.secure_url}`)
+        return uploadResponse.secure_url
     } catch (error) {
-        console.error('Failed to save metadata:', error)
+        console.error('Failed to upload metadata to Cloudinary:', error)
         throw new Error(`Metadata upload failed: ${error}`)
     }
 }
 
 /**
- * Save collection image and metadata locally
+ * Upload collection image and metadata to Cloudinary
  * @returns Object containing image URI and metadata URI
  */
 export async function uploadCollectionAssets(
@@ -90,7 +114,7 @@ export async function uploadCollectionAssets(
     metadataUri: string
 }> {
     try {
-        // Save image first
+        // Upload image first
         const imageUri = await uploadImage(imageBuffer, imageName)
 
         // Create metadata with image URI
@@ -99,7 +123,7 @@ export async function uploadCollectionAssets(
             image: imageUri,
         }
 
-        // Save metadata
+        // Upload metadata
         const metadataUri = await uploadMetadata(metadata)
 
         return {
@@ -107,14 +131,14 @@ export async function uploadCollectionAssets(
             metadataUri,
         }
     } catch (error) {
-        console.error('Failed to save collection assets:', error)
+        console.error('Failed to upload collection assets:', error)
         throw new Error(`Collection assets upload failed: ${error}`)
     }
 }
 
 /**
- * Save all ticket metadata locally
- * This saves only the JSON metadata, assuming images are already uploaded
+ * Upload all ticket metadata to Cloudinary
+ * This uploads only the JSON metadata, assuming images are already uploaded
  * @param ticketMetadataArray - Array of ticket metadata
  * @returns Array of metadata URIs in the same order
  */
@@ -122,11 +146,11 @@ export async function uploadAllTicketMetadata(
     ticketMetadataArray: NFTMetadataOutput[]
 ): Promise<string[]> {
     try {
-        console.log(`Saving ${ticketMetadataArray.length} ticket metadata...`)
+        console.log(`Uploading ${ticketMetadataArray.length} ticket metadata to Cloudinary...`)
 
         const uris: string[] = []
 
-        // Save metadata sequentially
+        // Upload metadata sequentially to avoid rate limiting
         for (let i = 0; i < ticketMetadataArray.length; i++) {
             const metadata = ticketMetadataArray[i]
             const uri = await uploadMetadata(metadata)
@@ -134,28 +158,28 @@ export async function uploadAllTicketMetadata(
 
             // Log progress every 10 tickets
             if ((i + 1) % 10 === 0) {
-                console.log(`Saved ${i + 1}/${ticketMetadataArray.length} metadata`)
+                console.log(`Uploaded ${i + 1}/${ticketMetadataArray.length} metadata`)
             }
         }
 
-        console.log(`All ${ticketMetadataArray.length} ticket metadata saved successfully`)
+        console.log(`All ${ticketMetadataArray.length} ticket metadata uploaded successfully`)
         return uris
     } catch (error) {
-        console.error('Failed to save ticket metadata:', error)
+        console.error('Failed to upload ticket metadata:', error)
         throw new Error(`Ticket metadata upload failed: ${error}`)
     }
 }
 
 /**
- * Save ticket metadata in batches for better performance
- * @param batchSize - Number of metadata to save in parallel (default: 5)
+ * Upload ticket metadata in batches for better performance
+ * @param batchSize - Number of metadata to upload in parallel (default: 5)
  */
 export async function uploadTicketMetadataBatched(
     ticketMetadataArray: NFTMetadataOutput[],
     batchSize: number = 5
 ): Promise<string[]> {
     try {
-        console.log(`Saving ${ticketMetadataArray.length} ticket metadata in batches of ${batchSize}...`)
+        console.log(`Uploading ${ticketMetadataArray.length} ticket metadata to Cloudinary in batches of ${batchSize}...`)
 
         const uris: string[] = []
 
@@ -163,45 +187,27 @@ export async function uploadTicketMetadataBatched(
         for (let i = 0; i < ticketMetadataArray.length; i += batchSize) {
             const batch = ticketMetadataArray.slice(i, i + batchSize)
 
-            // Save batch in parallel
+            // Upload batch in parallel
             const batchUris = await Promise.all(
                 batch.map(metadata => uploadMetadata(metadata))
             )
 
             uris.push(...batchUris)
 
-            console.log(`Saved ${Math.min(i + batchSize, ticketMetadataArray.length)}/${ticketMetadataArray.length} metadata`)
+            console.log(`Uploaded ${Math.min(i + batchSize, ticketMetadataArray.length)}/${ticketMetadataArray.length} metadata`)
 
-            // Small delay between batches
+            // Small delay between batches to avoid rate limiting
             if (i + batchSize < ticketMetadataArray.length) {
-                await new Promise(resolve => setTimeout(resolve, 100))
+                await new Promise(resolve => setTimeout(resolve, 200))
             }
         }
 
-        console.log(`All ${ticketMetadataArray.length} ticket metadata saved successfully`)
+        console.log(`All ${ticketMetadataArray.length} ticket metadata uploaded successfully`)
         return uris
     } catch (error) {
-        console.error('Failed to save ticket metadata in batches:', error)
+        console.error('Failed to upload ticket metadata in batches:', error)
         throw new Error(`Batched ticket metadata upload failed: ${error}`)
     }
-}
-
-/**
- * Get content type from file extension
- */
-function getContentType(fileName: string): string {
-    const extension = fileName.split('.').pop()?.toLowerCase()
-
-    const contentTypes: Record<string, string> = {
-        'jpg': 'image/jpeg',
-        'jpeg': 'image/jpeg',
-        'png': 'image/png',
-        'gif': 'image/gif',
-        'webp': 'image/webp',
-        'svg': 'image/svg+xml',
-    }
-
-    return contentTypes[extension || ''] || 'application/octet-stream'
 }
 
 /**

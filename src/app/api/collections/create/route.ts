@@ -216,11 +216,29 @@ export async function POST(request: NextRequest) {
         })
     } catch (error: any) {
         console.error('Error creating collection:', error)
+
+        // Provide more specific error messages
+        let errorMessage = 'Failed to create collection'
+        if (error.message) {
+            errorMessage = error.message
+        }
+
+        // Check for common Cloudinary errors
+        if (error.message?.includes('Cloudinary') || error.message?.includes('upload')) {
+            errorMessage = `Metadata upload failed: ${error.message}`
+        }
+
+        // Check for Solana/blockchain errors
+        if (error.message?.includes('insufficient') || error.message?.includes('balance')) {
+            errorMessage = `Blockchain error: ${error.message}`
+        }
+
         return NextResponse.json(
             {
                 success: false,
-                message: 'Failed to create collection',
+                message: errorMessage,
                 error: error.message || String(error),
+                stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
             },
             { status: 500 }
         )

@@ -172,9 +172,10 @@ export async function POST(request: NextRequest) {
             }
         } catch (collectionError) {
             console.error("Error creating collection:", collectionError)
+            const errorMessage = collectionError instanceof Error ? collectionError.message : String(collectionError)
             return NextResponse.json({
                 success: false,
-                message: "Event created but collection creation failed",
+                message: `Event created but collection creation failed: ${errorMessage}`,
                 eventId: event.id,
             })
         }
