@@ -169,6 +169,7 @@ export async function POST(request: NextRequest) {
                     const { SolanaService } = await import('@/lib/solana/SolanaService')
                     const { CollectionService } = await import('@/lib/solana/CollectionService')
                     const { CandyMachineService } = await import('@/lib/solana/CandyMachineService')
+                    const { BubblegumService } = await import('@/lib/solana/BubblegumService')
 
                     sendProgress('⚙️ Initializing Solana services...', 'init', 10)
                     const solanaService = new SolanaService()
@@ -177,8 +178,11 @@ export async function POST(request: NextRequest) {
 
                     sendProgress('📦 Preparing event data...', 'prepare', 15)
 
+                    // Always use cNFT for maximum speed and minimum cost
+                    const nftType = 'cnft'
+
                     // Create a temporary event object for collection creation
-                    const tempEvent: Event = {
+                    const tempEvent = {
                         id: 'temp',
                         title: validatedData.title,
                         price: validatedData.price,
@@ -190,11 +194,14 @@ export async function POST(request: NextRequest) {
                         description: validatedData.description,
                         fullAddress: validatedData.fullAddress,
                         isActive: true,
-                        schedule: validatedData.schedule || [],
+                        schedule: (validatedData.schedule || []).join('\n'),
                         categoryId: category.id,
                         organizerId: organizer.id,
                         collectionNftAddress: null,
                         candyMachineAddress: null,
+                        merkleTreeAddress: null,
+                        merkleTreeDepth: null,
+                        nftType: nftType,
                         createdAt: new Date(),
                         updatedAt: new Date(),
                     }
@@ -210,16 +217,23 @@ export async function POST(request: NextRequest) {
                     const { PublicKey } = await import('@solana/web3.js')
                     const organizerPublicKey = new PublicKey(walletAddress)
 
-                    // Create FULL collection: Collection NFT + Candy Machine + all items with guards
-                    sendProgress('🚀 Creating full blockchain infrastructure...', 'blockchain', 20)
-                    const { collectionNftAddress, candyMachineAddress } = await candyMachineService.createFullCollection(
+                    // Create cNFT collection: Collection NFT + Merkle Tree
+                    sendProgress('🌿 Creating Compressed NFT collection...', 'collection-nft', 20)
+
+                    const result = await candyMachineService.createFullCollection(
                         collection,
                         organizerPublicKey
                     )
 
+                    const collectionNftAddress = result.collectionNftAddress
+                    const merkleTreeAddress = result.merkleTreeAddress || null
+                    const merkleTreeDepth = result.merkleTreeDepth || null
+
+                    sendProgress('🌳 Merkle Tree created successfully!', 'merkle-tree', 80)
+
                     sendProgress('💾 Saving event to database...', 'database', 95)
 
-                    // Now create event in database WITH both collection and candy machine addresses
+                    // Now create event in database WITH blockchain addresses
                     const event = await prisma.event.create({
                         data: {
                             title: validatedData.title,
@@ -230,11 +244,13 @@ export async function POST(request: NextRequest) {
                             imageUrl: validatedData.imageUrl,
                             description: validatedData.description,
                             fullAddress: validatedData.fullAddress,
-                            schedule: validatedData.schedule || [],
+                            schedule: (validatedData.schedule || []).join('\n'),
                             categoryId: category.id,
                             organizerId: organizer.id,
                             collectionNftAddress,
-                            candyMachineAddress, // Now created immediately with guards!
+                            merkleTreeAddress,
+                            merkleTreeDepth,
+                            nftType: 'cnft',
                         },
                         include: {
                             category: true,
@@ -250,7 +266,9 @@ export async function POST(request: NextRequest) {
                         data: {
                             ...event,
                             collectionNftAddress,
-                            candyMachineAddress,
+                            merkleTreeAddress,
+                            merkleTreeDepth,
+                            nftType: 'cnft',
                         }
                     })
                     controller.enqueue(encoder.encode(`data: ${resultData}\n\n`))

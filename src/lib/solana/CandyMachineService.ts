@@ -3,18 +3,67 @@ import { SolanaService } from './SolanaService';
 import { CollectionService } from './CollectionService';
 import { SolanaCollection } from './adapters';
 import { getMetadataUri, getTicketMetadataUri } from './adapters';
+import { BubblegumService, MerkleTreeSize, MERKLE_TREE_CONFIGS, CNFTMetadata } from './BubblegumService';
+import { NFTType } from './types';
 
 export type ProgressCallback = (message: string, step?: string, progress?: number) => void;
+
+/**
+ * Result of creating a full collection (supports both legacy and cNFT)
+ */
+export interface CreateCollectionResult {
+    collectionNftAddress: string;
+    candyMachineAddress?: string;  // Only for legacy
+    merkleTreeAddress?: string;     // Only for cNFT
+    merkleTreeDepth?: number;       // Only for cNFT
+    nftType: NFTType;
+}
+
+/**
+ * Parameters for creating a collection
+ */
+export interface CreateCollectionParams {
+    collection: SolanaCollection;
+    organizerPublicKey: PublicKey;
+    nftType?: NFTType;
+    merkleTreeSize?: MerkleTreeSize;
+}
+
+/**
+ * Result of minting tickets
+ */
+export interface MintResult {
+    success: boolean;
+    nftType: NFTType;
+    // Legacy NFT fields
+    nftMintAddresses?: string[];
+    // cNFT fields
+    assetIds?: string[];
+    leafIndices?: number[];
+    dataHashes?: string[];
+    creatorHashes?: string[];
+    // Common
+    transactionSignature: string;
+}
 
 export class CandyMachineService {
     private solanaService: SolanaService;
     private collectionService: CollectionService;
+    private bubblegumService: BubblegumService;
     private progressCallback?: ProgressCallback;
 
     constructor(solanaService: SolanaService, collectionService: CollectionService, progressCallback?: ProgressCallback) {
         this.solanaService = solanaService;
         this.collectionService = collectionService;
+        this.bubblegumService = new BubblegumService(solanaService);
         this.progressCallback = progressCallback;
+    }
+
+    /**
+     * Get the BubblegumService instance for direct cNFT operations
+     */
+    getBubblegumService(): BubblegumService {
+        return this.bubblegumService;
     }
 
     private emitProgress(message: string, step?: string, progress?: number) {
@@ -25,38 +74,134 @@ export class CandyMachineService {
     }
 
     /**
-     * Создает полную коллекцию: Collection NFT + Candy Machine + все items с guards
-     * @param collection - Параметры коллекции
-     * @param organizerPublicKey - Публичный ключ организатора для получения платежей
-     * @returns Объект с адресами Collection NFT и Candy Machine
+     * Determine the recommended tree size based on ticket count
+     */
+    private getRecommendedTreeSize(maxTickets: number): MerkleTreeSize {
+        if (maxTickets <= MERKLE_TREE_CONFIGS.SMALL.capacity) {
+            return 'SMALL';
+        } else if (maxTickets <= MERKLE_TREE_CONFIGS.MEDIUM.capacity) {
+            return 'MEDIUM';
+        }
+        return 'LARGE';
+    }
+
+    /**
+     * Creates a full collection with support for both legacy NFTs and cNFTs
+     * 
+     * For legacy: Collection NFT + Candy Machine + all items
+     * For cNFT: Collection NFT + Merkle Tree (no items needed upfront)
+     * 
+     * @param params - Collection creation parameters
+     * @returns Object with collection addresses based on NFT type
+     */
+    async createFullCollection(params: CreateCollectionParams): Promise<CreateCollectionResult>;
+    /**
+     * @deprecated Use params object instead. Legacy signature for backward compatibility.
      */
     async createFullCollection(
         collection: SolanaCollection,
         organizerPublicKey: PublicKey
-    ): Promise<{ collectionNftAddress: string; candyMachineAddress: string }> {
-        try {
-            this.emitProgress(`🚀 Starting full collection creation for: ${collection.name}`, 'full-collection', 0);
+    ): Promise<CreateCollectionResult>;
+    async createFullCollection(
+        paramsOrCollection: CreateCollectionParams | SolanaCollection,
+        organizerPublicKey?: PublicKey
+    ): Promise<CreateCollectionResult> {
+        // Handle both old and new signatures
+        let params: CreateCollectionParams;
+        if ('collection' in paramsOrCollection) {
+            params = paramsOrCollection;
+        } else {
+            // Legacy call signature
+            params = {
+                collection: paramsOrCollection,
+                organizerPublicKey: organizerPublicKey!,
+                nftType: paramsOrCollection.nftType || 'legacy',
+            };
+        }
 
-            // Шаг 1: Создаем Collection NFT
+        const { collection, nftType = 'legacy' } = params;
+
+        // Route to appropriate creation method based on NFT type
+        if (nftType === 'cnft') {
+            return this.createCNFTCollection(params);
+        }
+
+        // Legacy flow (default)
+        return this.createLegacyCollection(params);
+    }
+
+    /**
+     * Create a cNFT collection with Merkle tree
+     * Much cheaper than legacy: ~0.1 SOL for tree creation vs ~1.5 SOL for 100-item Candy Machine
+     */
+    private async createCNFTCollection(params: CreateCollectionParams): Promise<CreateCollectionResult> {
+        const { collection, merkleTreeSize } = params;
+
+        try {
+            this.emitProgress(`🚀 Starting cNFT collection creation for: ${collection.name}`, 'cnft-collection', 0);
+
+            // Step 1: Create Collection NFT (same as legacy, needed for collection grouping)
+            this.emitProgress('📦 Step 1/2: Creating Collection NFT...', 'cnft-collection', 10);
+            const collectionResult = await this.bubblegumService.createCollectionNFT({
+                name: collection.name,
+                symbol: collection.name.substring(0, 4).toUpperCase(),
+                uri: getMetadataUri(collection.id),
+                sellerFeeBasisPoints: 250,
+            });
+
+            // Step 2: Create Merkle Tree
+            this.emitProgress('🌳 Step 2/2: Creating Merkle Tree...', 'cnft-collection', 50);
+            const treeSize = merkleTreeSize || this.getRecommendedTreeSize(collection.maxTickets);
+            const treeResult = await this.bubblegumService.createMerkleTree(treeSize);
+
+            this.emitProgress(`🎉 cNFT collection created successfully!`, 'cnft-collection', 100);
+            this.emitProgress(`  Collection NFT: ${collectionResult.collectionAddress}`, 'cnft-collection', 100);
+            this.emitProgress(`  Merkle Tree: ${treeResult.merkleTreeAddress}`, 'cnft-collection', 100);
+            this.emitProgress(`  Capacity: ${treeResult.capacity} tickets`, 'cnft-collection', 100);
+
+            return {
+                collectionNftAddress: collectionResult.collectionAddress,
+                merkleTreeAddress: treeResult.merkleTreeAddress,
+                merkleTreeDepth: treeResult.maxDepth,
+                nftType: 'cnft',
+            };
+        } catch (error) {
+            console.error('❌ Error creating cNFT collection:', error);
+            throw new Error(`Failed to create cNFT collection: ${(error as Error).message}`);
+        }
+    }
+
+    /**
+     * Create a legacy collection with Candy Machine
+     * Original implementation preserved for backward compatibility
+     */
+    private async createLegacyCollection(params: CreateCollectionParams): Promise<CreateCollectionResult> {
+        const { collection, organizerPublicKey } = params;
+
+        try {
+            this.emitProgress(`🚀 Starting legacy collection creation for: ${collection.name}`, 'full-collection', 0);
+
+            // Step 1: Create Collection NFT
             this.emitProgress('📦 Step 1/2: Creating Collection NFT...', 'full-collection', 10);
             const collectionNftAddress = await this.createCollectionNFT(collection);
 
-            // Обновляем коллекцию с адресом NFT
+            // Update collection with NFT address
             collection.collectionNftAddress = collectionNftAddress;
 
-            // Шаг 2: Создаем Candy Machine с guards и загружаем все items
+            // Step 2: Create Candy Machine with guards and load all items
             this.emitProgress('🍭 Step 2/2: Creating Candy Machine with all items...', 'full-collection', 50);
             const candyMachineAddress = await this.createCandyMachine(collection, organizerPublicKey, true);
 
-            this.emitProgress('🎉 Full collection created successfully!', 'full-collection', 100);
+            this.emitProgress('🎉 Legacy collection created successfully!', 'full-collection', 100);
 
             return {
                 collectionNftAddress,
                 candyMachineAddress,
+                nftType: 'legacy',
             };
         } catch (error) {
-            console.error('❌ Error creating full collection:', error);
-            throw new Error(`Failed to create full collection: ${(error as Error).message}`);
+            console.error('❌ Error creating legacy collection:', error);
+            throw new Error(`Failed to create legacy collection: ${(error as Error).message}`);
         }
     }
 
@@ -260,11 +405,24 @@ export class CandyMachineService {
         }
     }
 
+    /**
+     * Prepare a mint transaction for the given collection
+     * Automatically detects NFT type and routes to appropriate method
+     */
     async prepareMintTransaction(
         collectionId: string,
         userWallet: string,
         quantity: number = 1
-    ): Promise<{ transaction: string; candyMachineAddress: string; nftMintAddress: string }> {
+    ): Promise<{
+        transaction: string;
+        nftType: NFTType;
+        // Legacy fields
+        candyMachineAddress?: string;
+        nftMintAddress?: string;
+        // cNFT fields
+        merkleTreeAddress?: string;
+        expectedAssetIds?: string[];
+    }> {
         try {
             console.log('🎫 Preparing mint transaction...');
             console.log('Collection ID:', collectionId);
@@ -279,33 +437,258 @@ export class CandyMachineService {
             if (!collection.eventCreatorWallet) {
                 throw new Error('Event creator wallet not found in collection');
             }
-            const organizerPublicKey = new PublicKey(collection.eventCreatorWallet);
 
-            if (!collection.collectionNftAddress) {
-                console.log('🎨 Collection NFT not found, creating...');
-                const collectionNftAddress = await this.createCollectionNFT(collection);
-                await this.collectionService.updateCollection(collectionId, {
-                    collectionNftAddress,
-                });
-                collection.collectionNftAddress = collectionNftAddress;
+            // Route based on NFT type
+            if (collection.nftType === 'cnft') {
+                return this.prepareCNFTMintTransaction(collection, userWallet, quantity);
             }
 
-            if (!collection.candyMachineAddress) {
-                console.log('🍭 Candy Machine not found, creating with organizer as payment destination...');
-                const candyMachineAddress = await this.createCandyMachine(collection, organizerPublicKey);
-                await this.collectionService.updateCollection(collectionId, {
-                    candyMachineAddress,
-                });
-                collection.candyMachineAddress = candyMachineAddress;
-                console.log('✅ Candy Machine created! Payment goes to organizer.');
-            }
-
-            // TODO: Implement mint transaction preparation using old Metaplex SDK
-            throw new Error('Mint transaction preparation not yet implemented with old Metaplex SDK');
+            // Legacy flow
+            return this.prepareLegacyMintTransaction(collection, userWallet, quantity);
         } catch (error) {
             console.error('❌ Error preparing mint transaction:', error);
             throw new Error(`Failed to prepare mint transaction: ${(error as Error).message}`);
         }
+    }
+
+    /**
+     * Prepare a cNFT mint transaction
+     */
+    private async prepareCNFTMintTransaction(
+        collection: SolanaCollection,
+        userWallet: string,
+        quantity: number
+    ): Promise<{
+        transaction: string;
+        nftType: NFTType;
+        merkleTreeAddress: string;
+        expectedAssetIds: string[];
+    }> {
+        console.log('🌳 Preparing cNFT mint transaction...');
+
+        if (!collection.merkleTreeAddress) {
+            throw new Error('Merkle tree not found for cNFT collection');
+        }
+
+        if (!collection.collectionNftAddress) {
+            throw new Error('Collection NFT not found');
+        }
+
+        // Get next ticket number
+        const nextTicketNumber = collection.ticketsSold + 1;
+        const expectedAssetIds: string[] = [];
+
+        // For now, mint one at a time (can be batched in future)
+        // Build transaction for each ticket
+        for (let i = 0; i < quantity; i++) {
+            const ticketNumber = nextTicketNumber + i;
+            const metadata: CNFTMetadata = {
+                name: `Ticket #${String(ticketNumber).padStart(3, '0')}`,
+                symbol: collection.name.substring(0, 4).toUpperCase(),
+                uri: getTicketMetadataUri(collection.id, String(ticketNumber)),
+                sellerFeeBasisPoints: 250,
+                creators: [{
+                    address: this.solanaService.getKeypair().publicKey.toString(),
+                    share: 100,
+                    verified: true,
+                }],
+            };
+
+            const result = await this.bubblegumService.buildMintTransaction({
+                merkleTree: collection.merkleTreeAddress,
+                collectionMint: collection.collectionNftAddress,
+                metadata,
+                recipient: userWallet,
+                priceInSol: collection.ticketPrice,
+                paymentDestination: collection.eventCreatorWallet,
+            });
+
+            expectedAssetIds.push(result.expectedAssetId);
+
+            // For single quantity, return immediately
+            if (quantity === 1) {
+                return {
+                    transaction: result.transaction,
+                    nftType: 'cnft',
+                    merkleTreeAddress: collection.merkleTreeAddress,
+                    expectedAssetIds,
+                };
+            }
+        }
+
+        // TODO: For multiple tickets, need to combine transactions
+        throw new Error('Multiple cNFT minting in single transaction not yet implemented');
+    }
+
+    /**
+     * Prepare a legacy mint transaction using Candy Machine
+     */
+    private async prepareLegacyMintTransaction(
+        collection: SolanaCollection,
+        userWallet: string,
+        quantity: number
+    ): Promise<{
+        transaction: string;
+        nftType: NFTType;
+        candyMachineAddress: string;
+        nftMintAddress: string;
+    }> {
+        console.log('🍭 Preparing legacy Candy Machine mint transaction...');
+
+        const organizerPublicKey = new PublicKey(collection.eventCreatorWallet);
+
+        // Ensure Collection NFT exists
+        if (!collection.collectionNftAddress) {
+            console.log('🎨 Collection NFT not found, creating...');
+            const collectionNftAddress = await this.createCollectionNFT(collection);
+            await this.collectionService.updateCollection(collection.id, {
+                collectionNftAddress,
+            });
+            collection.collectionNftAddress = collectionNftAddress;
+        }
+
+        // Ensure Candy Machine exists
+        if (!collection.candyMachineAddress) {
+            console.log('🍭 Candy Machine not found, creating...');
+            const candyMachineAddress = await this.createCandyMachine(collection, organizerPublicKey);
+            await this.collectionService.updateCollection(collection.id, {
+                candyMachineAddress,
+            });
+            collection.candyMachineAddress = candyMachineAddress;
+        }
+
+        // TODO: Implement mint transaction preparation using old Metaplex SDK
+        // This requires building the transaction client-side with the Candy Machine
+        throw new Error('Legacy mint transaction preparation not yet fully implemented');
+    }
+
+    /**
+     * Mint cNFT tickets directly (server-side, for admin operations)
+     */
+    async mintCNFTTickets(
+        collectionId: string,
+        recipientWallet: string,
+        quantity: number = 1
+    ): Promise<MintResult> {
+        console.log('🎫 Minting cNFT tickets directly...');
+
+        const collection = await this.collectionService.getCollectionById(collectionId);
+        if (!collection) {
+            throw new Error('Collection not found');
+        }
+
+        if (collection.nftType !== 'cnft') {
+            throw new Error('Collection is not configured for cNFT');
+        }
+
+        if (!collection.merkleTreeAddress || !collection.collectionNftAddress) {
+            throw new Error('cNFT collection not properly initialized');
+        }
+
+        const assetIds: string[] = [];
+        const leafIndices: number[] = [];
+        const dataHashes: string[] = [];
+        const creatorHashes: string[] = [];
+        let lastSignature = '';
+
+        for (let i = 0; i < quantity; i++) {
+            const ticketNumber = collection.ticketsSold + i + 1;
+            const metadata: CNFTMetadata = {
+                name: `Ticket #${String(ticketNumber).padStart(3, '0')}`,
+                symbol: collection.name.substring(0, 4).toUpperCase(),
+                uri: getTicketMetadataUri(collection.id, String(ticketNumber)),
+                sellerFeeBasisPoints: 250,
+                creators: [{
+                    address: this.solanaService.getKeypair().publicKey.toString(),
+                    share: 100,
+                    verified: true,
+                }],
+            };
+
+            const result = await this.bubblegumService.mintCompressedNFT({
+                merkleTree: collection.merkleTreeAddress,
+                collectionMint: collection.collectionNftAddress,
+                metadata,
+                recipient: recipientWallet,
+            });
+
+            assetIds.push(result.assetId);
+            leafIndices.push(result.leafIndex);
+            dataHashes.push(result.dataHash);
+            creatorHashes.push(result.creatorHash);
+            lastSignature = result.signature;
+        }
+
+        return {
+            success: true,
+            nftType: 'cnft',
+            assetIds,
+            leafIndices,
+            dataHashes,
+            creatorHashes,
+            transactionSignature: lastSignature,
+        };
+    }
+
+    /**
+     * Get collection statistics including Merkle tree info for cNFT
+     */
+    async getCollectionStats(collectionId: string): Promise<{
+        nftType: NFTType;
+        ticketsSold: number;
+        ticketsAvailable: number;
+        // Legacy specific
+        candyMachineInfo?: {
+            address: string;
+            itemsMinted: string;
+            itemsAvailable: string;
+            isFullyLoaded: boolean;
+        };
+        // cNFT specific
+        merkleTreeInfo?: {
+            address: string;
+            totalCapacity: number;
+            minted: number;
+            remaining: number;
+            percentUsed: number;
+        };
+    }> {
+        const collection = await this.collectionService.getCollectionById(collectionId);
+        if (!collection) {
+            throw new Error('Collection not found');
+        }
+
+        const baseStats = {
+            nftType: collection.nftType,
+            ticketsSold: collection.ticketsSold,
+            ticketsAvailable: collection.maxTickets - collection.ticketsSold,
+        };
+
+        if (collection.nftType === 'cnft' && collection.merkleTreeAddress) {
+            const treeStats = await this.bubblegumService.getTreeStats(collection.merkleTreeAddress);
+            return {
+                ...baseStats,
+                merkleTreeInfo: {
+                    address: collection.merkleTreeAddress,
+                    ...treeStats,
+                },
+            };
+        }
+
+        if (collection.candyMachineAddress) {
+            const cmInfo = await this.getCandyMachineInfo(collection.candyMachineAddress);
+            return {
+                ...baseStats,
+                candyMachineInfo: {
+                    address: collection.candyMachineAddress,
+                    itemsMinted: cmInfo.itemsMinted,
+                    itemsAvailable: cmInfo.itemsAvailable,
+                    isFullyLoaded: cmInfo.isFullyLoaded,
+                },
+            };
+        }
+
+        return baseStats;
     }
 
     async getCandyMachineInfo(candyMachineAddress: string) {

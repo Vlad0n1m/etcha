@@ -123,10 +123,45 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
 
 exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
+  email: 'email',
+  emailVerified: 'emailVerified',
+  password: 'password',
+  name: 'name',
+  image: 'image',
+  role: 'role',
   walletAddress: 'walletAddress',
   internalWalletAddress: 'internalWalletAddress',
+  walletLinkedAt: 'walletLinkedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
+};
+
+exports.Prisma.AccountScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  type: 'type',
+  provider: 'provider',
+  providerAccountId: 'providerAccountId',
+  refresh_token: 'refresh_token',
+  access_token: 'access_token',
+  expires_at: 'expires_at',
+  token_type: 'token_type',
+  scope: 'scope',
+  id_token: 'id_token',
+  session_state: 'session_state'
+};
+
+exports.Prisma.SessionScalarFieldEnum = {
+  id: 'id',
+  sessionToken: 'sessionToken',
+  userId: 'userId',
+  expires: 'expires'
+};
+
+exports.Prisma.VerificationTokenScalarFieldEnum = {
+  identifier: 'identifier',
+  token: 'token',
+  expires: 'expires'
 };
 
 exports.Prisma.ProfileScalarFieldEnum = {
@@ -150,6 +185,11 @@ exports.Prisma.OrganizerScalarFieldEnum = {
   phone: 'phone',
   address: 'address',
   isVerified: 'isVerified',
+  status: 'status',
+  requestedAt: 'requestedAt',
+  approvedAt: 'approvedAt',
+  approvedBy: 'approvedBy',
+  rejectionNote: 'rejectionNote',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };
@@ -180,6 +220,9 @@ exports.Prisma.EventScalarFieldEnum = {
   updatedAt: 'updatedAt',
   collectionNftAddress: 'collectionNftAddress',
   candyMachineAddress: 'candyMachineAddress',
+  merkleTreeAddress: 'merkleTreeAddress',
+  merkleTreeDepth: 'merkleTreeDepth',
+  nftType: 'nftType',
   categoryId: 'categoryId',
   organizerId: 'organizerId'
 };
@@ -208,7 +251,12 @@ exports.Prisma.TicketScalarFieldEnum = {
   isValid: 'isValid',
   isUsed: 'isUsed',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  assetId: 'assetId',
+  leafIndex: 'leafIndex',
+  dataHash: 'dataHash',
+  creatorHash: 'creatorHash',
+  nftType: 'nftType'
 };
 
 exports.Prisma.ListingScalarFieldEnum = {
@@ -226,7 +274,9 @@ exports.Prisma.ListingScalarFieldEnum = {
   soldAt: 'soldAt',
   sellerSignature: 'sellerSignature',
   createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  updatedAt: 'updatedAt',
+  assetId: 'assetId',
+  nftType: 'nftType'
 };
 
 exports.Prisma.PlatformConfigScalarFieldEnum = {
@@ -264,10 +314,23 @@ exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
 };
+exports.Role = exports.$Enums.Role = {
+  USER: 'USER',
+  ORGANIZER: 'ORGANIZER',
+  ADMIN: 'ADMIN'
+};
 
+exports.OrganizerStatus = exports.$Enums.OrganizerStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED'
+};
 
 exports.Prisma.ModelName = {
   User: 'User',
+  Account: 'Account',
+  Session: 'Session',
+  VerificationToken: 'VerificationToken',
   Profile: 'Profile',
   Organizer: 'Organizer',
   Category: 'Category',

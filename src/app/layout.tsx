@@ -5,6 +5,7 @@ import { WalletContextProvider } from "@/components/WalletProvider";
 import { NavigationProvider } from "@/components/NavigationProvider";
 import { AuthProvider } from "@/components/AuthProvider";
 import { SignatureProvider } from "@/components/SignatureProvider";
+import SessionProvider from "@/components/SessionProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,15 +32,17 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <WalletContextProvider>
-          <AuthProvider>
-            <SignatureProvider>
-              <NavigationProvider>
-                {children}
-              </NavigationProvider>
-            </SignatureProvider>
-          </AuthProvider>
-        </WalletContextProvider>
+        <SessionProvider>
+          <WalletContextProvider>
+            <AuthProvider>
+              <SignatureProvider>
+                <NavigationProvider>
+                  {children}
+                </NavigationProvider>
+              </SignatureProvider>
+            </AuthProvider>
+          </WalletContextProvider>
+        </SessionProvider>
       </body>
     </html>
   );

@@ -1,4 +1,5 @@
 import { Event } from '@/generated/prisma';
+import { NFTType } from './types';
 
 // Adapter to convert Prisma Event to Solana Collection format
 export interface SolanaCollection {
@@ -17,6 +18,10 @@ export interface SolanaCollection {
     imageUrl: string;
     collectionNftAddress?: string;
     candyMachineAddress?: string;
+    // cNFT specific fields
+    merkleTreeAddress?: string;
+    merkleTreeDepth?: number;
+    nftType: NFTType;
     status: 'active' | 'inactive' | 'completed';
     createdAt: string;
     updatedAt: string;
@@ -45,6 +50,10 @@ export function eventToCollection(event: Event & { organizer?: { userId?: string
         imageUrl: event.imageUrl,
         collectionNftAddress: event.collectionNftAddress || undefined,
         candyMachineAddress: event.candyMachineAddress || undefined,
+        // cNFT specific fields
+        merkleTreeAddress: event.merkleTreeAddress || undefined,
+        merkleTreeDepth: event.merkleTreeDepth || undefined,
+        nftType: (event.nftType as NFTType) || 'legacy',
         status: event.isActive ? 'active' : 'inactive',
         createdAt: event.createdAt?.toISOString() || now,
         updatedAt: event.updatedAt?.toISOString() || now,

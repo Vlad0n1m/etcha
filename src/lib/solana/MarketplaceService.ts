@@ -1,16 +1,70 @@
-import { PublicKey } from '@solana/web3.js';
-import { Metaplex, lamports, toBigNumber } from '@metaplex-foundation/js';
+import { PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL, ComputeBudgetProgram } from '@solana/web3.js';
+import { Metaplex, lamports } from '@metaplex-foundation/js';
 import { SolanaService } from './SolanaService';
+import { BubblegumService } from './BubblegumService';
+import { NFTType } from './types';
 
 /**
- * Marketplace Service for handling NFT secondary sales via Metaplex Auction House
+ * Platform fee configuration
+ */
+const PLATFORM_FEE_BASIS_POINTS = 250; // 2.5%
+const PLATFORM_FEE_PERCENT = PLATFORM_FEE_BASIS_POINTS / 10000;
+
+/**
+ * Listing result type
+ */
+export interface ListingResult {
+    listingAddress: string;
+    price: number;
+    nftType: NFTType;
+    transaction?: string;
+}
+
+/**
+ * Purchase result type
+ */
+export interface PurchaseResult {
+    success: boolean;
+    nftType: NFTType;
+    purchaseAddress?: string;
+    nftAddress?: string;
+    assetId?: string;
+    transaction: string;
+    sellerReceived: number;
+    platformFee: number;
+}
+
+/**
+ * Sale transaction parameters for cNFT
+ */
+export interface CNFTSaleParams {
+    assetId: string;
+    sellerWallet: string;
+    buyerWallet: string;
+    priceInSol: number;
+}
+
+/**
+ * Marketplace Service for handling NFT secondary sales
+ * - Legacy NFTs: Metaplex Auction House
+ * - cNFTs: Direct P2P transfers with atomic SOL payment
+ * 
  * Platform fee: 2.5% (250 basis points)
  */
 export class MarketplaceService {
     private solanaService: SolanaService;
+    private bubblegumService: BubblegumService;
 
     constructor(solanaService: SolanaService) {
         this.solanaService = solanaService;
+        this.bubblegumService = new BubblegumService(solanaService);
+    }
+
+    /**
+     * Get the BubblegumService instance
+     */
+    getBubblegumService(): BubblegumService {
+        return this.bubblegumService;
     }
 
     /**
@@ -155,7 +209,7 @@ export class MarketplaceService {
             const { purchase, response } = await metaplex.auctionHouse().buy({
                 auctionHouse,
                 listing,
-                buyer: buyerPublicKey,
+                buyer: buyerPublicKey as any,
             });
 
             console.log('✅ Purchase prepared successfully!');
@@ -299,6 +353,223 @@ export class MarketplaceService {
             console.error('Error checking if NFT is listed:', error);
             return false;
         }
+    }
+
+    // ============================================
+    // cNFT P2P MARKETPLACE METHODS
+    // ============================================
+
+    /**
+     * Build a P2P sale transaction for cNFT
+     * Creates an atomic transaction with SOL transfer + cNFT transfer
+     * 
+     * Transaction flow:
+     * 1. Buyer pays SOL to seller (minus platform fee)
+     * 2. Buyer pays platform fee
+     * 3. Seller transfers cNFT to buyer
+     * 
+     * @param params - Sale parameters
+     * @returns Serialized transaction requiring both buyer and seller signatures
+     */
+    async buildCNFTSaleTransaction(params: CNFTSaleParams): Promise<{
+        transaction: string;
+        sellerReceives: number;
+        platformFee: number;
+    }> {
+        console.log('🔄 Building cNFT P2P sale transaction...');
+        console.log('Asset ID:', params.assetId);
+        console.log('Seller:', params.sellerWallet);
+        console.log('Buyer:', params.buyerWallet);
+        console.log('Price:', params.priceInSol, 'SOL');
+
+        return this.bubblegumService.buildSaleTransaction({
+            assetId: params.assetId,
+            seller: params.sellerWallet,
+            buyer: params.buyerWallet,
+            priceInSol: params.priceInSol,
+            platformFeePercent: PLATFORM_FEE_PERCENT * 100,
+        });
+    }
+
+    /**
+     * Execute a cNFT P2P sale (server-side, for trusted operations)
+     * Used when both parties have already signed or platform is facilitating
+     */
+    async executeCNFTSale(params: CNFTSaleParams): Promise<PurchaseResult> {
+        console.log('💰 Executing cNFT P2P sale...');
+
+        const platformFee = params.priceInSol * PLATFORM_FEE_PERCENT;
+        const sellerReceives = params.priceInSol - platformFee;
+
+        try {
+            // Transfer the cNFT from seller to buyer
+            const transferResult = await this.bubblegumService.transferCompressedNFT({
+                assetId: params.assetId,
+                currentOwner: params.sellerWallet,
+                newOwner: params.buyerWallet,
+            });
+
+            console.log('✅ cNFT P2P sale executed successfully!');
+
+            return {
+                success: true,
+                nftType: 'cnft',
+                assetId: params.assetId,
+                transaction: transferResult.signature,
+                sellerReceived: sellerReceives,
+                platformFee,
+            };
+        } catch (error) {
+            console.error('❌ Error executing cNFT sale:', error);
+            throw new Error(`Failed to execute cNFT sale: ${(error as Error).message}`);
+        }
+    }
+
+    /**
+     * Verify ownership of a cNFT before listing
+     */
+    async verifyCNFTOwnership(assetId: string, expectedOwner: string): Promise<boolean> {
+        return this.bubblegumService.verifyOwnership(assetId, expectedOwner);
+    }
+
+    /**
+     * Get cNFT asset details
+     */
+    async getCNFTAssetDetails(assetId: string): Promise<{
+        owner: string;
+        name: string;
+        symbol: string;
+        uri: string;
+        isCompressed: boolean;
+    }> {
+        const asset = await this.bubblegumService.getAssetFromDAS(assetId);
+        return {
+            owner: asset.ownership.owner,
+            name: asset.content.metadata.name,
+            symbol: asset.content.metadata.symbol,
+            uri: asset.content.json_uri,
+            isCompressed: asset.compression.compressed,
+        };
+    }
+
+    /**
+     * Build a listing creation "transaction" for cNFT
+     * Note: cNFT listings are stored off-chain in the database
+     * This method just validates ownership and returns listing details
+     */
+    async prepareCNFTListing(params: {
+        assetId: string;
+        sellerWallet: string;
+        priceInSol: number;
+    }): Promise<{
+        valid: boolean;
+        assetId: string;
+        price: number;
+        platformFee: number;
+        sellerReceives: number;
+    }> {
+        console.log('📝 Preparing cNFT listing...');
+        console.log('Asset ID:', params.assetId);
+        console.log('Seller:', params.sellerWallet);
+        console.log('Price:', params.priceInSol, 'SOL');
+
+        // Verify ownership
+        const isOwner = await this.verifyCNFTOwnership(params.assetId, params.sellerWallet);
+        if (!isOwner) {
+            throw new Error('Seller does not own this cNFT');
+        }
+
+        const platformFee = params.priceInSol * PLATFORM_FEE_PERCENT;
+        const sellerReceives = params.priceInSol - platformFee;
+
+        return {
+            valid: true,
+            assetId: params.assetId,
+            price: params.priceInSol,
+            platformFee,
+            sellerReceives,
+        };
+    }
+
+    // ============================================
+    // UNIFIED MARKETPLACE METHODS
+    // ============================================
+
+    /**
+     * Prepare a buy transaction based on NFT type
+     * Routes to appropriate method (Auction House for legacy, P2P for cNFT)
+     */
+    async prepareBuyTransaction(params: {
+        nftType: NFTType;
+        buyerWallet: string;
+        priceInSol: number;
+        // Legacy params
+        auctionHouseAddress?: string;
+        listingAddress?: string;
+        nftMintAddress?: string;
+        // cNFT params
+        assetId?: string;
+        sellerWallet?: string;
+    }): Promise<{
+        transaction: string;
+        nftType: NFTType;
+        sellerReceives: number;
+        platformFee: number;
+    }> {
+        if (params.nftType === 'cnft') {
+            if (!params.assetId || !params.sellerWallet) {
+                throw new Error('assetId and sellerWallet required for cNFT purchase');
+            }
+
+            const result = await this.buildCNFTSaleTransaction({
+                assetId: params.assetId,
+                sellerWallet: params.sellerWallet,
+                buyerWallet: params.buyerWallet,
+                priceInSol: params.priceInSol,
+            });
+
+            return {
+                ...result,
+                nftType: 'cnft',
+            };
+        }
+
+        // Legacy Auction House flow
+        if (!params.auctionHouseAddress || !params.listingAddress || !params.nftMintAddress) {
+            throw new Error('auctionHouseAddress, listingAddress, and nftMintAddress required for legacy purchase');
+        }
+
+        const result = await this.buyTicketFromMarketplace(
+            params.auctionHouseAddress,
+            params.listingAddress,
+            params.nftMintAddress,
+            new PublicKey(params.buyerWallet)
+        );
+
+        const platformFee = params.priceInSol * PLATFORM_FEE_PERCENT;
+
+        return {
+            transaction: result.transaction,
+            nftType: 'legacy',
+            sellerReceives: params.priceInSol - platformFee,
+            platformFee,
+        };
+    }
+
+    /**
+     * Calculate platform fee and seller share
+     */
+    calculateFees(priceInSol: number): {
+        platformFee: number;
+        sellerReceives: number;
+        platformFeeBasisPoints: number;
+    } {
+        const platformFee = priceInSol * PLATFORM_FEE_PERCENT;
+        return {
+            platformFee,
+            sellerReceives: priceInSol - platformFee,
+            platformFeeBasisPoints: PLATFORM_FEE_BASIS_POINTS,
+        };
     }
 }
 

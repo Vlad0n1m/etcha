@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { useWallet } from "@solana/wallet-adapter-react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, Upload, Loader2, Calendar, MapPin, Tag, Ticket } from "lucide-react"
+import { ChevronLeft, Upload, Loader2, Calendar, MapPin, Tag, Ticket, Leaf, AlertCircle, Wallet } from "lucide-react"
 
 interface Category {
     id: string
@@ -14,11 +15,12 @@ interface Category {
 }
 
 export default function CreateEventPage() {
+    const { data: session, status } = useSession()
     const { connected, connecting, publicKey } = useWallet()
     const router = useRouter()
 
-    // Wallet check state
-    const [isCheckingWallet, setIsCheckingWallet] = useState(true)
+    // Auth check state
+    const [isCheckingAuth, setIsCheckingAuth] = useState(true)
 
     // Categories
     const [categories, setCategories] = useState<Category[]>([])
@@ -45,27 +47,38 @@ export default function CreateEventPage() {
     const [error, setError] = useState<string>("")
     const [currentStep, setCurrentStep] = useState(1)
 
-    // Wait for wallet to initialize
+    // Wait for auth to initialize
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsCheckingWallet(false)
-        }, 1000)
-
-        return () => clearTimeout(timer)
-    }, [])
+        if (status !== "loading") {
+            setIsCheckingAuth(false)
+        }
+    }, [status])
 
     useEffect(() => {
-        if (isCheckingWallet || connecting) {
+        if (isCheckingAuth || status === "loading") {
             return
         }
 
-        if (!connected) {
-            router.push("/")
-        } else {
-            // Load categories
-            loadCategories()
+        // Check if user is authenticated
+        if (!session?.user) {
+            router.push("/auth/login?callbackUrl=/organizer/create-event")
+            return
         }
-    }, [connected, connecting, isCheckingWallet, router])
+
+        // Check if user is an approved organizer
+        if (session.user.role !== "ORGANIZER" && session.user.role !== "ADMIN") {
+            router.push("/dashboard/organizer/request")
+            return
+        }
+
+        if (session.user.role === "ORGANIZER" && session.user.organizerStatus !== "APPROVED") {
+            router.push("/dashboard/organizer/pending")
+            return
+        }
+
+        // Load categories
+        loadCategories()
+    }, [session, status, isCheckingAuth, router])
 
     const loadCategories = async () => {
         try {
@@ -104,7 +117,17 @@ export default function CreateEventPage() {
     }
 
     const handleCreateEvent = async () => {
-        if (!publicKey) return
+        // Require wallet to be connected for blockchain operations
+        if (!session?.user?.walletAddress && !publicKey) {
+            setError("Please link your wallet in the dashboard before creating events.")
+            return
+        }
+
+        const walletAddress = session?.user?.walletAddress || publicKey?.toBase58()
+        if (!walletAddress) {
+            setError("Wallet address not found. Please link your wallet.")
+            return
+        }
 
         setCreating(true)
         setError("")
@@ -145,7 +168,7 @@ export default function CreateEventPage() {
                 imageUrl: uploadedImageUrl || "/logo.png",
                 ticketsAvailable,
                 price,
-                organizerWallet: publicKey.toBase58(),
+                organizerWallet: walletAddress,
 
                 // Collection metadata
                 collectionMetadata: {
@@ -183,13 +206,47 @@ export default function CreateEventPage() {
     const isStep2Valid = ticketsAvailable > 0 && price > 0 && symbol
     const isFormValid = isStep1Valid && isStep2Valid
 
-    // Show loading while checking wallet
-    if (isCheckingWallet || connecting) {
+    // Show loading while checking auth
+    if (isCheckingAuth || status === "loading") {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="text-center space-y-4">
                     <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" />
-                    <p className="text-sm text-muted-foreground">Checking wallet connection...</p>
+                    <p className="text-sm text-muted-foreground">Checking authentication...</p>
+                </div>
+            </div>
+        )
+    }
+
+    // Check if wallet is linked
+    const hasWallet = session?.user?.walletAddress || (connected && publicKey)
+
+    // Show wallet requirement warning
+    if (!hasWallet) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center px-4">
+                <div className="text-center space-y-4 max-w-md">
+                    <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto">
+                        <Wallet className="w-8 h-8 text-yellow-600" />
+                    </div>
+                    <h2 className="text-xl font-bold text-foreground">Wallet Required</h2>
+                    <p className="text-sm text-muted-foreground">
+                        You need to link a Solana wallet to create events and mint NFT tickets.
+                    </p>
+                    <div className="flex flex-col gap-2">
+                        <Link
+                            href="/dashboard/wallet"
+                            className="bg-primary text-primary-foreground font-semibold py-3 px-6 rounded-xl hover:bg-primary/90 transition-all"
+                        >
+                            Link Wallet
+                        </Link>
+                        <Link
+                            href="/dashboard"
+                            className="text-sm text-muted-foreground hover:text-foreground"
+                        >
+                            Back to Dashboard
+                        </Link>
+                    </div>
                 </div>
             </div>
         )
@@ -416,9 +473,24 @@ export default function CreateEventPage() {
                 {/* Step 2: Ticket/Collection Settings */}
                 {currentStep === 2 && (
                     <>
+                        {/* cNFT Info Banner */}
+                        <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                    <Leaf className="w-5 h-5 text-green-600" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-semibold text-green-800">Compressed NFT Tickets</p>
+                                    <p className="text-xs text-green-600">
+                                        Ultra-low fees (~0.0003 SOL/ticket) • Fast minting • Eco-friendly
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="bg-surface rounded-2xl p-5 border border-border">
                             <h2 className="text-base font-bold text-foreground mb-4">
-                                Ticket & NFT Collection
+                                Ticket Settings
                             </h2>
 
                             <div className="space-y-4">
@@ -506,6 +578,15 @@ export default function CreateEventPage() {
                                                 {(price * ticketsAvailable * 0.025).toFixed(4)} SOL
                                             </span>
                                         </div>
+                                        <div className="flex items-center justify-between pt-2 border-t border-border mt-2">
+                                            <span className="text-xs text-green-600 flex items-center gap-1">
+                                                <Leaf className="w-3 h-3" />
+                                                Est. minting cost (cNFT)
+                                            </span>
+                                            <span className="text-xs text-green-600 font-medium">
+                                                ~{(ticketsAvailable * 0.0003).toFixed(4)} SOL
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -544,7 +625,7 @@ export default function CreateEventPage() {
                                 disabled={!isFormValid || creating}
                                 className="flex-1 bg-primary text-primary-foreground font-semibold py-3.5 rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {creating ? "Creating..." : "Create Event & Collection"}
+                                {creating ? "Creating..." : "Create Event"}
                             </button>
                         </div>
                     </>

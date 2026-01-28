@@ -3,11 +3,10 @@
 import { useState, use, useEffect, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, Calendar, MapPin, Clock, Loader2 } from "lucide-react"
+import { ChevronLeft, Calendar, MapPin, Clock, Loader2, Leaf } from "lucide-react"
 import { useWallet, useConnection } from "@solana/wallet-adapter-react"
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui"
 import WalletDrawer from "@/components/WalletDrawer"
-import CollectionStatus from "@/components/CollectionStatus"
 import MintProgress, { MintStatus } from "@/components/MintProgress"
 import MintResultModal from "@/components/MintResultModal"
 import { useSignature } from "@/components/SignatureProvider"
@@ -33,16 +32,10 @@ interface Event {
         description: string
     }
     // schedule?: string[] // Disabled for MVP
-    candyMachineAddress?: string
     collectionNftAddress?: string
-}
-
-interface CandyMachineData {
-    success: boolean
-    itemsAvailable: number
-    itemsRedeemed: number
-    itemsRemaining: number
-    price: number
+    // cNFT fields (all events use cNFT)
+    merkleTreeAddress?: string
+    merkleTreeDepth?: number
 }
 
 interface EventMintResult {
@@ -67,7 +60,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     const [error, setError] = useState<string | null>(null)
     const [ticketQuantity, setTicketQuantity] = useState(1)
     const [isWalletDrawerOpen, setIsWalletDrawerOpen] = useState(false)
-    const [candyMachineData, setCandyMachineData] = useState<CandyMachineData | null>(null)
     const [isMinting, setIsMinting] = useState(false)
     const [mintStatus, setMintStatus] = useState<MintStatus>("preparing")
     const [mintProgress, setMintProgress] = useState<string>("")
@@ -77,6 +69,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     const [internalBalance, setInternalBalance] = useState<number | null>(null)
     const { signature, derivedAddress } = useSignature()
     const [copiedAddress, setCopiedAddress] = useState(false)
+    const [isUpgrading, setIsUpgrading] = useState(false)
 
     const { connected, publicKey, sendTransaction, wallet } = useWallet()
     const { connection } = useConnection()
@@ -149,21 +142,50 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         }
     }
 
+    const handleUpgradeEvent = async () => {
+        if (!event) return
+
+        setIsUpgrading(true)
+        setError(null)
+
+        try {
+            const response = await fetch(`/api/events/${event.id}/upgrade-cnft`, {
+                method: 'POST',
+            })
+
+            const result = await response.json()
+
+            if (result.success) {
+                // Refresh event data
+                await fetchEvent()
+                setError(null)
+            } else {
+                setError(result.error || 'Failed to upgrade event')
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to upgrade event')
+        } finally {
+            setIsUpgrading(false)
+        }
+    }
+
     const startMint = async () => {
-        if (!connected || !publicKey || !wallet || !sendTransaction) {
+        if (!connected || !publicKey || !wallet || !sendTransaction || !event) {
             setIsWalletDrawerOpen(true)
             return
         }
 
-        if (!event.candyMachineAddress) {
-            alert("This event does not have an active NFT collection")
+        // All new events use cNFT - check if collection is configured
+        if (!event.merkleTreeAddress) {
+            // This is a legacy event without cNFT infrastructure
+            setError("This event was created before cNFT support. Please contact the organizer to upgrade the event.")
             return
         }
 
         setShowBuyConfirm(false)
         setIsMinting(true)
         setMintStatus("preparing")
-        setMintProgress("Preparing transaction...")
+        setMintProgress("Preparing ticket purchase...")
 
         try {
             // Step 1: Get Mint Transaction from Backend
@@ -172,7 +194,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     eventId: event.id,
-                    candyMachineAddress: event.candyMachineAddress,
+                    merkleTreeAddress: event.merkleTreeAddress,
                     buyerWallet: publicKey.toBase58(),
                     quantity: ticketQuantity,
                 }),
@@ -185,7 +207,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             }
 
             const transactionBase64 = mintResult.transaction
-            const mintAddresses = mintResult.mintAddresses || []
+            const assetIds = mintResult.assetIds || []
 
             if (!transactionBase64) {
                 throw new Error('No transaction returned from server')
@@ -202,7 +224,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             const signature = await sendTransaction(transaction, connection)
 
             setMintStatus("confirming")
-            setMintProgress("Confirming transaction on blockchain...")
+            setMintProgress("Confirming on blockchain...")
 
             // Wait for confirmation
             await connection.confirmTransaction(signature, 'confirmed')
@@ -215,10 +237,10 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     eventId: event.id,
-                    candyMachineAddress: event.candyMachineAddress,
+                    merkleTreeAddress: event.merkleTreeAddress,
                     buyerWallet: publicKey.toBase58(),
                     quantity: ticketQuantity,
-                    nftMintAddresses: mintAddresses,
+                    assetIds: assetIds,
                     transactionSignature: signature,
                 }),
             })
@@ -227,10 +249,10 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
 
             if (result.success) {
                 setMintStatus("complete")
-                setMintProgress("Minted successfully!")
+                setMintProgress("Ticket purchased successfully!")
                 setMintResult({
                     ...result,
-                    nftMintAddresses: mintAddresses,
+                    nftMintAddresses: assetIds,
                     transactionSignature: signature,
                 })
                 setShowMintModal(true)
@@ -243,7 +265,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         } catch (error: unknown) {
             console.error("Mint error:", error)
             setMintStatus("error")
-            let errorMessage = "Failed to mint NFT tickets"
+            let errorMessage = "Failed to purchase ticket"
 
             if (error instanceof Error) {
                 errorMessage = error.message
@@ -368,23 +390,18 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
 
-                <div className="absolute top-4 left-4">
+                <div className="absolute top-4 left-4 flex gap-2">
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/90 text-primary-foreground backdrop-blur-sm">
                         {event.category}
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/90 text-white backdrop-blur-sm">
+                        <Leaf className="w-3 h-3" />
+                        cNFT
                     </span>
                 </div>
             </div>
 
             <div className="px-4 max-w-2xl mx-auto">
-                {/* Collection Status */}
-                {event.candyMachineAddress && candyMachineData && (
-                    <div className="bg-surface rounded-2xl p-4 -mt-4 mb-4 relative z-10 border border-border shadow-lg">
-                        <CollectionStatus
-                            candyMachineAddress={event.candyMachineAddress}
-                            showDetails={false}
-                        />
-                    </div>
-                )}
 
                 <div className="bg-surface rounded-2xl p-5 -mt-8 relative z-10 border border-border shadow-lg">
                     <div className="flex items-start justify-between gap-3 mb-4">
@@ -429,6 +446,10 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                                 <span className="text-sm font-medium text-muted-foreground">SOL</span>
                             </div>
                             <div className="text-xs text-muted-foreground">per ticket</div>
+                            <div className="mt-2 flex items-center gap-1.5 text-xs text-green-600">
+                                <Leaf className="w-3.5 h-3.5" />
+                                <span>Ultra-low transaction fees</span>
+                            </div>
                         </div>
                     )}
 
@@ -440,7 +461,33 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                         </div>
                     )}
 
-
+                    {/* Legacy Event Upgrade Banner */}
+                    {!event.merkleTreeAddress && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
+                            <div className="flex items-start gap-3">
+                                <div className="flex-1">
+                                    <p className="text-sm font-medium text-yellow-800">Event Upgrade Required</p>
+                                    <p className="text-xs text-yellow-700 mt-1">
+                                        This event needs to be upgraded to enable ticket purchases with ultra-low fees.
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={handleUpgradeEvent}
+                                disabled={isUpgrading}
+                                className="mt-3 w-full bg-yellow-600 text-white font-medium py-2.5 rounded-lg hover:bg-yellow-700 transition-colors disabled:opacity-50"
+                            >
+                                {isUpgrading ? (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Upgrading...
+                                    </span>
+                                ) : (
+                                    'Upgrade Event to cNFT'
+                                )}
+                            </button>
+                        </div>
+                    )}
 
                     {/* Mint Progress */}
                     {isMinting && (
@@ -449,13 +496,22 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                         </div>
                     )}
 
-                    <button
-                        onClick={handleBuyClick}
-                        disabled={isMinting}
-                        className="w-full bg-primary text-primary-foreground font-semibold py-3.5 rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isMinting ? "Minting..." : event.price === 0 ? 'Get Ticket' : `Buy for ${formatPrice(totalPrice)} SOL`}
-                    </button>
+                    {event.merkleTreeAddress ? (
+                        <button
+                            onClick={handleBuyClick}
+                            disabled={isMinting}
+                            className="w-full bg-primary text-primary-foreground font-semibold py-3.5 rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isMinting ? "Minting..." : event.price === 0 ? 'Get Ticket' : `Buy for ${formatPrice(totalPrice)} SOL`}
+                        </button>
+                    ) : (
+                        <button
+                            disabled
+                            className="w-full bg-muted text-muted-foreground font-semibold py-3.5 rounded-xl cursor-not-allowed"
+                        >
+                            Upgrade event first to buy tickets
+                        </button>
+                    )}
                 </div>
 
                 {/* Resale offers */}

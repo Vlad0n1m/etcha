@@ -48,7 +48,13 @@ export class CollectionService {
         );
     }
 
-    async updateCollection(id: string, updates: Partial<{ collectionNftAddress: string; candyMachineAddress: string }>): Promise<SolanaCollection | null> {
+    async updateCollection(id: string, updates: Partial<{
+        collectionNftAddress: string;
+        candyMachineAddress: string;
+        merkleTreeAddress: string;
+        merkleTreeDepth: number;
+        nftType: string;
+    }>): Promise<SolanaCollection | null> {
         const event = await prisma.event.update({
             where: { id },
             data: updates,

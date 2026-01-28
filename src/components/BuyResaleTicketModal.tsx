@@ -21,6 +21,8 @@ interface BuyResaleTicketModalProps {
         date: string
         time?: string
         sellerName: string
+        // cNFT asset ID (all tickets are cNFTs)
+        assetId?: string
     }
     onSuccess?: () => void
 }
@@ -100,7 +102,7 @@ export default function BuyResaleTicketModal({
 
             setSuccess(true)
             setTransactionHash(data.transactionHash)
-            
+
             // Call success callback
             if (onSuccess) {
                 onSuccess()
@@ -157,7 +159,7 @@ export default function BuyResaleTicketModal({
             // Clear funding state and retry purchase
             setNeedsFunding(null)
             setError(null)
-            
+
             // Retry purchase after funding
             setTimeout(() => {
                 handlePurchase()
@@ -265,12 +267,12 @@ export default function BuyResaleTicketModal({
                                             <div className="flex-1">
                                                 <p className="text-sm text-yellow-800 font-medium">Funding Required</p>
                                                 <p className="text-sm text-yellow-700 mt-1">
-                                                    Your internal wallet needs {needsFunding.requiredAmount.toFixed(4)} SOL 
+                                                    Your internal wallet needs {needsFunding.requiredAmount.toFixed(4)} SOL
                                                     (current: {needsFunding.currentBalance.toFixed(4)} SOL)
                                                 </p>
                                             </div>
                                         </div>
-                                        
+
                                         <div className="bg-white rounded-lg p-3 border border-yellow-200">
                                             <div className="text-xs text-yellow-800 mb-2">Send SOL to this address:</div>
                                             <div className="flex items-center justify-between">
@@ -331,10 +333,13 @@ export default function BuyResaleTicketModal({
                                 </div>
 
                                 {/* Disclaimer */}
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                                    <p className="text-xs text-blue-800">
-                                        By purchasing this ticket, you agree to complete the transaction. 
-                                        The NFT will be transferred to your wallet and payment will be sent to the seller.
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                                    <p className="text-xs text-green-800">
+                                        By purchasing this ticket, you agree to complete the transaction.
+                                        The compressed NFT will be transferred to your wallet and payment will be sent to the seller.
+                                        <span className="block mt-1 font-medium">
+                                            Ultra-low transaction fees with cNFT technology!
+                                        </span>
                                     </p>
                                 </div>
 

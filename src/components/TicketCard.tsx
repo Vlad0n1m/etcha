@@ -2,7 +2,7 @@
 
 import type React from "react"
 import Image from "next/image"
-import { Calendar, MapPin, Clock, CheckCircle2 } from "lucide-react"
+import { Calendar, MapPin, Clock, CheckCircle2, Leaf } from "lucide-react"
 import { motion } from "framer-motion"
 
 interface TicketCardProps {
@@ -14,7 +14,10 @@ interface TicketCardProps {
   location: string
   price: number
   status: "purchased" | "attended"
-  nftId: string
+  // cNFT asset ID (all tickets are cNFTs)
+  assetId?: string
+  // Legacy NFT identifier (for backward compatibility)
+  nftId?: string
 }
 
 const TicketCard: React.FC<TicketCardProps> = ({
@@ -25,8 +28,12 @@ const TicketCard: React.FC<TicketCardProps> = ({
   location,
   price,
   status,
+  assetId,
   nftId,
 }) => {
+  // Use asset ID (cNFT) or fall back to nftId for legacy
+  const displayId = assetId || nftId
+  const shortId = displayId ? `${displayId.slice(0, 8)}...` : "N/A"
   const formatPrice = (price: number): string => {
     if (price >= 1000) {
       return `${(price / 1000).toFixed(1)}k SOL`
@@ -99,7 +106,14 @@ const TicketCard: React.FC<TicketCardProps> = ({
 
               <div className="flex items-center justify-between pt-1">
                 <span className="text-sm font-bold text-gray-900">{formatPrice(price)}</span>
-                <span className="text-xs text-gray-500">NFT #{nftId.slice(0, 8)}...</span>
+                <div className="flex items-center gap-1">
+                  <span title="Compressed NFT">
+                    <Leaf className="w-3 h-3 text-green-500" />
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    cNFT #{shortId}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

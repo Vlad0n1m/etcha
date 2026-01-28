@@ -64,6 +64,10 @@ export async function GET(
             schedule: [], // Schedule disabled for MVP
             candyMachineAddress: event.candyMachineAddress,
             collectionNftAddress: event.collectionNftAddress,
+            // cNFT fields
+            merkleTreeAddress: event.merkleTreeAddress,
+            merkleTreeDepth: event.merkleTreeDepth,
+            nftType: event.nftType || 'legacy',
         }
 
         return NextResponse.json({

@@ -1,18 +1,17 @@
 "use client"
 
-import { useWallet } from "@solana/wallet-adapter-react"
+import { useSession } from "next-auth/react"
+import { useWallet, useConnection } from "@solana/wallet-adapter-react"
 import { useState, useEffect } from "react"
-import { Copy, Edit, Eye, MoreHorizontal, Wallet, RefreshCw, Save, X, AlertCircle } from "lucide-react"
-import { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } from "@solana/web3.js"
+import { Copy, Edit, Eye, MoreHorizontal, Wallet, RefreshCw, Save, X, User, LogIn, UserPlus } from "lucide-react"
+import { LAMPORTS_PER_SOL } from "@solana/web3.js"
 import WalletDrawer from "@/components/WalletDrawer"
 import MobileHeader from "@/components/MobileHeader"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Image from "next/image"
-// Link not needed after redesign
+import Link from "next/link"
 import EventCard from "@/components/EventCard"
-import { useAuth } from "@/components/AuthProvider"
-import { useSignature } from "@/components/SignatureProvider"
 
 type TicketStatus = "bought" | "on_resale" | "passed" | "nft"
 
@@ -32,128 +31,157 @@ interface Ticket {
     organizerName?: string
 }
 
+// Auth prompt component for non-authenticated users
+function AuthPrompt() {
+    return (
+        <div className="min-h-screen bg-gray-50">
+            <MobileHeader />
+            <div className="flex items-center justify-center min-h-screen px-4 pt-16 pb-20">
+                <div className="w-full max-w-md text-center">
+                    {/* Icon */}
+                    <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <User className="w-10 h-10 text-purple-600" />
+                    </div>
+
+                    {/* Title */}
+                    <h1 className="text-2xl font-bold text-gray-900 mb-3">
+                        Sign in to your account
+                    </h1>
+                    <p className="text-gray-500 mb-8">
+                        Create an account or sign in to view your profile, tickets, and more.
+                    </p>
+
+                    {/* Auth buttons */}
+                    <div className="space-y-3">
+                        <Link
+                            href="/auth/login"
+                            className="flex items-center justify-center gap-2 w-full bg-gray-900 text-white font-semibold py-3 px-6 rounded-xl hover:bg-gray-800 transition-colors"
+                        >
+                            <LogIn className="w-5 h-5" />
+                            Sign In
+                        </Link>
+                        <Link
+                            href="/auth/register"
+                            className="flex items-center justify-center gap-2 w-full bg-white text-gray-900 font-semibold py-3 px-6 rounded-xl border border-gray-300 hover:bg-gray-50 transition-colors"
+                        >
+                            <UserPlus className="w-5 h-5" />
+                            Create Account
+                        </Link>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="relative my-8">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-gray-200"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="px-4 bg-gray-50 text-gray-500">or</span>
+                        </div>
+                    </div>
+
+                    {/* Browse events */}
+                    <Link
+                        href="/"
+                        className="text-purple-600 font-medium hover:text-purple-700 transition-colors"
+                    >
+                        Browse events without an account
+                    </Link>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// Loading component
+function LoadingState() {
+    return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="text-center">
+                <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-gray-500">Loading profile...</p>
+            </div>
+        </div>
+    )
+}
+
 export default function ProfilePage() {
-    const { connected, publicKey, wallet } = useWallet()
-    const { isLoading: authLoading, error: authError, refreshToken } = useAuth()
-    const { signature, derivedAddress } = useSignature()
+    const { data: session, status } = useSession()
+    const { connected, publicKey } = useWallet()
+    const { connection } = useConnection()
+
     const [activeTab, setActiveTab] = useState("bought")
     const [copied, setCopied] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
-    const [nickname, setNickname] = useState("User")
+    const [nickname, setNickname] = useState("")
     const [tempNickname, setTempNickname] = useState("")
     const [showValue, setShowValue] = useState(true)
-    const [internalWalletBalance, setInternalWalletBalance] = useState<number | null>(null)
-    const [internalWalletAddress, setInternalWalletAddress] = useState<string | null>(null)
+    const [walletBalance, setWalletBalance] = useState<number | null>(null)
     const [isLoadingBalance, setIsLoadingBalance] = useState(false)
     const [isSavingNickname, setIsSavingNickname] = useState(false)
-    const [copiedInternalAddress, setCopiedInternalAddress] = useState(false)
     const [tickets, setTickets] = useState<Ticket[]>([])
     const [isLoadingTickets, setIsLoadingTickets] = useState(false)
-    const [isTransferring, setIsTransferring] = useState(false)
-    const [transferError, setTransferError] = useState<string | null>(null)
-    const [isAirdropping, setIsAirdropping] = useState(false)
-    const [airdropError, setAirdropError] = useState<string | null>(null)
-    // Signature and derived address are provided by SignatureProvider
 
-    // Function to load balance - can be called manually or on mount
-    const loadBalance = async () => {
-        if (!connected || !publicKey) {
-            setInternalWalletBalance(null)
-            setInternalWalletAddress(null)
-            return
+    // Set nickname from session
+    useEffect(() => {
+        if (session?.user?.name) {
+            setNickname(session.user.name)
+            setTempNickname(session.user.name)
+        } else if (session?.user?.email) {
+            const emailName = session.user.email.split("@")[0]
+            setNickname(emailName)
+            setTempNickname(emailName)
         }
+    }, [session])
 
-        // Wait for signature to be available from SignatureProvider
-        if (!signature) {
-            console.log('⏳ Waiting for signature from SignatureProvider...')
+    // Wallet address from connected wallet
+    const walletAddress = publicKey?.toBase58()
+
+    // Load wallet balance directly from chain
+    const loadBalance = async () => {
+        if (!publicKey || !connection) {
+            setWalletBalance(null)
             return
         }
 
         try {
             setIsLoadingBalance(true)
-
-            const signatureHex = Array.from(signature)
-                .map(b => b.toString(16).padStart(2, '0'))
-                .join('')
-
-            // POST request with signature to derive internal wallet
-            const response = await fetch('/api/wallet/balance', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    walletAddress: publicKey.toString(),
-                    signature: signatureHex,
-                }),
-            })
-
-            const data = await response.json()
-
-            if (data.success) {
-                setInternalWalletBalance(data.balance ?? 0)
-                setInternalWalletAddress(derivedAddress || data.internalWalletAddress || null)
-                console.log('Internal wallet loaded:', data.internalWalletAddress, 'Balance:', data.balance)
-            } else {
-                console.error('Failed to load balance:', data.message)
-                setInternalWalletBalance(0)
-                setInternalWalletAddress(null)
-            }
-        } catch (error: unknown) {
+            const balance = await connection.getBalance(publicKey)
+            setWalletBalance(balance / LAMPORTS_PER_SOL)
+        } catch (error) {
             console.error('Error loading balance:', error)
-            setInternalWalletBalance(0)
-            setInternalWalletAddress(null)
+            setWalletBalance(null)
         } finally {
             setIsLoadingBalance(false)
         }
     }
 
-    // Load balance once when wallet/signature ready
+    // Load balance when wallet connects
     useEffect(() => {
-        if (connected && publicKey && signature) {
+        if (connected && publicKey) {
             loadBalance()
-        } else if (!connected || !publicKey) {
-            setInternalWalletBalance(null)
-            setInternalWalletAddress(null)
+        } else {
+            setWalletBalance(null)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [connected, publicKey, signature])
+    }, [connected, publicKey])
 
-    // Load tickets - use shared signature
+    // Load tickets (using wallet address)
     useEffect(() => {
         const loadTickets = async () => {
-            if (!connected || !publicKey) {
+            if (!walletAddress) {
                 setTickets([])
-                return
-            }
-
-            // Wait for signature from SignatureProvider
-            if (!signature) {
-                console.log('⏳ Waiting for signature for tickets...')
                 return
             }
 
             try {
                 setIsLoadingTickets(true)
 
-                const signatureHex = Array.from(signature)
-                    .map(b => b.toString(16).padStart(2, '0'))
-                    .join('')
-
-                // POST request with signature to derive internal wallet
-                const response = await fetch('/api/profile/tickets', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        walletAddress: publicKey.toString(),
-                        signature: signatureHex,
-                    }),
-                })
-
+                const response = await fetch(`/api/profile/tickets?wallet=${walletAddress}`)
                 const data = await response.json()
 
                 if (data.success) {
                     setTickets(data.tickets || [])
                 } else {
-                    console.error('Failed to load tickets:', data.message)
                     setTickets([])
                 }
             } catch (error) {
@@ -165,118 +193,17 @@ export default function ProfilePage() {
         }
 
         loadTickets()
-
-        // Also refresh tickets when page becomes visible (user returns from purchase)
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible' && connected && publicKey) {
-                loadTickets()
-            }
-        }
-
-        document.addEventListener('visibilitychange', handleVisibilityChange)
-
-        return () => {
-            document.removeEventListener('visibilitychange', handleVisibilityChange)
-        }
-    }, [connected, publicKey, signature])
+    }, [walletAddress])
 
     const formatAddress = (address: string) => {
         return `${address.slice(0, 4)}...${address.slice(-4)}`
     }
 
     const handleCopy = () => {
-        if (publicKey) {
-            navigator.clipboard.writeText(publicKey.toString())
+        if (walletAddress) {
+            navigator.clipboard.writeText(walletAddress)
             setCopied(true)
             setTimeout(() => setCopied(false), 2000)
-        }
-    }
-
-    const handleCopyInternalAddress = () => {
-        if (internalWalletAddress) {
-            navigator.clipboard.writeText(internalWalletAddress)
-            setCopiedInternalAddress(true)
-            setTimeout(() => setCopiedInternalAddress(false), 2000)
-        }
-    }
-
-    const handleTopUp = async () => {
-        if (!internalWalletAddress || !connected || !publicKey || !wallet?.adapter) {
-            setTransferError('Wallet not connected or internal wallet address not available')
-            return
-        }
-
-        setIsTransferring(true)
-        setTransferError(null)
-
-        try {
-            const connection = new Connection(
-                process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
-                'confirmed'
-            )
-
-            // Create transfer transaction for 1 SOL
-            const transferTransaction = new Transaction().add(
-                SystemProgram.transfer({
-                    fromPubkey: publicKey,
-                    toPubkey: new PublicKey(internalWalletAddress),
-                    lamports: Math.floor(1 * LAMPORTS_PER_SOL),
-                })
-            )
-
-            const { blockhash } = await connection.getLatestBlockhash('confirmed')
-            transferTransaction.recentBlockhash = blockhash
-            transferTransaction.feePayer = publicKey
-
-            // Send transaction using wallet adapter
-            const signature = await wallet.adapter.sendTransaction(transferTransaction, connection)
-            await connection.confirmTransaction(signature, 'confirmed')
-
-            // Refresh balance after successful transfer
-            await loadBalance()
-            
-            console.log('1 SOL transferred successfully. Signature:', signature)
-        } catch (error: unknown) {
-            console.error('Error transferring SOL:', error)
-            setTransferError(error instanceof Error ? error.message : 'Failed to transfer SOL. Please try again.')
-        } finally {
-            setIsTransferring(false)
-        }
-    }
-
-    const handleAirdrop = async () => {
-        if (!internalWalletAddress) {
-            setAirdropError('Internal wallet address not available')
-            return
-        }
-
-        setIsAirdropping(true)
-        setAirdropError(null)
-
-        try {
-            const response = await fetch('/api/wallet/airdrop', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    recipientAddress: internalWalletAddress,
-                }),
-            })
-
-            const data = await response.json()
-
-            if (!response.ok || !data.success) {
-                throw new Error(data.error || 'Failed to process airdrop')
-            }
-
-            // Refresh balance after successful airdrop
-            await loadBalance()
-            
-            console.log('Airdrop successful. Signature:', data.transactionSignature)
-        } catch (error: unknown) {
-            console.error('Error during airdrop:', error)
-            setAirdropError(error instanceof Error ? error.message : 'Failed to process airdrop. Please try again.')
-        } finally {
-            setIsAirdropping(false)
         }
     }
 
@@ -288,12 +215,8 @@ export default function ProfilePage() {
 
         setIsSavingNickname(true)
         try {
-            // Here you would save the nickname to your backend
-            // For now, just update the local state
             setNickname(tempNickname.trim())
             setIsEditing(false)
-        } catch (error) {
-            console.error('Error saving nickname:', error)
         } finally {
             setIsSavingNickname(false)
         }
@@ -302,15 +225,6 @@ export default function ProfilePage() {
     const cancelEdit = () => {
         setTempNickname(nickname)
         setIsEditing(false)
-    }
-
-    const handleEditNickname = () => {
-        if (isEditing && tempNickname.trim()) {
-            saveNickname()
-        } else {
-            setTempNickname(nickname)
-            setIsEditing(true)
-        }
     }
 
     const ownedTickets = tickets.filter(ticket => ["bought", "on_resale", "nft"].includes(ticket.status))
@@ -322,7 +236,6 @@ export default function ProfilePage() {
         return true
     })
 
-    // Group tickets by date similar to home page feed
     const groupTicketsByDate = (items: Ticket[]) => {
         const grouped = items.reduce((acc: Record<string, Ticket[]>, t: Ticket) => {
             const dateKey = t.date
@@ -350,69 +263,41 @@ export default function ProfilePage() {
 
     const groupedTickets = groupTicketsByDate(filteredTickets)
 
-    if (!connected) {
-        return (
-            <div className="min-h-screen bg-background flex items-center justify-center p-4">
-                <div className="text-center max-w-md">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-3">Connect Your Wallet</h2>
-                    <p className="text-gray-600 mb-8">Connect your Solana wallet to view your profile</p>
-                    <WalletDrawer>
-                        <Button size="lg" className="bg-blue-600 text-white hover:bg-blue-700 px-8">
-                            Connect Wallet
-                        </Button>
-                    </WalletDrawer>
-                </div>
-            </div>
-        )
+    // Show loading state
+    if (status === "loading") {
+        return <LoadingState />
     }
 
-    if (authLoading) {
-        return (
-            <div className="min-h-screen bg-background flex items-center justify-center p-4">
-                <div className="text-center max-w-md">
-                    <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                    <h2 className="text-2xl font-bold text-gray-900 mb-3">Authenticating...</h2>
-                    <p className="text-gray-600">Please sign the transaction to continue</p>
-                </div>
-            </div>
-        )
+    // Show auth prompt if not logged in
+    if (!session?.user) {
+        return <AuthPrompt />
     }
 
-    if (authError) {
-        return (
-            <div className="min-h-screen bg-background flex items-center justify-center p-4">
-                <div className="text-center max-w-md">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-3">Authentication Error</h2>
-                    <p className="text-gray-600 mb-8">{authError}</p>
-                    <Button
-                        onClick={refreshToken}
-                        size="lg"
-                        className="bg-blue-600 text-white hover:bg-blue-700 px-8"
-                    >
-                        Try Again
-                    </Button>
-                </div>
-            </div>
-        )
-    }
-
+    // User is authenticated - show profile
     return (
         <div className="min-h-screen bg-background">
             <MobileHeader />
-            <div className="px-3 pt-24 pb-3">
+            <div className="px-3 pt-24 pb-3 md:pt-8 md:max-w-4xl md:mx-auto">
                 <div className="flex flex-col items-start mb-4">
-                    <div className="w-16 h-16 rounded-full mb-3 flex items-center justify-center overflow-hidden">
-                        <div
-                            className="w-full h-full"
-                            style={{
-                                background:
-                                    "repeating-conic-gradient(from 0deg, #FF1493 0deg 45deg, #FF69B4 45deg 90deg, #FF1493 90deg 135deg, #C71585 135deg 180deg)",
-                                imageRendering: "pixelated",
-                            }}
-                        />
+                    {/* Avatar */}
+                    <div className="w-16 h-16 rounded-full mb-3 flex items-center justify-center overflow-hidden bg-gradient-to-br from-purple-500 to-indigo-600">
+                        {session.user.image ? (
+                            <Image
+                                src={session.user.image}
+                                alt="Profile"
+                                width={64}
+                                height={64}
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <span className="text-white text-2xl font-bold">
+                                {session.user.name?.[0]?.toUpperCase() || session.user.email?.[0]?.toUpperCase() || "U"}
+                            </span>
+                        )}
                     </div>
 
-                    <div className="flex items-center gap-2 mb-2">
+                    {/* Name and email */}
+                    <div className="flex items-center gap-2 mb-1">
                         {isEditing ? (
                             <div className="flex items-center gap-2">
                                 <Input
@@ -443,124 +328,105 @@ export default function ProfilePage() {
                             </div>
                         ) : (
                             <>
-                                <h1 className="text-gray-900 text-xl font-bold">{nickname}</h1>
-                                <button onClick={handleEditNickname} className="p-1 hover:bg-gray-100 rounded transition-colors">
+                                <h1 className="text-gray-900 text-xl font-bold">{nickname || "User"}</h1>
+                                <button
+                                    onClick={() => {
+                                        setTempNickname(nickname)
+                                        setIsEditing(true)
+                                    }}
+                                    className="p-1 hover:bg-gray-100 rounded transition-colors"
+                                >
                                     <Edit className="w-4 h-4 text-gray-500" />
                                 </button>
                             </>
                         )}
-                        <button onClick={handleCopy} className="p-1 hover:bg-gray-100 rounded transition-colors" title={copied ? "Copied!" : "Copy address"}>
-                            <Copy className={`w-4 h-4 ${copied ? "text-green-500" : "text-gray-500"}`} />
-                        </button>
                     </div>
 
-                    <div className="px-2 py-1 bg-gray-100 rounded text-xs text-gray-700 font-mono mb-2">
-                        {formatAddress(publicKey?.toString() || "").toUpperCase()}
-                    </div>
+                    {/* Email */}
+                    <p className="text-sm text-gray-500 mb-3">{session.user.email}</p>
 
-                    {/* Internal Wallet Section */}
-                    {internalWalletAddress && (
+                    {/* Wallet section */}
+                    {connected && walletAddress ? (
                         <div className="w-full mb-3 p-3 bg-white/80 backdrop-blur-sm rounded-lg border border-gray-200">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
-                                    <Wallet className="w-4 h-4 text-gray-600" />
-                                    <span className="text-gray-600 text-xs font-medium">Internal Wallet</span>
+                                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                                    <span className="text-gray-600 text-xs font-medium">Connected Wallet</span>
                                 </div>
                                 <button
-                                    onClick={handleCopyInternalAddress}
+                                    onClick={handleCopy}
                                     className="p-1 hover:bg-gray-100 rounded transition-colors"
-                                    title={copiedInternalAddress ? "Copied!" : "Copy internal wallet address"}
+                                    title={copied ? "Copied!" : "Copy address"}
                                 >
-                                    <Copy className={`w-3.5 h-3.5 ${copiedInternalAddress ? "text-green-500" : "text-gray-500"}`} />
+                                    <Copy className={`w-3.5 h-3.5 ${copied ? "text-green-500" : "text-gray-500"}`} />
                                 </button>
                             </div>
-                            <div className="px-2 py-1.5 bg-gray-50 rounded text-xs text-gray-700 font-mono mb-2 break-all">
-                                {internalWalletAddress}
+                            <div className="px-2 py-1.5 bg-gray-50 rounded text-xs text-gray-700 font-mono mb-2">
+                                {formatAddress(walletAddress).toUpperCase()}
                             </div>
-                            {transferError && (
-                                <div className="mb-2 p-2 bg-red-50 rounded flex items-start gap-2">
-                                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
-                                    <p className="text-xs text-red-600">{transferError}</p>
-                                </div>
-                            )}
-                            {airdropError && (
-                                <div className="mb-2 p-2 bg-red-50 rounded flex items-start gap-2">
-                                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
-                                    <p className="text-xs text-red-600">{airdropError}</p>
-                                </div>
-                            )}
-                            <div className="flex gap-2">
-                                <Button
-                                    onClick={handleTopUp}
-                                    className="flex-1 text-white text-xs py-1.5 h-auto bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    size="sm"
-                                    disabled={isTransferring}
-                                >
-                                    {isTransferring ? (
-                                        <>
-                                            <div className="w-3 h-3 mr-1.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                            Transferring...
-                                        </>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1 text-sm">
+                                    <span className="text-gray-500">Balance:</span>
+                                    {isLoadingBalance ? (
+                                        <span className="text-gray-400">Loading...</span>
                                     ) : (
-                                        <>
-                                            <Wallet className="w-3 h-3 mr-1.5" />
-                                            Top Up 1 SOL
-                                        </>
+                                        <span className="font-semibold text-gray-900">
+                                            {showValue ? (walletBalance !== null ? walletBalance.toFixed(4) : "0.0000") : "***"} SOL
+                                        </span>
                                     )}
-                                </Button>
-                                {internalWalletBalance === 0 && (
-                                    <Button
-                                        onClick={handleAirdrop}
-                                        className="flex-1 text-white text-xs py-1.5 h-auto bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        size="sm"
-                                        disabled={isAirdropping}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() => setShowValue(!showValue)}
+                                        className="p-1 hover:bg-gray-100 rounded"
+                                        title={showValue ? "Hide balance" : "Show balance"}
                                     >
-                                        {isAirdropping ? (
-                                            <>
-                                                <div className="w-3 h-3 mr-1.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                Airdrop...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Wallet className="w-3 h-3 mr-1.5" />
-                                                Airdrop
-                                            </>
-                                        )}
+                                        <Eye className="w-3.5 h-3.5 text-gray-500" />
+                                    </button>
+                                    <button
+                                        onClick={loadBalance}
+                                        disabled={isLoadingBalance}
+                                        className="p-1 hover:bg-gray-100 rounded disabled:opacity-50"
+                                        title="Refresh balance"
+                                    >
+                                        <RefreshCw className={`w-3.5 h-3.5 text-gray-500 ${isLoadingBalance ? 'animate-spin' : ''}`} />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="w-full mb-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
+                            <div className="flex items-center gap-3">
+                                <Wallet className="w-5 h-5 text-purple-600" />
+                                <div className="flex-1">
+                                    <p className="text-sm font-medium text-purple-900">Connect your Solana wallet</p>
+                                    <p className="text-xs text-purple-600">Required to buy and manage tickets</p>
+                                </div>
+                                <WalletDrawer>
+                                    <Button
+                                        size="sm"
+                                        className="bg-purple-600 hover:bg-purple-700 text-white"
+                                    >
+                                        Connect
                                     </Button>
-                                )}
+                                </WalletDrawer>
                             </div>
                         </div>
                     )}
                 </div>
 
+                {/* Stats */}
                 <div className="flex items-center justify-between mb-3">
                     <div>
-                        <div className="text-gray-500 text-xs mb-1 flex items-center gap-1">
-                            INTERNAL WALLET BALANCE
-                            <button
-                                onClick={() => setShowValue(!showValue)}
-                                className="p-0.5 hover:bg-gray-100 rounded"
-                                title={showValue ? "Hide balance" : "Show balance"}
-                            >
-                                <Eye className="w-3 h-3" />
-                            </button>
-                            {internalWalletAddress && (
-                                <button
-                                    onClick={() => loadBalance()}
-                                    disabled={isLoadingBalance}
-                                    className="p-0.5 hover:bg-gray-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title="Refresh balance"
-                                >
-                                    <RefreshCw className={`w-3 h-3 ${isLoadingBalance ? 'animate-spin' : ''}`} />
-                                </button>
-                            )}
-                        </div>
+                        <div className="text-gray-500 text-xs mb-1">WALLET BALANCE</div>
                         <div className="text-gray-900 font-bold">
-                            {isLoadingBalance ? (
-                                <span className="text-sm">Loading...</span>
+                            {!connected ? (
+                                <span className="text-gray-400">—</span>
+                            ) : isLoadingBalance ? (
+                                <span className="text-sm text-gray-400">Loading...</span>
                             ) : (
-                                showValue ? (internalWalletBalance !== null ? internalWalletBalance.toFixed(4) : "0.0000") : "***"
-                            )} SOL
+                                <>{showValue ? (walletBalance !== null ? walletBalance.toFixed(4) : "0.0000") : "***"} SOL</>
+                            )}
                         </div>
                     </div>
                     <div>
@@ -573,6 +439,7 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
+                {/* Tabs */}
                 <div className="flex items-center gap-4 border-b border-gray-200 mb-3">
                     {["bought", "used"].map(tab => (
                         <button
@@ -585,7 +452,8 @@ export default function ProfilePage() {
                     ))}
                 </div>
 
-                <div className="pb-20">
+                {/* Tickets */}
+                <div className="pb-20 md:pb-8">
                     {isLoadingTickets ? (
                         <div className="flex flex-col items-center justify-center py-12">
                             <div className="text-gray-500 text-sm">Loading tickets...</div>
@@ -635,12 +503,16 @@ export default function ProfilePage() {
                                 />
                             </div>
                             <h3 className="text-gray-900 text-xl font-bold mb-2">No {activeTab} tickets yet</h3>
+                            <Link href="/" className="text-purple-600 font-medium hover:underline">
+                                Browse events
+                            </Link>
                         </div>
                     )}
                 </div>
             </div>
 
-            <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 p-3">
+            {/* Bottom actions - only on mobile */}
+            <div className="md:hidden fixed bottom-16 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 p-3">
                 <div className="flex items-center gap-2">
                     <Button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm">List items</Button>
                     <Button variant="outline" className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 bg-white text-sm">

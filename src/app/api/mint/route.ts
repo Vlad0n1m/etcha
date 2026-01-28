@@ -1,18 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { PrismaClient } from '@/generated/prisma'
-import {
-    mintNFT,
-    distributePayment,
-    getCandyMachineData,
-} from '@/lib/services/CandyMachineService'
-import { loadPlatformWallet, isValidSolanaAddress, lamportsToSol } from '@/lib/utils/wallet'
+import { isValidSolanaAddress } from '@/lib/utils/wallet'
+import { SolanaService } from '@/lib/solana/SolanaService'
+import { BubblegumService } from '@/lib/solana/BubblegumService'
 
 const prisma = new PrismaClient()
 
 /**
  * POST /api/mint
  * 
- * Mint NFT ticket(s) from Candy Machine
+ * Mint cNFT ticket(s) using Bubblegum with Merkle tree
+ * 98% cheaper than traditional NFT minting!
+ * 
  * Automatically distributes payment: 97.5% to organizer, 2.5% to platform
  */
 export async function POST(request: NextRequest) {
@@ -22,14 +21,13 @@ export async function POST(request: NextRequest) {
         // Validate required fields
         const {
             eventId,
-            candyMachineAddress,
             buyerWallet,
-            quantity,
+            quantity = 1,
         } = body
 
-        if (!eventId || !candyMachineAddress || !buyerWallet || !quantity) {
+        if (!eventId || !buyerWallet) {
             return NextResponse.json(
-                { success: false, message: 'Missing required fields' },
+                { success: false, message: 'Missing required fields: eventId, buyerWallet' },
                 { status: 400 }
             )
         }
@@ -53,6 +51,13 @@ export async function POST(request: NextRequest) {
         // Get event from database
         const event = await prisma.event.findUnique({
             where: { id: eventId },
+            include: {
+                organizer: {
+                    include: {
+                        user: true,
+                    },
+                },
+            },
         })
 
         if (!event) {
@@ -62,65 +67,134 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        if (event.candyMachineAddress !== candyMachineAddress) {
-            return NextResponse.json(
-                { success: false, message: 'Candy Machine address mismatch' },
-                { status: 400 }
-            )
-        }
-
-        console.log(`Preparing mint transaction for event: ${eventId}`)
-
-        // Step 1: Check Candy Machine availability
-        const candyMachineData = await getCandyMachineData(candyMachineAddress)
-
-        if (!candyMachineData.isFullyLoaded) {
+        // Check ticket availability
+        const ticketsRemaining = event.ticketsAvailable - event.ticketsSold
+        if (ticketsRemaining < quantity) {
             return NextResponse.json(
                 {
                     success: false,
-                    message: `Candy Machine is not fully loaded. Please wait for all items to be added.`,
+                    message: `Not enough tickets available. Only ${ticketsRemaining} remaining.`,
                 },
                 { status: 400 }
             )
         }
 
-        if (candyMachineData.itemsRemaining < quantity) {
+        console.log(`🌳 Preparing cNFT mint transaction for event: ${eventId}`)
+
+        // Validate cNFT infrastructure
+        if (!event.merkleTreeAddress) {
+            return NextResponse.json(
+                { success: false, message: 'Merkle tree not configured for this event' },
+                { status: 400 }
+            )
+        }
+
+        if (!event.collectionNftAddress) {
+            return NextResponse.json(
+                { success: false, message: 'Collection NFT not configured for this event' },
+                { status: 400 }
+            )
+        }
+
+        const organizerWallet = event.organizer?.user?.walletAddress
+        if (!organizerWallet) {
+            return NextResponse.json(
+                { success: false, message: 'Organizer wallet not found' },
+                { status: 400 }
+            )
+        }
+
+        // Initialize services
+        console.log('Initializing Solana services...')
+        const solanaService = new SolanaService()
+        const bubblegumService = new BubblegumService(solanaService)
+
+        // Get tree stats to check availability
+        console.log('Getting tree stats for:', event.merkleTreeAddress)
+        let treeStats
+        try {
+            treeStats = await bubblegumService.getTreeStats(event.merkleTreeAddress)
+            console.log('Tree stats:', treeStats)
+        } catch (treeError) {
+            console.error('Error getting tree stats:', treeError)
             return NextResponse.json(
                 {
                     success: false,
-                    message: `Not enough tickets available. Only ${candyMachineData.itemsRemaining} remaining.`,
+                    message: `Failed to get tree stats: ${treeError instanceof Error ? treeError.message : 'Unknown error'}`,
+                },
+                { status: 500 }
+            )
+        }
+
+        if (treeStats.remaining < quantity) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: `Not enough capacity. Only ${treeStats.remaining} tickets remaining.`,
                 },
                 { status: 400 }
             )
         }
 
-        // Step 2: Construct Mint Transaction
-        const { constructMintTransaction } = await import('@/lib/services/CandyMachineService')
+        // Build mint transaction for the ticket
+        const nextTicketNumber = event.ticketsSold + 1
+        const metadata = {
+            name: `Ticket #${String(nextTicketNumber).padStart(3, '0')}`,
+            symbol: 'TICKET',
+            uri: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/metadata/ticket/${event.id}/${nextTicketNumber}`,
+            sellerFeeBasisPoints: 250,
+            creators: [{
+                address: solanaService.getKeypair().publicKey.toString(),
+                share: 100,
+                verified: true,
+            }],
+        }
 
-        const { transaction, mintAddresses } = await constructMintTransaction({
-            candyMachineAddress,
-            buyerWallet,
-            quantity,
-            pricePerNFT: event.price,
-        })
+        console.log('Building mint transaction...')
+        console.log('Metadata:', metadata)
+        console.log('Recipient:', buyerWallet)
+        console.log('Price:', event.price)
+        console.log('Payment destination:', organizerWallet)
+
+        let result
+        try {
+            result = await bubblegumService.buildMintTransaction({
+                merkleTree: event.merkleTreeAddress,
+                collectionMint: event.collectionNftAddress,
+                metadata,
+                recipient: buyerWallet,
+                priceInSol: event.price,
+                paymentDestination: organizerWallet,
+            })
+            console.log('Transaction built successfully')
+        } catch (buildError) {
+            console.error('Error building mint transaction:', buildError)
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: `Failed to build transaction: ${buildError instanceof Error ? buildError.message : 'Unknown error'}`,
+                },
+                { status: 500 }
+            )
+        }
 
         return NextResponse.json({
             success: true,
-            transaction, // Base64 serialized transaction
-            mintAddresses,
-            message: 'Transaction constructed successfully',
+            transaction: result.transaction,
+            assetIds: [result.expectedAssetId],
+            merkleTreeAddress: event.merkleTreeAddress,
+            message: 'Ticket purchase transaction ready',
         })
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error preparing mint transaction:', error)
         return NextResponse.json(
             {
                 success: false,
-                message: 'Failed to prepare mint transaction',
-                error: error.message || String(error),
+                message: 'Failed to prepare purchase',
+                error: error instanceof Error ? error.message : String(error),
             },
             { status: 500 }
         )
     }
 }
-

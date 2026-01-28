@@ -14,7 +14,7 @@ export default function MobileHeader() {
     }
 
     return (
-        <header className="fixed top-0 left-0 right-0 z-40 bg-white/35 backdrop-blur-sm border-b border-gray-200/35">
+        <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white/35 backdrop-blur-sm border-b border-gray-200/35">
             <div className="flex items-center justify-between px-4 py-3">
                 {/* Logo */}
                 <div className="flex items-center">
@@ -27,30 +27,30 @@ export default function MobileHeader() {
                     />
                 </div>
                 <div className="flex justify-center gap-2 items-center">
-                {/* Wallet Status or Connect Button */}
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-semibold uppercase tracking-wide">Devnet</span>
-                {connected ? (
-                    <WalletDrawer>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex items-center gap-2 border-green-500 text-green-700 hover:bg-green-50"
-                        >
-                            <div className="w-2 h-2 rounded-full bg-green-500" />
-                            {formatAddress(publicKey?.toString() || "")}
-                        </Button>
-                    </WalletDrawer>
-                ) : (
-                    <WalletDrawer>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="bg-purple-500 text-white hover:bg-purple-600"
-                        >
-                            Connect Wallet
-                        </Button>
-                    </WalletDrawer>
-                )}
+                    {/* Wallet Status or Connect Button */}
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-semibold uppercase tracking-wide">Devnet</span>
+                    {connected ? (
+                        <WalletDrawer>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-2 border-green-500 text-green-700 hover:bg-green-50"
+                            >
+                                <div className="w-2 h-2 rounded-full bg-green-500" />
+                                {formatAddress(publicKey?.toString() || "")}
+                            </Button>
+                        </WalletDrawer>
+                    ) : (
+                        <WalletDrawer>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="bg-purple-500 text-white hover:bg-purple-600"
+                            >
+                                Connect Wallet
+                            </Button>
+                        </WalletDrawer>
+                    )}
                 </div>
             </div>
         </header>

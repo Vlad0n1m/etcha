@@ -15,13 +15,42 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model User {
-    id                  String   @id @default(cuid())
-    walletAddress       String   @unique // External wallet address
-    internalWalletAddress String? @unique // Internal derived wallet address (derived on first use)
-    createdAt            DateTime @default(now())
-    updatedAt          DateTime @updatedAt
+// User roles enum
+enum Role {
+    USER
+    ORGANIZER
+    ADMIN
+}
 
+// Organizer approval status
+enum OrganizerStatus {
+    PENDING
+    APPROVED
+    REJECTED
+}
+
+model User {
+    id            String    @id @default(cuid())
+    email         String?   @unique
+    emailVerified DateTime?
+    password      String? // bcrypt hash for credentials login
+    name          String?
+    image         String?
+    role          Role      @default(USER)
+
+    // Solana wallet (linked after account creation)
+    walletAddress         String?   @unique // External wallet address
+    internalWalletAddress String?   @unique // Internal derived wallet address (derived on first use)
+    walletLinkedAt        DateTime?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Auth.js relations
+    accounts Account[]
+    sessions Session[]
+
+    // App relations
     profile   Profile?
     organizer Organizer?
     orders    Order[]
@@ -29,6 +58,49 @@ model User {
     listings  Listing[]
 
     @@map("users")
+}
+
+// Auth.js Account model (for OAuth providers)
+model Account {
+    id                String  @id @default(cuid())
+    userId            String
+    type              String
+    provider          String
+    providerAccountId String
+    refresh_token     String? @db.Text
+    access_token      String? @db.Text
+    expires_at        Int?
+    token_type        String?
+    scope             String?
+    id_token          String? @db.Text
+    session_state     String?
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([provider, providerAccountId])
+    @@map("accounts")
+}
+
+// Auth.js Session model
+model Session {
+    id           String   @id @default(cuid())
+    sessionToken String   @unique
+    userId       String
+    expires      DateTime
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("sessions")
+}
+
+// Auth.js VerificationToken model (for email verification)
+model VerificationToken {
+    identifier String
+    token      String   @unique
+    expires    DateTime
+
+    @@unique([identifier, token])
+    @@map("verification_tokens")
 }
 
 model Profile {
@@ -46,8 +118,8 @@ model Profile {
 }
 
 model Organizer {
-    id          String   @id @default(cuid())
-    userId      String   @unique
+    id          String  @id @default(cuid())
+    userId      String  @unique
     companyName String
     description String?
     avatar      String?
@@ -55,9 +127,17 @@ model Organizer {
     email       String?
     phone       String?
     address     String?
-    isVerified  Boolean  @default(false)
-    createdAt   DateTime @default(now())
-    updatedAt   DateTime @updatedAt
+    isVerified  Boolean @default(false)
+
+    // Approval workflow
+    status        OrganizerStatus @default(PENDING)
+    requestedAt   DateTime        @default(now())
+    approvedAt    DateTime?
+    approvedBy    String? // Admin userId who approved
+    rejectionNote String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
     user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
     events Event[]
@@ -96,7 +176,12 @@ model Event {
 
     // Solana blockchain fields
     collectionNftAddress String? @unique // Collection NFT address on Solana
-    candyMachineAddress  String? @unique // Candy Machine address
+    candyMachineAddress  String? @unique // Candy Machine address (legacy)
+
+    // cNFT (Compressed NFT) fields
+    merkleTreeAddress String? @unique // Merkle tree address for cNFT minting
+    merkleTreeDepth   Int? // Depth of merkle tree (14 = 16384 tickets, 17 = 131072, 20 = 1048576)
+    nftType           String  @default("legacy") // "legacy" | "cnft" | "core"
 
     categoryId  String
     organizerId String?
@@ -134,13 +219,20 @@ model Ticket {
     eventId        String
     orderId        String
     userId         String
-    nftMintAddress String   @unique
+    nftMintAddress String   @unique // For legacy NFTs - mint address; For cNFT - asset ID
     tokenId        Int
     metadataUri    String?
     isValid        Boolean  @default(true)
     isUsed         Boolean  @default(false)
     createdAt      DateTime @default(now())
     updatedAt      DateTime @updatedAt
+
+    // cNFT specific fields
+    assetId     String? @unique // cNFT asset ID (derived from merkle tree + leaf index)
+    leafIndex   Int? // Position in the merkle tree
+    dataHash    String? // Hash of NFT data for verification
+    creatorHash String? // Hash of creators for verification
+    nftType     String  @default("legacy") // "legacy" | "cnft"
 
     event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
     order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -151,11 +243,11 @@ model Ticket {
 
 model Listing {
     id                  String    @id @default(cuid())
-    nftMintAddress      String    @unique
+    nftMintAddress      String    @unique // For legacy NFTs - mint address; For cNFT - asset ID
     eventId             String
     sellerId            String
-    listingAddress      String    @unique // Trade state address on Auction House
-    auctionHouseAddress String
+    listingAddress      String    @unique // Trade state address on Auction House (legacy) or unique listing ID (cNFT)
+    auctionHouseAddress String? // Only for legacy Auction House listings
     price               Float // Price in SOL
     originalPrice       Float // Original ticket price for comparison
     status              String    @default("active") // active, sold, cancelled
@@ -166,11 +258,16 @@ model Listing {
     createdAt           DateTime  @default(now())
     updatedAt           DateTime  @updatedAt
 
+    // cNFT specific fields
+    assetId String? // cNFT asset ID for quick lookup
+    nftType String  @default("legacy") // "legacy" | "cnft"
+
     event  Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
     seller User  @relation(fields: [sellerId], references: [id], onDelete: Cascade)
 
     @@index([eventId, status])
     @@index([sellerId, status])
+    @@index([nftType, status])
     @@map("listings")
 }
 

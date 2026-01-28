@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         try {
             const signature = await getOrRequestSignature(storageKey, signMessage)
-            
+
             if (!signature) {
                 throw new Error('Failed to get signature')
             }
@@ -79,16 +79,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
     }
 
-    // Auto-refresh token when wallet connects
+    // Clear auth state when wallet disconnects
+    // NOTE: We no longer auto-request signature on connect
+    // Users now authenticate via email/OAuth through Auth.js
+    // Wallet signature is only requested when needed (e.g., buying tickets)
     useEffect(() => {
-        if (connected && publicKey && !token && !hasRequestedRef.current) {
-            hasRequestedRef.current = true
-            refreshToken()
-        } else if (!connected) {
+        if (!connected) {
             hasRequestedRef.current = false
             clearAuth()
         }
-    }, [connected, publicKey, token])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [connected])
 
     const value: AuthContextType = {
         token,
