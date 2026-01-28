@@ -6,6 +6,7 @@ import Twitter from "next-auth/providers/twitter"
 import bcrypt from "bcryptjs"
 import { prisma } from "./db"
 import type { Role } from "@/generated/prisma"
+import { authConfig } from "./auth.config"
 
 declare module "next-auth" {
     interface Session {
@@ -36,14 +37,8 @@ declare module "next-auth/jwt" {
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+    ...authConfig,
     adapter: PrismaAdapter(prisma),
-    session: {
-        strategy: "jwt",
-    },
-    pages: {
-        signIn: "/auth/login",
-        error: "/auth/error",
-    },
     providers: [
         Credentials({
             name: "credentials",
@@ -100,6 +95,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }),
     ],
     callbacks: {
+        ...authConfig.callbacks,
         async jwt({ token, user, trigger, session }) {
             if (user) {
                 token.id = user.id

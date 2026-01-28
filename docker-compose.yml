@@ -12,8 +12,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-etcha}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-etcha} -d ${POSTGRES_DB:-etcha}"]
       interval: 10s
@@ -31,7 +29,7 @@ services:
       dockerfile: Dockerfile
       args:
         - NEXT_PUBLIC_SOLANA_RPC_URL=${NEXT_PUBLIC_SOLANA_RPC_URL:-https://api.devnet.solana.com}
-        - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+        - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-https://etcha.app}
     container_name: etcha-app
     restart: unless-stopped
     depends_on:
@@ -49,7 +47,7 @@ services:
       AUTH_TWITTER_SECRET: ${AUTH_TWITTER_SECRET:-}
       
       # Legacy NextAuth (if needed)
-      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-https://etcha.app}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-${AUTH_SECRET}}
       
       # Solana
@@ -60,7 +58,7 @@ services:
       SOLANA_PRIVATE_KEY: ${SOLANA_PRIVATE_KEY}
       
       # Application
-      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://etcha.app}
       JWT_SECRET: ${JWT_SECRET}
       DERIVATION_SALT: ${DERIVATION_SALT:-etcha-platform-salt}
       
@@ -77,10 +75,49 @@ services:
       
       # Node
       NODE_ENV: production
-    ports:
-      - "${APP_PORT:-3000}:3000"
+    expose:
+      - "3000"
     networks:
       - etcha-network
+
+  # ============================================
+  # Nginx Reverse Proxy
+  # ============================================
+  nginx:
+    image: nginx:alpine
+    container_name: etcha-nginx
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    networks:
+      - etcha-network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================
+  # Certbot for SSL certificates
+  # ============================================
+  certbot:
+    image: certbot/certbot
+    container_name: etcha-certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - etcha-network
+    profiles:
+      - ssl
 
   # ============================================
   # Database Migrations (one-time job)

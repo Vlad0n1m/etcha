@@ -177,7 +177,20 @@ export default function ProfilePage() {
                 setIsLoadingTickets(true)
 
                 const response = await fetch(`/api/profile/tickets?wallet=${walletAddress}`)
-                const data = await response.json()
+
+                if (!response.ok) {
+                    console.error('Failed to fetch tickets:', response.status)
+                    setTickets([])
+                    return
+                }
+
+                const text = await response.text()
+                if (!text) {
+                    setTickets([])
+                    return
+                }
+
+                const data = JSON.parse(text)
 
                 if (data.success) {
                     setTickets(data.tickets || [])

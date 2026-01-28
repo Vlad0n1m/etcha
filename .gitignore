@@ -45,3 +45,11 @@ dev.db-journal
 # uploads
 /public/uploads/*
 !/public/uploads/.gitkeep
+
+# SSL certificates (Let's Encrypt)
+/certbot/conf/
+/certbot/www/
+
+# Docker env files
+.env.docker
+!.env.docker.example
