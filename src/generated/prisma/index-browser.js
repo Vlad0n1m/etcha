@@ -339,6 +339,42 @@ exports.Prisma.PlatformMerkleTreeScalarFieldEnum = {
   collectionAddress: 'collectionAddress'
 };
 
+exports.Prisma.PostScalarFieldEnum = {
+  id: 'id',
+  authorId: 'authorId',
+  content: 'content',
+  images: 'images',
+  type: 'type',
+  eventId: 'eventId',
+  ticketId: 'ticketId',
+  attendanceId: 'attendanceId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.CommentScalarFieldEnum = {
+  id: 'id',
+  postId: 'postId',
+  authorId: 'authorId',
+  content: 'content',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.LikeScalarFieldEnum = {
+  id: 'id',
+  postId: 'postId',
+  userId: 'userId',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.FollowScalarFieldEnum = {
+  id: 'id',
+  followerId: 'followerId',
+  followingId: 'followingId',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -365,6 +401,12 @@ exports.OrganizerStatus = exports.$Enums.OrganizerStatus = {
   REJECTED: 'REJECTED'
 };
 
+exports.PostType = exports.$Enums.PostType = {
+  REGULAR: 'REGULAR',
+  TICKET_PURCHASE: 'TICKET_PURCHASE',
+  ATTENDANCE: 'ATTENDANCE'
+};
+
 exports.Prisma.ModelName = {
   User: 'User',
   Account: 'Account',
@@ -381,7 +423,11 @@ exports.Prisma.ModelName = {
   PaymentDistribution: 'PaymentDistribution',
   Attendance: 'Attendance',
   ScannerCode: 'ScannerCode',
-  PlatformMerkleTree: 'PlatformMerkleTree'
+  PlatformMerkleTree: 'PlatformMerkleTree',
+  Post: 'Post',
+  Comment: 'Comment',
+  Like: 'Like',
+  Follow: 'Follow'
 };
 
 /**

@@ -1,8 +1,11 @@
 "use client"
 
-import { useState } from "react"
-import { X, Copy, ExternalLink, CheckCircle2 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { X, Copy, ExternalLink, CheckCircle2, Share2 } from "lucide-react"
 import { Drawer } from "vaul"
+import { SharePostPrompt } from "@/components/feed"
+import { useAuth } from "@/components/AuthProvider"
+import { useSession } from "next-auth/react"
 
 interface MintResult {
     nftMintAddresses: string[]
@@ -15,18 +18,45 @@ interface MintResult {
         amount: number
     }
     orderId: string
+    ticketId?: string
+}
+
+interface EventInfo {
+    id: string
+    title: string
+    imageUrl: string
+    date: string
 }
 
 interface MintResultModalProps {
     open: boolean
     onClose: () => void
     result: MintResult | null
+    event?: EventInfo | null
 }
 
-export default function MintResultModal({ open, onClose, result }: MintResultModalProps) {
+export default function MintResultModal({ open, onClose, result, event }: MintResultModalProps) {
     const [copiedItem, setCopiedItem] = useState<string | null>(null)
+    const [showSharePrompt, setShowSharePrompt] = useState(false)
+    const [shareEventData, setShareEventData] = useState<EventInfo | null>(null)
+    const [shareTicketId, setShareTicketId] = useState<string | undefined>(undefined)
+    const { token } = useAuth()
+    const { data: session } = useSession()
 
-    if (!result) return null
+    const isAuthenticated = !!token || !!session?.user
+
+    // Store event data when opening share prompt
+    const handleShareClick = () => {
+        if (event && result) {
+            setShareEventData(event)
+            setShareTicketId(result.ticketId)
+            onClose()
+            // Delay showing share prompt to allow drawer to close
+            setTimeout(() => setShowSharePrompt(true), 100)
+        }
+    }
+
+    if (!result && !showSharePrompt) return null
 
     const totalPaid = result.organizerPayment.amount + result.platformFee.amount
     const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK || "devnet"
@@ -47,7 +77,8 @@ export default function MintResultModal({ open, onClose, result }: MintResultMod
     }
 
     return (
-        <Drawer.Root open={open} onOpenChange={(open) => !open && onClose()}>
+        <>
+        <Drawer.Root open={open && !!result} onOpenChange={(open) => !open && onClose()}>
             <Drawer.Portal>
                 <Drawer.Overlay className="fixed inset-0 bg-black/40 z-50" />
                 <Drawer.Content className="fixed bottom-0 left-0 right-0 max-h-[90vh] bg-white z-50 bg-surface rounded-t-2xl">
@@ -170,6 +201,15 @@ export default function MintResultModal({ open, onClose, result }: MintResultMod
 
                         {/* Action Buttons */}
                         <div className="flex flex-col gap-3">
+                            {isAuthenticated && event && (
+                                <button
+                                    onClick={handleShareClick}
+                                    className="w-full bg-purple-500 text-white font-semibold py-3.5 rounded-xl hover:bg-purple-600 transition-all flex items-center justify-center gap-2"
+                                >
+                                    <Share2 className="w-5 h-5" />
+                                    Рассказать в ленте
+                                </button>
+                            )}
                             <a
                                 href="/profile"
                                 className="w-full bg-primary text-primary-foreground font-semibold py-3.5 rounded-xl hover:bg-primary/90 transition-all text-center"
@@ -187,6 +227,24 @@ export default function MintResultModal({ open, onClose, result }: MintResultMod
                 </Drawer.Content>
             </Drawer.Portal>
         </Drawer.Root>
+
+        {/* Share Post Prompt - rendered outside drawer */}
+        {isAuthenticated && shareEventData && (
+            <SharePostPrompt
+                isOpen={showSharePrompt}
+                onClose={() => {
+                    setShowSharePrompt(false)
+                    setShareEventData(null)
+                    setShareTicketId(undefined)
+                }}
+                authToken={token || ""}
+                event={shareEventData}
+                type="TICKET_PURCHASE"
+                ticketId={shareTicketId}
+                useSession={!token && !!session}
+            />
+        )}
+        </>
     )
 }
 

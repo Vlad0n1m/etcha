@@ -595,6 +595,12 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     setMintProgress('')
                 }}
                 result={mintResult}
+                event={event ? {
+                    id: event.id,
+                    title: event.title,
+                    imageUrl: event.imageUrl,
+                    date: event.date
+                } : null}
             />
 
             {/* Confirm Buy Modal */}

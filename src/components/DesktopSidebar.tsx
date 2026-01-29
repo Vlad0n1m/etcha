@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { Calendar, Repeat, User, Settings } from "lucide-react"
+import { Calendar, Repeat, User, Settings, Newspaper } from "lucide-react"
 
 export default function DesktopSidebar() {
     const pathname = usePathname()
@@ -12,9 +12,9 @@ export default function DesktopSidebar() {
 
     const navItems = [
         { href: "/", label: "Events", icon: Calendar },
+        { href: "/feed", label: "Feed", icon: Newspaper },
         { href: "/resale", label: "Resale", icon: Repeat },
         { href: "/profile", label: "Profile", icon: User },
-        { href: "/settings", label: "Settings", icon: Settings },
     ]
 
     const isActive = (href: string) => {

@@ -29,6 +29,13 @@ enum OrganizerStatus {
     REJECTED
 }
 
+// Post types for social feed
+enum PostType {
+    REGULAR // Regular post
+    TICKET_PURCHASE // "Going to event!"
+    ATTENDANCE // "Was at event" with POAP proof
+}
+
 model User {
     id            String    @id @default(cuid())
     email         String?   @unique
@@ -57,6 +64,13 @@ model User {
     tickets     Ticket[]
     listings    Listing[]
     attendances Attendance[]
+
+    // Social relations
+    posts     Post[]    @relation("PostAuthor")
+    comments  Comment[] @relation("CommentAuthor")
+    likes     Like[]    @relation("UserLikes")
+    followers Follow[]  @relation("Following") // Users who follow this user
+    following Follow[]  @relation("Followers") // Users this user follows
 
     @@map("users")
 }
@@ -198,6 +212,7 @@ model Event {
     listings     Listing[]
     attendances  Attendance[]
     scannerCodes ScannerCode[]
+    posts        Post[]
 
     @@map("events")
 }
@@ -364,4 +379,79 @@ model PlatformMerkleTree {
 
     @@index([type, isActive])
     @@map("platform_merkle_trees")
+}
+
+// Social feed post
+model Post {
+    id       String   @id @default(cuid())
+    authorId String
+    content  String?  @db.Text
+    images   String[] // URLs of images (S3)
+    type     PostType @default(REGULAR)
+
+    // Optional event connection
+    eventId      String?
+    ticketId     String? // For TICKET_PURCHASE posts
+    attendanceId String? // For ATTENDANCE posts (contains POAP proof)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    author   User      @relation("PostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+    event    Event?    @relation(fields: [eventId], references: [id])
+    likes    Like[]
+    comments Comment[]
+
+    @@index([authorId, createdAt])
+    @@index([eventId])
+    @@index([createdAt])
+    @@map("posts")
+}
+
+// Comment on a post
+model Comment {
+    id       String @id @default(cuid())
+    postId   String
+    authorId String
+    content  String @db.Text
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+    author User @relation("CommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+    @@index([postId, createdAt])
+    @@map("comments")
+}
+
+// Like on a post
+model Like {
+    id     String @id @default(cuid())
+    postId String
+    userId String
+
+    createdAt DateTime @default(now())
+
+    post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+    user User @relation("UserLikes", fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([postId, userId])
+    @@map("likes")
+}
+
+// User follow relationship
+model Follow {
+    id          String @id @default(cuid())
+    followerId  String // Who is following
+    followingId String // Who is being followed
+
+    createdAt DateTime @default(now())
+
+    follower  User @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
+    following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+    @@unique([followerId, followingId])
+    @@index([followingId])
+    @@map("follows")
 }
