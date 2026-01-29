@@ -95,8 +95,9 @@ export class PlatformTreeService {
      * Create a new platform Merkle Tree
      */
     private async createNewTree(type: TreeType): Promise<ActiveTree> {
-        // Use LARGE tree for maximum capacity (1M NFTs)
-        const treeSize: MerkleTreeSize = 'LARGE';
+        // Use MEDIUM tree by default (131K NFTs, ~0.5 SOL)
+        // Good balance between cost and capacity for growing platforms
+        const treeSize: MerkleTreeSize = 'MEDIUM';
         const config = MERKLE_TREE_CONFIGS[treeSize];
 
         // Create the Merkle Tree on-chain

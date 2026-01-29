@@ -33,9 +33,10 @@ interface Event {
     }
     // schedule?: string[] // Disabled for MVP
     collectionNftAddress?: string
-    // cNFT fields (all events use cNFT)
-    merkleTreeAddress?: string
+    // cNFT fields - now using shared platform tree
+    merkleTreeAddress?: string // Legacy - kept for backwards compatibility
     merkleTreeDepth?: number
+    nftType?: string // 'cnft' | 'legacy'
 }
 
 interface EventMintResult {
@@ -175,8 +176,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             return
         }
 
-        // All new events use cNFT - check if collection is configured
-        if (!event.merkleTreeAddress) {
+        // Check if event supports cNFT (either has nftType='cnft' or legacy merkleTreeAddress)
+        if (event.nftType !== 'cnft' && !event.merkleTreeAddress) {
             // This is a legacy event without cNFT infrastructure
             setError("This event was created before cNFT support. Please contact the organizer to upgrade the event.")
             return
@@ -188,13 +189,12 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         setMintProgress("Preparing ticket purchase...")
 
         try {
-            // Step 1: Get Mint Transaction from Backend
+            // Step 1: Get Mint Transaction from Backend (uses shared platform tree)
             const mintResponse = await fetch('/api/mint', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     eventId: event.id,
-                    merkleTreeAddress: event.merkleTreeAddress,
                     buyerWallet: publicKey.toBase58(),
                     quantity: ticketQuantity,
                 }),
@@ -208,6 +208,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
 
             const transactionBase64 = mintResult.transaction
             const assetIds = mintResult.assetIds || []
+            const mintMerkleTreeAddress = mintResult.merkleTreeAddress
+            const mintPlatformTreeId = mintResult.platformTreeId
 
             if (!transactionBase64) {
                 throw new Error('No transaction returned from server')
@@ -237,7 +239,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     eventId: event.id,
-                    merkleTreeAddress: event.merkleTreeAddress,
+                    merkleTreeAddress: mintMerkleTreeAddress,
+                    platformTreeId: mintPlatformTreeId,
                     buyerWallet: publicKey.toBase58(),
                     quantity: ticketQuantity,
                     assetIds: assetIds,
@@ -461,8 +464,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                         </div>
                     )}
 
-                    {/* Legacy Event Upgrade Banner */}
-                    {!event.merkleTreeAddress && (
+                    {/* Legacy Event Upgrade Banner - only for old events without cNFT */}
+                    {event.nftType !== 'cnft' && !event.merkleTreeAddress && (
                         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
                             <div className="flex items-start gap-3">
                                 <div className="flex-1">
@@ -496,7 +499,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                         </div>
                     )}
 
-                    {event.merkleTreeAddress ? (
+                    {/* Buy button - enabled for cNFT events or events with merkleTreeAddress */}
+                    {(event.nftType === 'cnft' || event.merkleTreeAddress) ? (
                         <button
                             onClick={handleBuyClick}
                             disabled={isMinting}

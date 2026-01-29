@@ -9,6 +9,7 @@ import {
     Building2,
     ChevronRight,
     Clock,
+    TreeDeciduous,
 } from "lucide-react"
 
 export default async function AdminPage() {
@@ -19,11 +20,22 @@ export default async function AdminPage() {
     }
 
     // Get stats
-    const [userCount, eventCount, pendingOrganizers] = await Promise.all([
+    const [userCount, eventCount, pendingOrganizers, platformTrees] = await Promise.all([
         prisma.user.count(),
         prisma.event.count(),
         prisma.organizer.count({ where: { status: "PENDING" } }),
+        prisma.platformMerkleTree.findMany({
+            where: { isActive: true },
+            select: { type: true, capacity: true, minted: true },
+        }),
     ])
+
+    // Calculate tree stats
+    const ticketTree = platformTrees.find(t => t.type === 'ticket')
+    const poapTree = platformTrees.find(t => t.type === 'poap')
+    const ticketUsage = ticketTree ? Math.round((ticketTree.minted / ticketTree.capacity) * 100) : 0
+    const poapUsage = poapTree ? Math.round((poapTree.minted / poapTree.capacity) * 100) : 0
+    const treesNeedAttention = ticketUsage > 80 || poapUsage > 80
 
     return (
         <div className="min-h-screen bg-background">
@@ -149,6 +161,41 @@ export default async function AdminPage() {
                             </div>
                             <ChevronRight className="w-5 h-5 text-gray-400" />
                         </div>
+
+                        {/* Platform Trees */}
+                        <Link
+                            href="/admin/platform-trees"
+                            className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${treesNeedAttention ? 'bg-orange-100' : 'bg-emerald-100'
+                                    }`}>
+                                    <TreeDeciduous className={`w-5 h-5 ${treesNeedAttention ? 'text-orange-600' : 'text-emerald-600'
+                                        }`} />
+                                </div>
+                                <div>
+                                    <p className="font-medium text-gray-900">Merkle Trees</p>
+                                    <p className="text-xs text-gray-500">
+                                        {platformTrees.length === 0
+                                            ? "Not initialized"
+                                            : `Tickets: ${ticketUsage}% • POAP: ${poapUsage}%`}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {treesNeedAttention && (
+                                    <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
+                                        Attention
+                                    </span>
+                                )}
+                                {platformTrees.length === 0 && (
+                                    <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-full">
+                                        Setup
+                                    </span>
+                                )}
+                                <ChevronRight className="w-5 h-5 text-gray-400" />
+                            </div>
+                        </Link>
                     </div>
                 </div>
             </div>

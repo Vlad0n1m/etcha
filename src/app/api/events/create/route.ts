@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
 
         console.log(`Event created in DB: ${event.id}`)
 
-        // Step 3: Verify platform tree is ready
+        // Step 3: Verify platform tree is ready (auto-initialize if needed)
         try {
             // Use shared platform Merkle Tree instead of creating per-event tree
             // This saves ~0.2 SOL per event!
@@ -125,7 +125,11 @@ export async function POST(request: NextRequest) {
 
             const platformTreeService = getPlatformTreeService()
 
-            // Get or create platform ticket tree
+            // Auto-initialize platform trees if not done yet
+            // This will create MEDIUM trees (~0.5 SOL each) on first event creation
+            await platformTreeService.initializeIfNeeded()
+
+            // Get platform ticket tree
             const ticketTree = await platformTreeService.getActiveTree('ticket')
             console.log(`Platform ticket tree: ${ticketTree.address}`)
             console.log(`Available capacity: ${ticketTree.available}`)
@@ -134,17 +138,7 @@ export async function POST(request: NextRequest) {
                 throw new Error('Platform ticket collection not initialized')
             }
 
-            // Update event to use platform tree
-            await prisma.event.update({
-                where: { id: event.id },
-                data: {
-                    nftType: 'cnft',
-                    // Note: merkleTreeAddress and collectionNftAddress are now optional
-                    // Tickets are minted using the platform shared tree
-                },
-            })
-
-            console.log(`Event updated to use shared platform tree`)
+            console.log(`Event ready to use shared platform tree`)
 
             return NextResponse.json({
                 success: true,
@@ -158,15 +152,15 @@ export async function POST(request: NextRequest) {
             })
 
         } catch (blockchainError) {
-            console.error("Error creating cNFT infrastructure:", blockchainError)
+            console.error("Error verifying platform tree:", blockchainError)
 
-            // Event was created but blockchain setup failed
-            // Leave event in DB - can be upgraded later
+            // Event was created but platform tree check failed
+            // This likely means insufficient SOL for tree initialization
             return NextResponse.json({
                 success: true,
-                message: "Event created but cNFT setup failed. You can upgrade it later.",
+                message: "Event created. Platform trees need to be initialized by admin.",
                 eventId: event.id,
-                warning: blockchainError instanceof Error ? blockchainError.message : "Blockchain error",
+                warning: blockchainError instanceof Error ? blockchainError.message : "Platform tree not ready",
             })
         }
 
