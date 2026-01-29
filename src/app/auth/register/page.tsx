@@ -16,7 +16,7 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
     return (
         <div className="min-h-screen bg-background flex flex-col">
             {/* Header */}
-            <div className="bg-white border-b border-gray-100">
+            {/* <div className="bg-white border-b border-gray-100">
                 <div className="max-w-md mx-auto px-4 py-4 flex items-center">
                     <Link
                         href="/"
@@ -26,13 +26,13 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
                         <span className="text-sm font-medium">Back</span>
                     </Link>
                 </div>
-            </div>
+            </div> */}
 
             {/* Content */}
             <div className="flex-1 flex items-center justify-center px-4 py-8">
                 <div className="w-full max-w-md">
                     {/* Logo */}
-                    <div className="text-center mb-8">
+                    {/* <div className="text-center mb-8">
                         <Link href="/" className="inline-block">
                             <Image
                                 src="/logo.png"
@@ -44,7 +44,7 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
                         </Link>
                         <h1 className="text-2xl font-bold text-gray-900 mt-4">Create an account</h1>
                         <p className="text-gray-500 mt-2">Get started with Etcha</p>
-                    </div>
+                    </div> */}
 
                     {/* Card */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import jwt from "jsonwebtoken";
+import { auth } from "@/lib/auth";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -16,16 +17,26 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Get current user (optional - for checking follow status)
     let currentUserId: string | null = null;
-    const authHeader = request.headers.get("authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      try {
-        const token = authHeader.substring(7);
-        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-          userId: string;
-        };
-        currentUserId = decoded.userId;
-      } catch {
-        // Invalid token, continue as anonymous
+
+    // Try NextAuth session first
+    const session = await auth();
+    if (session?.user?.id) {
+      currentUserId = session.user.id;
+    }
+
+    // Fallback to JWT token (wallet auth)
+    if (!currentUserId) {
+      const authHeader = request.headers.get("authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        try {
+          const token = authHeader.substring(7);
+          const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+            userId: string;
+          };
+          currentUserId = decoded.userId;
+        } catch {
+          // Invalid token, continue as anonymous
+        }
       }
     }
 

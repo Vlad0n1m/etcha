@@ -6,6 +6,7 @@ import { NavigationProvider } from "@/components/NavigationProvider";
 import { AuthProvider } from "@/components/AuthProvider";
 import { SignatureProvider } from "@/components/SignatureProvider";
 import SessionProvider from "@/components/SessionProvider";
+import { NotificationProvider } from "@/components/NotificationProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,9 +37,11 @@ export default function RootLayout({
           <WalletContextProvider>
             <AuthProvider>
               <SignatureProvider>
-                <NavigationProvider>
-                  {children}
-                </NavigationProvider>
+                <NotificationProvider>
+                  <NavigationProvider>
+                    {children}
+                  </NavigationProvider>
+                </NotificationProvider>
               </SignatureProvider>
             </AuthProvider>
           </WalletContextProvider>

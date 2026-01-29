@@ -1,13 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { X, Loader2, AlertCircle, CheckCircle2, ExternalLink, Copy } from "lucide-react"
+import { X, Loader2, AlertCircle, CheckCircle2, ExternalLink } from "lucide-react"
 import { Drawer } from "vaul"
 import { DrawerTitle } from "@/components/ui/drawer"
 import { Button } from "@/components/ui/button"
 import { useWallet } from "@solana/wallet-adapter-react"
-import { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } from "@solana/web3.js"
-import { useSignature } from "@/components/SignatureProvider"
+import { Connection, Transaction } from "@solana/web3.js"
 
 interface BuyResaleTicketModalProps {
     open: boolean
@@ -34,44 +33,33 @@ export default function BuyResaleTicketModal({
     ticketData,
     onSuccess,
 }: BuyResaleTicketModalProps) {
-    const { connected, publicKey, wallet } = useWallet()
-    const { signature } = useSignature()
+    const { connected, publicKey, wallet, sendTransaction } = useWallet()
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [purchaseStep, setPurchaseStep] = useState<'idle' | 'preparing' | 'signing' | 'confirming'>('idle')
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState(false)
     const [transactionHash, setTransactionHash] = useState<string | null>(null)
-    const [needsFunding, setNeedsFunding] = useState<{
-        internalWalletAddress: string
-        requiredAmount: number
-        currentBalance: number
-    } | null>(null)
 
     const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK || "devnet"
 
     const handlePurchase = async () => {
-        if (!connected || !publicKey) {
+        if (!connected || !publicKey || !wallet?.adapter) {
             setError("Please connect your wallet")
-            return
-        }
-
-        if (!signature) {
-            setError("Please wait for wallet to be ready")
             return
         }
 
         setIsSubmitting(true)
         setError(null)
+        setPurchaseStep('preparing')
 
         try {
-            // Step 1: Use cached signature from SignatureProvider
-            const buyerSignatureHex = Array.from(signature)
-                .map(b => b.toString(16).padStart(2, '0'))
-                .join('')
+            const connection = new Connection(
+                process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
+                'confirmed'
+            )
 
-            // Step 2: Call API to purchase
-            // Seller signature is stored in listing, so we don't need it here
-            // The system will use the stored signature to derive seller's internal wallet keypair
-            const response = await fetch('/api/resale/buy', {
+            // Step 1: Get prepared transaction from server
+            const prepareResponse = await fetch('/api/resale/prepare-buy', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -79,29 +67,54 @@ export default function BuyResaleTicketModal({
                 body: JSON.stringify({
                     listingId,
                     buyerWallet: publicKey.toString(),
-                    signature: buyerSignatureHex,
-                    // Seller signature is stored in listing, so no need to send it
                 }),
             })
 
-            const data = await response.json()
+            const prepareData = await prepareResponse.json()
 
-            if (!response.ok || !data.success) {
-                // Check if error is about insufficient balance
-                if (data.internalWalletAddress && data.requiredAmount !== undefined) {
-                    setNeedsFunding({
-                        internalWalletAddress: data.internalWalletAddress,
-                        requiredAmount: data.requiredAmount,
-                        currentBalance: data.currentBalance || 0,
-                    })
-                    setError(data.message || 'Insufficient balance in internal wallet')
-                    return
-                }
-                throw new Error(data.message || 'Failed to purchase ticket')
+            if (!prepareResponse.ok || !prepareData.success) {
+                throw new Error(prepareData.message || 'Failed to prepare purchase')
+            }
+
+            // Step 2: Sign and send transaction with Phantom
+            setPurchaseStep('signing')
+
+            const transaction = Transaction.from(
+                Buffer.from(prepareData.transaction, 'base64')
+            )
+
+            // Send transaction via wallet adapter (user signs in Phantom)
+            const paymentSignature = await sendTransaction(transaction, connection)
+
+            console.log('Payment transaction sent:', paymentSignature)
+
+            // Step 3: Wait for confirmation and transfer NFT
+            setPurchaseStep('confirming')
+
+            // Wait for transaction to confirm
+            await connection.confirmTransaction(paymentSignature, 'confirmed')
+
+            // Step 4: Confirm with server to transfer NFT
+            const confirmResponse = await fetch('/api/resale/confirm-buy', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    listingId,
+                    buyerWallet: publicKey.toString(),
+                    paymentSignature,
+                }),
+            })
+
+            const confirmData = await confirmResponse.json()
+
+            if (!confirmResponse.ok || !confirmData.success) {
+                throw new Error(confirmData.message || 'Failed to complete purchase')
             }
 
             setSuccess(true)
-            setTransactionHash(data.transactionHash)
+            setTransactionHash(confirmData.nftTransferSignature)
 
             // Call success callback
             if (onSuccess) {
@@ -112,6 +125,7 @@ export default function BuyResaleTicketModal({
             setError(err.message || 'Failed to purchase ticket. Please try again.')
         } finally {
             setIsSubmitting(false)
+            setPurchaseStep('idle')
         }
     }
 
@@ -120,63 +134,21 @@ export default function BuyResaleTicketModal({
             setError(null)
             setSuccess(false)
             setTransactionHash(null)
-            setNeedsFunding(null)
+            setPurchaseStep('idle')
             onClose()
         }
     }
 
-    const handleFundInternalWallet = async () => {
-        if (!needsFunding || !connected || !publicKey || !wallet?.adapter) {
-            return
-        }
-
-        setIsSubmitting(true)
-        setError(null)
-
-        try {
-            const connection = new Connection(
-                process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
-                'confirmed'
-            )
-
-            const amountToSend = needsFunding.requiredAmount + 0.001 // Add extra for fees
-
-            const transferTransaction = new Transaction().add(
-                SystemProgram.transfer({
-                    fromPubkey: publicKey,
-                    toPubkey: new PublicKey(needsFunding.internalWalletAddress),
-                    lamports: Math.floor(amountToSend * LAMPORTS_PER_SOL),
-                })
-            )
-
-            const { blockhash } = await connection.getLatestBlockhash('confirmed')
-            transferTransaction.recentBlockhash = blockhash
-            transferTransaction.feePayer = publicKey
-
-            const signature = await wallet.adapter.sendTransaction(transferTransaction, connection)
-            await connection.confirmTransaction(signature, 'confirmed')
-
-            // Clear funding state and retry purchase
-            setNeedsFunding(null)
-            setError(null)
-
-            // Retry purchase after funding
-            setTimeout(() => {
-                handlePurchase()
-            }, 1000)
-        } catch (err: any) {
-            console.error('Error funding internal wallet:', err)
-            setError(err.message || 'Failed to fund internal wallet. Please try again.')
-        } finally {
-            setIsSubmitting(false)
-        }
-    }
-
-    const copyToClipboard = async (text: string) => {
-        try {
-            await navigator.clipboard.writeText(text)
-        } catch (err) {
-            console.error('Failed to copy:', err)
+    const getStepMessage = () => {
+        switch (purchaseStep) {
+            case 'preparing':
+                return 'Preparing transaction...'
+            case 'signing':
+                return 'Please approve the transaction in your wallet...'
+            case 'confirming':
+                return 'Confirming payment and transferring NFT...'
+            default:
+                return 'Processing...'
         }
     }
 
@@ -259,51 +231,6 @@ export default function BuyResaleTicketModal({
                                     </div>
                                 )}
 
-                                {/* Funding Required Message */}
-                                {needsFunding && (
-                                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 space-y-3">
-                                        <div className="flex items-start gap-3">
-                                            <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                                            <div className="flex-1">
-                                                <p className="text-sm text-yellow-800 font-medium">Funding Required</p>
-                                                <p className="text-sm text-yellow-700 mt-1">
-                                                    Your internal wallet needs {needsFunding.requiredAmount.toFixed(4)} SOL
-                                                    (current: {needsFunding.currentBalance.toFixed(4)} SOL)
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <div className="bg-white rounded-lg p-3 border border-yellow-200">
-                                            <div className="text-xs text-yellow-800 mb-2">Send SOL to this address:</div>
-                                            <div className="flex items-center justify-between">
-                                                <code className="text-xs font-mono text-yellow-900 break-all flex-1">
-                                                    {needsFunding.internalWalletAddress}
-                                                </code>
-                                                <button
-                                                    onClick={() => copyToClipboard(needsFunding.internalWalletAddress)}
-                                                    className="ml-2 p-1.5 hover:bg-yellow-100 rounded transition-colors"
-                                                >
-                                                    <Copy className="w-4 h-4 text-yellow-700" />
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <Button
-                                            onClick={handleFundInternalWallet}
-                                            disabled={isSubmitting}
-                                            className="w-full bg-yellow-600 text-white hover:bg-yellow-700"
-                                        >
-                                            {isSubmitting ? (
-                                                <>
-                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                                    Funding...
-                                                </>
-                                            ) : (
-                                                `Fund Internal Wallet (${needsFunding.requiredAmount.toFixed(4)} SOL)`
-                                            )}
-                                        </Button>
-                                    </div>
-                                )}
 
                                 {/* Ticket Information */}
                                 <div className="bg-muted/50 rounded-xl p-4">
@@ -352,7 +279,7 @@ export default function BuyResaleTicketModal({
                                     {isSubmitting ? (
                                         <>
                                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                            Processing...
+                                            {getStepMessage()}
                                         </>
                                     ) : (
                                         `Buy for ${ticketData.price.toFixed(4)} SOL`

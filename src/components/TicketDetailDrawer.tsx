@@ -64,12 +64,30 @@ export default function TicketDetailDrawer({
         setError(null)
 
         try {
+            console.log('=== Resale Listing Client Request ===')
+            console.log('Raw price string:', price, 'type:', typeof price)
+
             const priceValue = parseFloat(price)
+
+            console.log('Parsed price value:', priceValue, 'type:', typeof priceValue)
+            console.log('isNaN:', isNaN(priceValue))
+
+            // Extra validation on client side
+            if (isNaN(priceValue) || priceValue <= 0) {
+                setError("Please enter a valid price")
+                setIsSubmitting(false)
+                return
+            }
 
             // Use cached signature from SignatureProvider
             const signatureHex = Array.from(signature!)
                 .map(b => b.toString(16).padStart(2, '0'))
                 .join('')
+
+            console.log('Ticket ID:', ticketId)
+            console.log('Price to send:', priceValue)
+            console.log('Wallet:', walletAddress)
+            console.log('Signature length:', signatureHex.length)
 
             const response = await fetch(`/api/profile/tickets/${ticketId}/resale`, {
                 method: "POST",
@@ -236,43 +254,43 @@ export default function TicketDetailDrawer({
                             </div>
                         </form>
                     </div>
+
+                    {/* Confirmation Modal - inside Portal to preserve state */}
+                    {showConfirm && (
+                        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+                            <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
+                                <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mx-auto mb-4">
+                                    <AlertCircle className="w-6 h-6 text-blue-600" />
+                                </div>
+                                <h3 className="text-lg font-bold text-center text-gray-900 mb-2">
+                                    List Ticket for Resale?
+                                </h3>
+                                <p className="text-sm text-gray-600 text-center mb-2">
+                                    Are you sure you want to list this ticket for <span className="font-semibold">{price} SOL</span>?
+                                </p>
+                                <p className="text-xs text-gray-500 text-center mb-6">
+                                    The ticket will be available for purchase by others on the resale marketplace.
+                                </p>
+                                <div className="flex gap-3">
+                                    <Button
+                                        onClick={() => setShowConfirm(false)}
+                                        variant="outline"
+                                        className="flex-1"
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        onClick={handleConfirmSubmit}
+                                        className="flex-1 bg-primary hover:bg-primary/90 text-white"
+                                    >
+                                        Yes, List
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </Drawer.Content>
             </Drawer.Portal>
-
-            {/* Confirmation Modal */}
-            {showConfirm && (
-                <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
-                        <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mx-auto mb-4">
-                            <AlertCircle className="w-6 h-6 text-blue-600" />
-                        </div>
-                        <h3 className="text-lg font-bold text-center text-gray-900 mb-2">
-                            List Ticket for Resale?
-                        </h3>
-                        <p className="text-sm text-gray-600 text-center mb-2">
-                            Are you sure you want to list this ticket for <span className="font-semibold">{price} SOL</span>?
-                        </p>
-                        <p className="text-xs text-gray-500 text-center mb-6">
-                            The ticket will be available for purchase by others on the resale marketplace.
-                        </p>
-                        <div className="flex gap-3">
-                            <Button
-                                onClick={() => setShowConfirm(false)}
-                                variant="outline"
-                                className="flex-1"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                onClick={handleConfirmSubmit}
-                                className="flex-1 bg-primary hover:bg-primary/90 text-white"
-                            >
-                                Yes, List
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </Drawer.Root>
     )
 }

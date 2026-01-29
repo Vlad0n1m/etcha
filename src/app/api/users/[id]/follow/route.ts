@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import jwt from "jsonwebtoken";
+import { auth } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications";
+import { NotificationType } from "@/generated/prisma";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -14,21 +17,32 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { id: targetUserId } = await params;
 
-    // Verify authentication
-    const authHeader = request.headers.get("authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    let currentUserId: string | null = null;
+
+    // Try NextAuth session first
+    const session = await auth();
+    if (session?.user?.id) {
+      currentUserId = session.user.id;
     }
 
-    const token = authHeader.substring(7);
-    let currentUserId: string;
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-        userId: string;
-      };
-      currentUserId = decoded.userId;
-    } catch {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+    // Fallback to JWT token (wallet auth)
+    if (!currentUserId) {
+      const authHeader = request.headers.get("authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        const token = authHeader.substring(7);
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+            userId: string;
+          };
+          currentUserId = decoded.userId;
+        } catch {
+          // Invalid token
+        }
+      }
+    }
+
+    if (!currentUserId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Cannot follow yourself
@@ -77,6 +91,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         },
       });
       isFollowing = true;
+
+      // Create notification for the user being followed
+      await createNotification({
+        userId: targetUserId,
+        actorId: currentUserId,
+        type: NotificationType.FOLLOW,
+      });
     }
 
     // Get updated followers count

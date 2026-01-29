@@ -72,6 +72,10 @@ model User {
     followers Follow[]  @relation("Following") // Users who follow this user
     following Follow[]  @relation("Followers") // Users this user follows
 
+    // Notifications
+    notifications      Notification[] @relation("UserNotifications")
+    actorNotifications Notification[] @relation("ActorNotifications")
+
     @@map("users")
 }
 
@@ -454,4 +458,31 @@ model Follow {
     @@unique([followerId, followingId])
     @@index([followingId])
     @@map("follows")
+}
+
+// Notification types
+enum NotificationType {
+    LIKE // Someone liked your post
+    COMMENT // Someone commented on your post
+    FOLLOW // Someone followed you
+    NEW_POST // Someone you follow posted
+}
+
+// User notifications
+model Notification {
+    id        String           @id @default(cuid())
+    userId    String // User who receives the notification
+    actorId   String // User who triggered the notification
+    type      NotificationType
+    postId    String? // Related post (for LIKE, COMMENT, NEW_POST)
+    commentId String? // Related comment (for COMMENT)
+    isRead    Boolean          @default(false)
+    createdAt DateTime         @default(now())
+
+    user  User @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+    actor User @relation("ActorNotifications", fields: [actorId], references: [id], onDelete: Cascade)
+
+    @@index([userId, isRead, createdAt])
+    @@index([userId, createdAt])
+    @@map("notifications")
 }

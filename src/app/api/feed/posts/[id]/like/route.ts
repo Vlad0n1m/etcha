@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import jwt from "jsonwebtoken";
 import { auth } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications";
+import { NotificationType } from "@/generated/prisma";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -46,7 +48,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Check if post exists
     const post = await prisma.post.findUnique({
       where: { id: postId },
-      select: { id: true },
+      select: { id: true, authorId: true },
     });
 
     if (!post) {
@@ -81,6 +83,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         },
       });
       isLiked = true;
+
+      // Create notification for post author (if not liking own post)
+      if (post.authorId !== userId) {
+        await createNotification({
+          userId: post.authorId,
+          actorId: userId,
+          type: NotificationType.LIKE,
+          postId,
+        });
+      }
     }
 
     // Get updated likes count

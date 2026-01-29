@@ -172,7 +172,8 @@ export async function POST(
         console.log('=== Resale Listing Request ===')
         console.log('Ticket ID:', ticketId)
         console.log('Wallet Address (external):', walletAddress)
-        console.log('Price:', price, 'SOL')
+        console.log('Price:', price, 'type:', typeof price)
+        console.log('Full body:', JSON.stringify(body, null, 2))
 
         // Validation
         if (!walletAddress) {
@@ -189,7 +190,11 @@ export async function POST(
             )
         }
 
-        if (!price || typeof price !== 'number' || price <= 0) {
+        // Parse price - handle both number and string inputs
+        const priceValue = typeof price === 'string' ? parseFloat(price) : price
+
+        if (priceValue === undefined || priceValue === null || isNaN(priceValue) || priceValue <= 0) {
+            console.log('Invalid price received:', { price, priceValue, typeofPrice: typeof price })
             return NextResponse.json(
                 { success: false, message: 'Valid price in SOL is required' },
                 { status: 400 }
@@ -390,7 +395,7 @@ export async function POST(
                 sellerId: user.id,
                 listingAddress: listingAddress,
                 auctionHouseAddress: auctionHouseAddress,
-                price: price,
+                price: priceValue,
                 originalPrice: ticket.event.price,
                 status: 'active',
                 sellerSignature: sellerSignatureHex, // Store signature for future NFT transfers

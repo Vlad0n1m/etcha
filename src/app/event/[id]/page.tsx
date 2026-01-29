@@ -9,7 +9,6 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui"
 import WalletDrawer from "@/components/WalletDrawer"
 import MintProgress, { MintStatus } from "@/components/MintProgress"
 import MintResultModal from "@/components/MintResultModal"
-import { useSignature } from "@/components/SignatureProvider"
 import ResaleSection from "@/components/ResaleSection"
 import { Button } from "@/components/ui/button"
 
@@ -67,9 +66,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     const [mintResult, setMintResult] = useState<EventMintResult | null>(null)
     const [showMintModal, setShowMintModal] = useState(false)
     const [showBuyConfirm, setShowBuyConfirm] = useState(false)
-    const [internalBalance, setInternalBalance] = useState<number | null>(null)
-    const { signature, derivedAddress } = useSignature()
-    const [copiedAddress, setCopiedAddress] = useState(false)
     const [isUpgrading, setIsUpgrading] = useState(false)
 
     const { connected, publicKey, sendTransaction, wallet } = useWallet()
@@ -128,18 +124,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         const newQuantity = ticketQuantity + change
         if (newQuantity >= 1 && newQuantity <= (event?.ticketsAvailable || 0)) {
             setTicketQuantity(newQuantity)
-        }
-    }
-
-    const handleCopyDerivedAddress = async () => {
-        if (!derivedAddress) return
-
-        try {
-            await navigator.clipboard.writeText(derivedAddress)
-            setCopiedAddress(true)
-            setTimeout(() => setCopiedAddress(false), 2000)
-        } catch (err) {
-            console.error("Failed to copy address:", err)
         }
     }
 
@@ -289,30 +273,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     }
 
 
-    // Load internal wallet balance when signature is available
-    useEffect(() => {
-        const loadBalance = async () => {
-            if (!connected || !publicKey || !signature) return
-            try {
-                const sigHex = Array.from(signature).map(b => b.toString(16).padStart(2, '0')).join('')
-                const resp = await fetch('/api/wallet/balance', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ walletAddress: publicKey.toBase58(), signature: sigHex }),
-                })
-                const data = await resp.json()
-                if (data?.success && typeof data.balance === 'number') {
-                    setInternalBalance(data.balance)
-                }
-            } catch {
-                // ignore for header UI
-            }
-        }
-        void loadBalance()
-    }, [connected, publicKey, signature])
-
-    // (External wallet balance removed; showing internal wallet balance instead)
-
     // Loading state
     if (isLoading) {
         return (
@@ -354,9 +314,6 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     <div className="flex items-center gap-2">
                         {/* Devnet badge */}
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-semibold uppercase tracking-wide">Devnet</span>
-                        {internalBalance !== null && (
-                            <span className="text-xs font-medium text-muted-foreground">{internalBalance.toFixed(3)} SOL</span>
-                        )}
                         {connected ? (
                             <WalletDrawer>
                                 <Button

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
+import { notifyFollowersOfNewPost } from "@/lib/notifications";
 
 const createPostSchema = z.object({
   content: z.string().max(2000).optional(),
@@ -164,6 +165,11 @@ export async function POST(request: NextRequest) {
       });
       poapProofTx = attendance?.poapMintTx;
     }
+
+    // Notify followers of new post (async, non-blocking)
+    notifyFollowersOfNewPost(userId, post.id).catch((err) => {
+      console.error("Error notifying followers:", err);
+    });
 
     return NextResponse.json({
       id: post.id,

@@ -11,6 +11,7 @@ interface FollowButtonProps {
   onFollowChange?: (isFollowing: boolean, followersCount: number) => void;
   size?: "sm" | "md" | "lg";
   variant?: "primary" | "outline";
+  useSession?: boolean; // Use NextAuth session instead of wallet token
 }
 
 const FollowButton: React.FC<FollowButtonProps> = ({
@@ -20,12 +21,16 @@ const FollowButton: React.FC<FollowButtonProps> = ({
   onFollowChange,
   size = "md",
   variant = "primary",
+  useSession = false,
 }) => {
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Can interact if using session auth or has wallet token
+  const canInteract = useSession || !!authToken;
+
   const handleClick = async () => {
-    if (!authToken || isLoading) return;
+    if (!canInteract || isLoading) return;
 
     setIsLoading(true);
     // Optimistic update
@@ -33,11 +38,15 @@ const FollowButton: React.FC<FollowButtonProps> = ({
     setIsFollowing(newIsFollowing);
 
     try {
+      const headers: Record<string, string> = {};
+      // Only add Authorization header if using wallet token (not session)
+      if (authToken && !useSession) {
+        headers.Authorization = `Bearer ${authToken}`;
+      }
+
       const response = await fetch(`/api/users/${userId}/follow`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
+        headers,
       });
 
       if (response.ok) {
@@ -76,7 +85,7 @@ const FollowButton: React.FC<FollowButtonProps> = ({
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       onClick={handleClick}
-      disabled={!authToken || isLoading}
+      disabled={!canInteract || isLoading}
       className={`
         ${sizeClasses[size]}
         ${variantClasses[variant]}

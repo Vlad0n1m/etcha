@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
+import { createNotification } from "@/lib/notifications";
+import { NotificationType } from "@/generated/prisma";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -135,7 +137,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Check if post exists
     const post = await prisma.post.findUnique({
       where: { id: postId },
-      select: { id: true },
+      select: { id: true, authorId: true },
     });
 
     if (!post) {
@@ -169,6 +171,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         },
       },
     });
+
+    // Create notification for post author (if not commenting on own post)
+    if (post.authorId !== userId) {
+      await createNotification({
+        userId: post.authorId,
+        actorId: userId,
+        type: NotificationType.COMMENT,
+        postId,
+        commentId: comment.id,
+      });
+    }
 
     return NextResponse.json({
       id: comment.id,
