@@ -187,10 +187,10 @@ export default async function DashboardPage() {
                             </Link>
                         )}
 
-                        {/* Create Event (only for approved organizers) */}
+                        {/* My Events (only for approved organizers) */}
                         {user.role === "ORGANIZER" && user.organizerStatus === "APPROVED" && (
                             <Link
-                                href="/organizer/create-event"
+                                href="/organizer/events"
                                 className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
                             >
                                 <div className="flex items-center gap-3">
@@ -198,8 +198,46 @@ export default async function DashboardPage() {
                                         <Calendar className="w-5 h-5 text-purple-600" />
                                     </div>
                                     <div>
+                                        <p className="font-medium text-gray-900">My Events</p>
+                                        <p className="text-xs text-gray-500">Manage events & scan tickets</p>
+                                    </div>
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-gray-400" />
+                            </Link>
+                        )}
+
+                        {/* Create Event (only for approved organizers) */}
+                        {user.role === "ORGANIZER" && user.organizerStatus === "APPROVED" && (
+                            <Link
+                                href="/organizer/create-event"
+                                className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                        <Building2 className="w-5 h-5 text-green-600" />
+                                    </div>
+                                    <div>
                                         <p className="font-medium text-gray-900">Create Event</p>
                                         <p className="text-xs text-gray-500">Set up a new event</p>
+                                    </div>
+                                </div>
+                                <ChevronRight className="w-5 h-5 text-gray-400" />
+                            </Link>
+                        )}
+
+                        {/* All Events (for admins) */}
+                        {user.role === "ADMIN" && (
+                            <Link
+                                href="/organizer/events"
+                                className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                        <Calendar className="w-5 h-5 text-purple-600" />
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-gray-900">All Events</p>
+                                        <p className="text-xs text-gray-500">Manage all events & scan tickets</p>
                                     </div>
                                 </div>
                                 <ChevronRight className="w-5 h-5 text-gray-400" />

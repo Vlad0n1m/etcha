@@ -3,6 +3,7 @@ import { PrismaClient } from '@/generated/prisma'
 import { isValidSolanaAddress } from '@/lib/utils/wallet'
 import { SolanaService } from '@/lib/solana/SolanaService'
 import { BubblegumService } from '@/lib/solana/BubblegumService'
+import { getPlatformTreeService } from '@/lib/solana/PlatformTreeService'
 
 const prisma = new PrismaClient()
 
@@ -81,21 +82,6 @@ export async function POST(request: NextRequest) {
 
         console.log(`🌳 Preparing cNFT mint transaction for event: ${eventId}`)
 
-        // Validate cNFT infrastructure
-        if (!event.merkleTreeAddress) {
-            return NextResponse.json(
-                { success: false, message: 'Merkle tree not configured for this event' },
-                { status: 400 }
-            )
-        }
-
-        if (!event.collectionNftAddress) {
-            return NextResponse.json(
-                { success: false, message: 'Collection NFT not configured for this event' },
-                { status: 400 }
-            )
-        }
-
         const organizerWallet = event.organizer?.user?.walletAddress
         if (!organizerWallet) {
             return NextResponse.json(
@@ -108,29 +94,37 @@ export async function POST(request: NextRequest) {
         console.log('Initializing Solana services...')
         const solanaService = new SolanaService()
         const bubblegumService = new BubblegumService(solanaService)
+        const platformTreeService = getPlatformTreeService()
 
-        // Get tree stats to check availability
-        console.log('Getting tree stats for:', event.merkleTreeAddress)
-        let treeStats
+        // Get shared platform ticket tree (auto-creates if not exists)
+        let ticketTree
         try {
-            treeStats = await bubblegumService.getTreeStats(event.merkleTreeAddress)
-            console.log('Tree stats:', treeStats)
+            ticketTree = await platformTreeService.getActiveTree('ticket')
+            console.log('Using platform ticket tree:', ticketTree.address)
+            console.log('Tree capacity:', ticketTree.available, 'remaining')
         } catch (treeError) {
-            console.error('Error getting tree stats:', treeError)
+            console.error('Error getting platform tree:', treeError)
             return NextResponse.json(
                 {
                     success: false,
-                    message: `Failed to get tree stats: ${treeError instanceof Error ? treeError.message : 'Unknown error'}`,
+                    message: `Failed to get platform tree: ${treeError instanceof Error ? treeError.message : 'Unknown error'}`,
                 },
                 { status: 500 }
             )
         }
 
-        if (treeStats.remaining < quantity) {
+        if (!ticketTree.collectionAddress) {
+            return NextResponse.json(
+                { success: false, message: 'Platform ticket collection not initialized' },
+                { status: 500 }
+            )
+        }
+
+        if (ticketTree.available < quantity) {
             return NextResponse.json(
                 {
                     success: false,
-                    message: `Not enough capacity. Only ${treeStats.remaining} tickets remaining.`,
+                    message: `Not enough tree capacity. Only ${ticketTree.available} slots remaining.`,
                 },
                 { status: 400 }
             )
@@ -159,8 +153,8 @@ export async function POST(request: NextRequest) {
         let result
         try {
             result = await bubblegumService.buildMintTransaction({
-                merkleTree: event.merkleTreeAddress,
-                collectionMint: event.collectionNftAddress,
+                merkleTree: ticketTree.address,
+                collectionMint: ticketTree.collectionAddress,
                 metadata,
                 recipient: buyerWallet,
                 priceInSol: event.price,
@@ -182,7 +176,8 @@ export async function POST(request: NextRequest) {
             success: true,
             transaction: result.transaction,
             assetIds: [result.expectedAssetId],
-            merkleTreeAddress: event.merkleTreeAddress,
+            merkleTreeAddress: ticketTree.address,
+            platformTreeId: ticketTree.id,
             message: 'Ticket purchase transaction ready',
         })
 

@@ -4,6 +4,7 @@ import { isValidSolanaAddress } from '@/lib/utils/wallet'
 import { Connection } from '@solana/web3.js'
 import { SolanaService } from '@/lib/solana/SolanaService'
 import { BubblegumService } from '@/lib/solana/BubblegumService'
+import { getPlatformTreeService } from '@/lib/solana/PlatformTreeService'
 
 const prisma = new PrismaClient()
 
@@ -22,6 +23,7 @@ export async function POST(request: NextRequest) {
         const {
             eventId,
             merkleTreeAddress,
+            platformTreeId,
             buyerWallet,
             quantity = 1,
             transactionSignature,
@@ -34,9 +36,9 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        if (!merkleTreeAddress) {
+        if (!merkleTreeAddress && !platformTreeId) {
             return NextResponse.json(
-                { success: false, message: 'Missing merkle tree address' },
+                { success: false, message: 'Missing merkle tree address or platform tree ID' },
                 { status: 400 }
             )
         }
@@ -93,16 +95,22 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        if (event.merkleTreeAddress !== merkleTreeAddress) {
+        // Get platform tree for minting
+        const platformTreeService = getPlatformTreeService()
+        let ticketTree
+        try {
+            ticketTree = await platformTreeService.getActiveTree('ticket')
+        } catch (treeError) {
+            console.error('Error getting platform tree:', treeError)
             return NextResponse.json(
-                { success: false, message: 'Merkle tree address mismatch' },
-                { status: 400 }
+                { success: false, message: 'Platform tree not available' },
+                { status: 500 }
             )
         }
 
-        if (!event.collectionNftAddress) {
+        if (!ticketTree.collectionAddress) {
             return NextResponse.json(
-                { success: false, message: 'Collection NFT not configured' },
+                { success: false, message: 'Platform collection not configured' },
                 { status: 400 }
             )
         }
@@ -166,8 +174,8 @@ export async function POST(request: NextRequest) {
 
             try {
                 const mintResult = await bubblegumService.mintCompressedNFT({
-                    merkleTree: event.merkleTreeAddress!,
-                    collectionMint: event.collectionNftAddress!,
+                    merkleTree: ticketTree.address,
+                    collectionMint: ticketTree.collectionAddress!,
                     metadata,
                     recipient: buyerWallet,
                 })
@@ -175,6 +183,9 @@ export async function POST(request: NextRequest) {
                 assetIds.push(mintResult.assetId)
                 leafIndices.push(mintResult.leafIndex)
                 console.log(`Ticket #${ticketNumber} minted: ${mintResult.assetId}`)
+
+                // Increment platform tree minted count
+                await platformTreeService.incrementMintedCount(ticketTree.id)
             } catch (mintError) {
                 console.error(`Failed to mint ticket #${ticketNumber}:`, mintError)
 

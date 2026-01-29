@@ -121,6 +121,15 @@ export async function POST(
                         internalWalletAddress: true,
                     },
                 },
+                attendance: {
+                    select: {
+                        id: true,
+                        scannedAt: true,
+                        poapAssetId: true,
+                        poapStatus: true,
+                        poapMintTx: true,
+                    },
+                },
             },
         })
 
@@ -262,6 +271,14 @@ export async function POST(
                     auctionHouseAddress: listing.auctionHouseAddress,
                     status: listing.status,
                     createdAt: listing.createdAt.toISOString(),
+                } : null,
+                // Attendance information (if scanned)
+                attendance: ticket.attendance ? {
+                    id: ticket.attendance.id,
+                    scannedAt: ticket.attendance.scannedAt.toISOString(),
+                    poapAssetId: ticket.attendance.poapAssetId,
+                    poapStatus: ticket.attendance.poapStatus,
+                    poapMintTx: ticket.attendance.poapMintTx,
                 } : null,
             },
         }

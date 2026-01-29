@@ -4,7 +4,8 @@ import { useState, useEffect, use } from "react"
 import { useWallet } from "@solana/wallet-adapter-react"
 import Image from "next/image"
 import Link from "next/link"
-import { Calendar, MapPin, Clock, Copy, ExternalLink, CheckCircle2, AlertCircle, Loader2, Tag, ChevronDown } from "lucide-react"
+import { Calendar, MapPin, Clock, Copy, ExternalLink, CheckCircle2, AlertCircle, Loader2, Tag, ChevronDown, Award, QrCode } from "lucide-react"
+import { QRCodeSVG } from "qrcode.react"
 import TicketDetailDrawer from "@/components/TicketDetailDrawer"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
@@ -52,6 +53,13 @@ interface TicketDetail {
         auctionHouseAddress: string
         status: string
         createdAt: string
+    } | null
+    attendance: {
+        id: string
+        scannedAt: string
+        poapAssetId: string | null
+        poapStatus: string
+        poapMintTx: string | null
     } | null
 }
 
@@ -385,6 +393,101 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                         </div>
                     </div>
                 </div>
+
+                {/* QR Code for Entry (only show if ticket is valid and not used) */}
+                {ticket.isValid && !ticket.isUsed && (
+                    <div className="bg-surface rounded-2xl p-5 mt-4 border border-border">
+                        <div className="flex items-center gap-2 mb-4">
+                            <QrCode className="w-5 h-5 text-primary" />
+                            <h2 className="text-base font-bold text-foreground">Entry QR Code</h2>
+                        </div>
+
+                        <div className="flex flex-col items-center">
+                            {/* QR Code */}
+                            <div className="bg-white p-4 rounded-xl shadow-sm">
+                                <QRCodeSVG
+                                    value={JSON.stringify({
+                                        ticketId: ticket.id,
+                                        nftAddress: ticket.nftMintAddress,
+                                        eventId: ticket.event.id,
+                                    })}
+                                    size={200}
+                                    level="H"
+                                    includeMargin={false}
+                                />
+                            </div>
+
+                            {/* Ticket info under QR */}
+                            <div className="mt-4 text-center">
+                                <p className="text-sm font-medium text-foreground">
+                                    Ticket #{ticket.tokenId}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                    Show this QR code at the entrance
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Attendance Status (if ticket is used) */}
+                {ticket.isUsed && ticket.attendance && (
+                    <div className="bg-green-50 rounded-2xl p-5 mt-4 border border-green-200">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                            </div>
+                            <div>
+                                <h3 className="font-semibold text-green-800">Event Attended</h3>
+                                <p className="text-sm text-green-700">
+                                    Checked in: {new Date(ticket.attendance.scannedAt).toLocaleString()}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* POAP Badge Section */}
+                        {ticket.attendance.poapStatus === "minted" && ticket.attendance.poapAssetId && (
+                            <div className="mt-4 pt-4 border-t border-green-200">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Award className="w-4 h-4 text-purple-600" />
+                                    <span className="text-sm font-medium text-purple-800">POAP Badge Received</span>
+                                </div>
+                                <p className="text-xs text-green-700 mb-3">
+                                    You received a Proof of Attendance badge for this event!
+                                </p>
+                                <div className="flex items-center gap-2">
+                                    <a
+                                        href={`https://explorer.solana.com/address/${ticket.attendance.poapAssetId}?cluster=${network}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1.5 text-sm text-purple-600 hover:text-purple-800 font-medium"
+                                    >
+                                        View POAP on Explorer
+                                        <ExternalLink className="w-3.5 h-3.5" />
+                                    </a>
+                                </div>
+                            </div>
+                        )}
+
+                        {ticket.attendance.poapStatus === "pending" && (
+                            <div className="mt-4 pt-4 border-t border-green-200">
+                                <div className="flex items-center gap-2">
+                                    <Loader2 className="w-4 h-4 text-yellow-600 animate-spin" />
+                                    <span className="text-sm text-yellow-700">POAP badge is being minted...</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {ticket.attendance.poapStatus === "failed" && (
+                            <div className="mt-4 pt-4 border-t border-green-200">
+                                <div className="flex items-center gap-2">
+                                    <AlertCircle className="w-4 h-4 text-orange-500" />
+                                    <span className="text-sm text-orange-700">POAP badge minting failed</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Ticket Information (Accordion) */}
                 <div className="bg-surface rounded-2xl mt-4 border border-border overflow-hidden">

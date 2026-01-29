@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react"
 import { useWallet, useConnection } from "@solana/wallet-adapter-react"
 import { useState, useEffect } from "react"
-import { Copy, Edit, Eye, MoreHorizontal, Wallet, RefreshCw, Save, X, User, LogIn, UserPlus, Plus, Loader2 } from "lucide-react"
+import { Copy, Edit, Eye, MoreHorizontal, Wallet, RefreshCw, Save, X, User, LogIn, UserPlus, Plus, Loader2, Calendar, QrCode } from "lucide-react"
 import { LAMPORTS_PER_SOL } from "@solana/web3.js"
 import WalletDrawer from "@/components/WalletDrawer"
 import { Button } from "@/components/ui/button"
@@ -399,26 +399,44 @@ export default function ProfilePage() {
                     {/* Email */}
                     <p className="text-sm text-gray-500 mb-3">{session.user.email}</p>
 
-                    {/* Organizer: Create Event Button */}
+                    {/* Organizer: My Events & Create Event Buttons */}
                     {session.user.role === "ORGANIZER" && session.user.organizerStatus === "APPROVED" && (
-                        <Link
-                            href="/organizer/create-event"
-                            className="flex items-center gap-2 mb-3 px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Create Event
-                        </Link>
+                        <div className="flex items-center gap-2 mb-3">
+                            <Link
+                                href="/organizer/events"
+                                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                            >
+                                <Calendar className="w-4 h-4" />
+                                My Events
+                            </Link>
+                            <Link
+                                href="/organizer/create-event"
+                                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-900 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Create
+                            </Link>
+                        </div>
                     )}
 
-                    {/* Admin: Create Event Button */}
+                    {/* Admin: All Events & Create Event Buttons */}
                     {session.user.role === "ADMIN" && (
-                        <Link
-                            href="/organizer/create-event"
-                            className="flex items-center gap-2 mb-3 px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Create Event
-                        </Link>
+                        <div className="flex items-center gap-2 mb-3">
+                            <Link
+                                href="/organizer/events"
+                                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                            >
+                                <Calendar className="w-4 h-4" />
+                                All Events
+                            </Link>
+                            <Link
+                                href="/organizer/create-event"
+                                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-900 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Create
+                            </Link>
+                        </div>
                     )}
 
                     {/* Wallet section */}

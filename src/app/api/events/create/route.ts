@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { PrismaClient } from "@/generated/prisma"
-import { SolanaService } from "@/lib/solana/SolanaService"
-import { BubblegumService, MerkleTreeSize } from "@/lib/solana/BubblegumService"
+import { getPlatformTreeService } from "@/lib/solana/PlatformTreeService"
 
 const prisma = new PrismaClient()
 
@@ -9,8 +8,8 @@ const prisma = new PrismaClient()
  * POST /api/events/create
  * 
  * Create a new event with cNFT infrastructure
- * - Creates Collection NFT
- * - Creates Merkle Tree for ticket minting
+ * - Uses shared platform Merkle Tree for tickets (cost-efficient)
+ * - Uses shared platform Merkle Tree for POAP badges
  * - Saves event to database
  */
 export async function POST(request: NextRequest) {
@@ -118,58 +117,44 @@ export async function POST(request: NextRequest) {
 
         console.log(`Event created in DB: ${event.id}`)
 
-        // Step 3: Create cNFT infrastructure
+        // Step 3: Verify platform tree is ready
         try {
-            const solanaService = new SolanaService()
-            const bubblegumService = new BubblegumService(solanaService)
+            // Use shared platform Merkle Tree instead of creating per-event tree
+            // This saves ~0.2 SOL per event!
+            console.log(`Using shared platform Merkle Tree for tickets`)
 
-            // Determine tree size based on tickets
-            let treeSize: MerkleTreeSize = 'SMALL' // Up to 16,384 tickets
-            if (ticketsAvailable > 1000) {
-                treeSize = 'MEDIUM' // Up to 131,072 tickets
+            const platformTreeService = getPlatformTreeService()
+
+            // Get or create platform ticket tree
+            const ticketTree = await platformTreeService.getActiveTree('ticket')
+            console.log(`Platform ticket tree: ${ticketTree.address}`)
+            console.log(`Available capacity: ${ticketTree.available}`)
+
+            if (!ticketTree.collectionAddress) {
+                throw new Error('Platform ticket collection not initialized')
             }
-            if (ticketsAvailable > 10000) {
-                treeSize = 'LARGE' // Up to 1,048,576 tickets
-            }
 
-            console.log(`Creating cNFT collection with tree size: ${treeSize}`)
-
-            // Create Collection NFT
-            const collectionName = collectionMetadata?.name || title
-            const collectionResult = await bubblegumService.createCollectionNFT({
-                name: `${collectionName} Tickets`,
-                symbol: collectionMetadata?.symbol || 'TICKET',
-                uri: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/metadata/collection/${event.id}`,
-                sellerFeeBasisPoints: 250,
-            })
-
-            console.log(`Collection NFT created: ${collectionResult.collectionAddress}`)
-
-            // Create Merkle Tree
-            const treeResult = await bubblegumService.createMerkleTree(treeSize)
-
-            console.log(`Merkle Tree created: ${treeResult.merkleTreeAddress}`)
-
-            // Update event with blockchain addresses
+            // Update event to use platform tree
             await prisma.event.update({
                 where: { id: event.id },
                 data: {
-                    collectionNftAddress: collectionResult.collectionAddress,
-                    merkleTreeAddress: treeResult.merkleTreeAddress,
-                    merkleTreeDepth: treeResult.depth,
                     nftType: 'cnft',
+                    // Note: merkleTreeAddress and collectionNftAddress are now optional
+                    // Tickets are minted using the platform shared tree
                 },
             })
 
-            console.log(`Event updated with cNFT infrastructure`)
+            console.log(`Event updated to use shared platform tree`)
 
             return NextResponse.json({
                 success: true,
-                message: "Event created with cNFT collection",
+                message: "Event created with shared platform tree",
                 eventId: event.id,
-                collectionAddress: collectionResult.collectionAddress,
-                merkleTreeAddress: treeResult.merkleTreeAddress,
-                treeCapacity: treeResult.capacity,
+                platformTree: {
+                    address: ticketTree.address,
+                    collectionAddress: ticketTree.collectionAddress,
+                    available: ticketTree.available,
+                },
             })
 
         } catch (blockchainError) {

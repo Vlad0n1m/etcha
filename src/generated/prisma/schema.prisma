@@ -51,11 +51,12 @@ model User {
   sessions Session[]
 
   // App relations
-  profile   Profile?
-  organizer Organizer?
-  orders    Order[]
-  tickets   Ticket[]
-  listings  Listing[]
+  profile     Profile?
+  organizer   Organizer?
+  orders      Order[]
+  tickets     Ticket[]
+  listings    Listing[]
+  attendances Attendance[]
 
   @@map("users")
 }
@@ -183,13 +184,20 @@ model Event {
   merkleTreeDepth   Int? // Depth of merkle tree (14 = 16384 tickets, 17 = 131072, 20 = 1048576)
   nftType           String  @default("legacy") // "legacy" | "cnft" | "core"
 
-  categoryId  String
-  organizerId String?
-  category    Category   @relation(fields: [categoryId], references: [id])
-  organizer   Organizer? @relation(fields: [organizerId], references: [id])
-  orders      Order[]
-  tickets     Ticket[]
-  listings    Listing[]
+  // POAP (Proof of Attendance) fields
+  poapMerkleTreeAddress String? @unique // Merkle tree for POAP badges
+  poapCollectionAddress String? @unique // Collection NFT for POAP badges
+  poapMetadataUri       String? // URI for POAP badge metadata
+
+  categoryId   String
+  organizerId  String?
+  category     Category      @relation(fields: [categoryId], references: [id])
+  organizer    Organizer?    @relation(fields: [organizerId], references: [id])
+  orders       Order[]
+  tickets      Ticket[]
+  listings     Listing[]
+  attendances  Attendance[]
+  scannerCodes ScannerCode[]
 
   @@map("events")
 }
@@ -234,9 +242,10 @@ model Ticket {
   creatorHash String? // Hash of creators for verification
   nftType     String  @default("legacy") // "legacy" | "cnft"
 
-  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event      Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  order      Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attendance Attendance?
 
   @@map("tickets")
 }
@@ -296,4 +305,63 @@ model PaymentDistribution {
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@map("payment_distributions")
+}
+
+// Attendance tracking for ticket scanning and POAP badges
+model Attendance {
+  id        String   @id @default(cuid())
+  ticketId  String   @unique
+  eventId   String
+  userId    String
+  scannedAt DateTime @default(now())
+  scannedBy String // User ID or scanner code identifier
+
+  // POAP Badge cNFT
+  poapAssetId   String? @unique // cNFT asset ID for POAP badge
+  poapLeafIndex Int? // Position in POAP merkle tree
+  poapMintTx    String? // Transaction signature for POAP mint
+  poapStatus    String  @default("pending") // pending, minted, failed
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  event  Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, scannedAt])
+  @@map("attendances")
+}
+
+// Scanner codes for event staff
+model ScannerCode {
+  id         String    @id @default(cuid())
+  eventId    String
+  code       String    @unique
+  name       String // "Entrance 1", "VIP Gate", etc.
+  isActive   Boolean   @default(true)
+  usageCount Int       @default(0)
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime?
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([code, isActive])
+  @@map("scanner_codes")
+}
+
+// Platform-wide shared Merkle Trees for cost efficiency
+model PlatformMerkleTree {
+  id        String   @id @default(cuid())
+  address   String   @unique // Merkle tree address on Solana
+  type      String // "ticket" | "poap"
+  maxDepth  Int // Tree depth (determines capacity)
+  capacity  Int // Maximum number of NFTs this tree can hold
+  minted    Int      @default(0) // Current number of minted NFTs
+  isActive  Boolean  @default(true) // Whether this tree is accepting new mints
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Collection NFT for this tree
+  collectionAddress String? @unique
+
+  @@index([type, isActive])
+  @@map("platform_merkle_trees")
 }

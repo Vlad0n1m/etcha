@@ -78,6 +78,21 @@ export type PlatformConfig = $Result.DefaultSelection<Prisma.$PlatformConfigPayl
  * 
  */
 export type PaymentDistribution = $Result.DefaultSelection<Prisma.$PaymentDistributionPayload>
+/**
+ * Model Attendance
+ * 
+ */
+export type Attendance = $Result.DefaultSelection<Prisma.$AttendancePayload>
+/**
+ * Model ScannerCode
+ * 
+ */
+export type ScannerCode = $Result.DefaultSelection<Prisma.$ScannerCodePayload>
+/**
+ * Model PlatformMerkleTree
+ * 
+ */
+export type PlatformMerkleTree = $Result.DefaultSelection<Prisma.$PlatformMerkleTreePayload>
 
 /**
  * Enums
@@ -357,6 +372,36 @@ export class PrismaClient<
     * ```
     */
   get paymentDistribution(): Prisma.PaymentDistributionDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.attendance`: Exposes CRUD operations for the **Attendance** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Attendances
+    * const attendances = await prisma.attendance.findMany()
+    * ```
+    */
+  get attendance(): Prisma.AttendanceDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.scannerCode`: Exposes CRUD operations for the **ScannerCode** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ScannerCodes
+    * const scannerCodes = await prisma.scannerCode.findMany()
+    * ```
+    */
+  get scannerCode(): Prisma.ScannerCodeDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.platformMerkleTree`: Exposes CRUD operations for the **PlatformMerkleTree** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more PlatformMerkleTrees
+    * const platformMerkleTrees = await prisma.platformMerkleTree.findMany()
+    * ```
+    */
+  get platformMerkleTree(): Prisma.PlatformMerkleTreeDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -415,8 +460,8 @@ export namespace Prisma {
   export import Exact = $Public.Exact
 
   /**
-   * Prisma Client JS version: 6.19.2
-   * Query Engine version: c2990dca591cba766e3b7ef5d9e8a84796e47ab7
+   * Prisma Client JS version: 6.18.0
+   * Query Engine version: 34b5a692b7bd79939a9a2c3ef97d816e749cda2f
    */
   export type PrismaVersion = {
     client: string
@@ -810,7 +855,10 @@ export namespace Prisma {
     Ticket: 'Ticket',
     Listing: 'Listing',
     PlatformConfig: 'PlatformConfig',
-    PaymentDistribution: 'PaymentDistribution'
+    PaymentDistribution: 'PaymentDistribution',
+    Attendance: 'Attendance',
+    ScannerCode: 'ScannerCode',
+    PlatformMerkleTree: 'PlatformMerkleTree'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -829,7 +877,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "account" | "session" | "verificationToken" | "profile" | "organizer" | "category" | "event" | "order" | "ticket" | "listing" | "platformConfig" | "paymentDistribution"
+      modelProps: "user" | "account" | "session" | "verificationToken" | "profile" | "organizer" | "category" | "event" | "order" | "ticket" | "listing" | "platformConfig" | "paymentDistribution" | "attendance" | "scannerCode" | "platformMerkleTree"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1795,6 +1843,228 @@ export namespace Prisma {
           }
         }
       }
+      Attendance: {
+        payload: Prisma.$AttendancePayload<ExtArgs>
+        fields: Prisma.AttendanceFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.AttendanceFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttendancePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.AttendanceFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttendancePayload>
+          }
+          findFirst: {
+            args: Prisma.AttendanceFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttendancePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.AttendanceFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttendancePayload>
+          }
+          findMany: {
+            args: Prisma.AttendanceFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttendancePayload>[]
+          }
+          create: {
+            args: Prisma.AttendanceCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttendancePayload>
+          }
+          createMany: {
+            args: Prisma.AttendanceCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.AttendanceCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttendancePayload>[]
+          }
+          delete: {
+            args: Prisma.AttendanceDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttendancePayload>
+          }
+          update: {
+            args: Prisma.AttendanceUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttendancePayload>
+          }
+          deleteMany: {
+            args: Prisma.AttendanceDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.AttendanceUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.AttendanceUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttendancePayload>[]
+          }
+          upsert: {
+            args: Prisma.AttendanceUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$AttendancePayload>
+          }
+          aggregate: {
+            args: Prisma.AttendanceAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateAttendance>
+          }
+          groupBy: {
+            args: Prisma.AttendanceGroupByArgs<ExtArgs>
+            result: $Utils.Optional<AttendanceGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.AttendanceCountArgs<ExtArgs>
+            result: $Utils.Optional<AttendanceCountAggregateOutputType> | number
+          }
+        }
+      }
+      ScannerCode: {
+        payload: Prisma.$ScannerCodePayload<ExtArgs>
+        fields: Prisma.ScannerCodeFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ScannerCodeFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScannerCodePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ScannerCodeFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScannerCodePayload>
+          }
+          findFirst: {
+            args: Prisma.ScannerCodeFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScannerCodePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ScannerCodeFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScannerCodePayload>
+          }
+          findMany: {
+            args: Prisma.ScannerCodeFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScannerCodePayload>[]
+          }
+          create: {
+            args: Prisma.ScannerCodeCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScannerCodePayload>
+          }
+          createMany: {
+            args: Prisma.ScannerCodeCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.ScannerCodeCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScannerCodePayload>[]
+          }
+          delete: {
+            args: Prisma.ScannerCodeDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScannerCodePayload>
+          }
+          update: {
+            args: Prisma.ScannerCodeUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScannerCodePayload>
+          }
+          deleteMany: {
+            args: Prisma.ScannerCodeDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ScannerCodeUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.ScannerCodeUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScannerCodePayload>[]
+          }
+          upsert: {
+            args: Prisma.ScannerCodeUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScannerCodePayload>
+          }
+          aggregate: {
+            args: Prisma.ScannerCodeAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateScannerCode>
+          }
+          groupBy: {
+            args: Prisma.ScannerCodeGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ScannerCodeGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ScannerCodeCountArgs<ExtArgs>
+            result: $Utils.Optional<ScannerCodeCountAggregateOutputType> | number
+          }
+        }
+      }
+      PlatformMerkleTree: {
+        payload: Prisma.$PlatformMerkleTreePayload<ExtArgs>
+        fields: Prisma.PlatformMerkleTreeFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.PlatformMerkleTreeFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformMerkleTreePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.PlatformMerkleTreeFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformMerkleTreePayload>
+          }
+          findFirst: {
+            args: Prisma.PlatformMerkleTreeFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformMerkleTreePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.PlatformMerkleTreeFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformMerkleTreePayload>
+          }
+          findMany: {
+            args: Prisma.PlatformMerkleTreeFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformMerkleTreePayload>[]
+          }
+          create: {
+            args: Prisma.PlatformMerkleTreeCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformMerkleTreePayload>
+          }
+          createMany: {
+            args: Prisma.PlatformMerkleTreeCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.PlatformMerkleTreeCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformMerkleTreePayload>[]
+          }
+          delete: {
+            args: Prisma.PlatformMerkleTreeDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformMerkleTreePayload>
+          }
+          update: {
+            args: Prisma.PlatformMerkleTreeUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformMerkleTreePayload>
+          }
+          deleteMany: {
+            args: Prisma.PlatformMerkleTreeDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.PlatformMerkleTreeUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.PlatformMerkleTreeUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformMerkleTreePayload>[]
+          }
+          upsert: {
+            args: Prisma.PlatformMerkleTreeUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$PlatformMerkleTreePayload>
+          }
+          aggregate: {
+            args: Prisma.PlatformMerkleTreeAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregatePlatformMerkleTree>
+          }
+          groupBy: {
+            args: Prisma.PlatformMerkleTreeGroupByArgs<ExtArgs>
+            result: $Utils.Optional<PlatformMerkleTreeGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.PlatformMerkleTreeCountArgs<ExtArgs>
+            result: $Utils.Optional<PlatformMerkleTreeCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1904,6 +2174,9 @@ export namespace Prisma {
     listing?: ListingOmit
     platformConfig?: PlatformConfigOmit
     paymentDistribution?: PaymentDistributionOmit
+    attendance?: AttendanceOmit
+    scannerCode?: ScannerCodeOmit
+    platformMerkleTree?: PlatformMerkleTreeOmit
   }
 
   /* Types for Logging */
@@ -1989,6 +2262,7 @@ export namespace Prisma {
     orders: number
     tickets: number
     listings: number
+    attendances: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -1997,6 +2271,7 @@ export namespace Prisma {
     orders?: boolean | UserCountOutputTypeCountOrdersArgs
     tickets?: boolean | UserCountOutputTypeCountTicketsArgs
     listings?: boolean | UserCountOutputTypeCountListingsArgs
+    attendances?: boolean | UserCountOutputTypeCountAttendancesArgs
   }
 
   // Custom InputTypes
@@ -2043,6 +2318,13 @@ export namespace Prisma {
    */
   export type UserCountOutputTypeCountListingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: ListingWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
+  export type UserCountOutputTypeCountAttendancesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: AttendanceWhereInput
   }
 
 
@@ -2116,12 +2398,16 @@ export namespace Prisma {
     orders: number
     tickets: number
     listings: number
+    attendances: number
+    scannerCodes: number
   }
 
   export type EventCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     orders?: boolean | EventCountOutputTypeCountOrdersArgs
     tickets?: boolean | EventCountOutputTypeCountTicketsArgs
     listings?: boolean | EventCountOutputTypeCountListingsArgs
+    attendances?: boolean | EventCountOutputTypeCountAttendancesArgs
+    scannerCodes?: boolean | EventCountOutputTypeCountScannerCodesArgs
   }
 
   // Custom InputTypes
@@ -2154,6 +2440,20 @@ export namespace Prisma {
    */
   export type EventCountOutputTypeCountListingsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: ListingWhereInput
+  }
+
+  /**
+   * EventCountOutputType without action
+   */
+  export type EventCountOutputTypeCountAttendancesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: AttendanceWhereInput
+  }
+
+  /**
+   * EventCountOutputType without action
+   */
+  export type EventCountOutputTypeCountScannerCodesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ScannerCodeWhereInput
   }
 
 
@@ -2419,6 +2719,7 @@ export namespace Prisma {
     orders?: boolean | User$ordersArgs<ExtArgs>
     tickets?: boolean | User$ticketsArgs<ExtArgs>
     listings?: boolean | User$listingsArgs<ExtArgs>
+    attendances?: boolean | User$attendancesArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -2476,6 +2777,7 @@ export namespace Prisma {
     orders?: boolean | User$ordersArgs<ExtArgs>
     tickets?: boolean | User$ticketsArgs<ExtArgs>
     listings?: boolean | User$listingsArgs<ExtArgs>
+    attendances?: boolean | User$attendancesArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -2491,6 +2793,7 @@ export namespace Prisma {
       orders: Prisma.$OrderPayload<ExtArgs>[]
       tickets: Prisma.$TicketPayload<ExtArgs>[]
       listings: Prisma.$ListingPayload<ExtArgs>[]
+      attendances: Prisma.$AttendancePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -2906,6 +3209,7 @@ export namespace Prisma {
     orders<T extends User$ordersArgs<ExtArgs> = {}>(args?: Subset<T, User$ordersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     tickets<T extends User$ticketsArgs<ExtArgs> = {}>(args?: Subset<T, User$ticketsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TicketPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     listings<T extends User$listingsArgs<ExtArgs> = {}>(args?: Subset<T, User$listingsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    attendances<T extends User$attendancesArgs<ExtArgs> = {}>(args?: Subset<T, User$attendancesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3490,6 +3794,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: ListingScalarFieldEnum | ListingScalarFieldEnum[]
+  }
+
+  /**
+   * User.attendances
+   */
+  export type User$attendancesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attendance
+     */
+    select?: AttendanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attendance
+     */
+    omit?: AttendanceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttendanceInclude<ExtArgs> | null
+    where?: AttendanceWhereInput
+    orderBy?: AttendanceOrderByWithRelationInput | AttendanceOrderByWithRelationInput[]
+    cursor?: AttendanceWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: AttendanceScalarFieldEnum | AttendanceScalarFieldEnum[]
   }
 
   /**
@@ -10165,6 +10493,9 @@ export namespace Prisma {
     merkleTreeAddress: string | null
     merkleTreeDepth: number | null
     nftType: string | null
+    poapMerkleTreeAddress: string | null
+    poapCollectionAddress: string | null
+    poapMetadataUri: string | null
     categoryId: string | null
     organizerId: string | null
   }
@@ -10189,6 +10520,9 @@ export namespace Prisma {
     merkleTreeAddress: string | null
     merkleTreeDepth: number | null
     nftType: string | null
+    poapMerkleTreeAddress: string | null
+    poapCollectionAddress: string | null
+    poapMetadataUri: string | null
     categoryId: string | null
     organizerId: string | null
   }
@@ -10213,6 +10547,9 @@ export namespace Prisma {
     merkleTreeAddress: number
     merkleTreeDepth: number
     nftType: number
+    poapMerkleTreeAddress: number
+    poapCollectionAddress: number
+    poapMetadataUri: number
     categoryId: number
     organizerId: number
     _all: number
@@ -10253,6 +10590,9 @@ export namespace Prisma {
     merkleTreeAddress?: true
     merkleTreeDepth?: true
     nftType?: true
+    poapMerkleTreeAddress?: true
+    poapCollectionAddress?: true
+    poapMetadataUri?: true
     categoryId?: true
     organizerId?: true
   }
@@ -10277,6 +10617,9 @@ export namespace Prisma {
     merkleTreeAddress?: true
     merkleTreeDepth?: true
     nftType?: true
+    poapMerkleTreeAddress?: true
+    poapCollectionAddress?: true
+    poapMetadataUri?: true
     categoryId?: true
     organizerId?: true
   }
@@ -10301,6 +10644,9 @@ export namespace Prisma {
     merkleTreeAddress?: true
     merkleTreeDepth?: true
     nftType?: true
+    poapMerkleTreeAddress?: true
+    poapCollectionAddress?: true
+    poapMetadataUri?: true
     categoryId?: true
     organizerId?: true
     _all?: true
@@ -10412,6 +10758,9 @@ export namespace Prisma {
     merkleTreeAddress: string | null
     merkleTreeDepth: number | null
     nftType: string
+    poapMerkleTreeAddress: string | null
+    poapCollectionAddress: string | null
+    poapMetadataUri: string | null
     categoryId: string
     organizerId: string | null
     _count: EventCountAggregateOutputType | null
@@ -10455,6 +10804,9 @@ export namespace Prisma {
     merkleTreeAddress?: boolean
     merkleTreeDepth?: boolean
     nftType?: boolean
+    poapMerkleTreeAddress?: boolean
+    poapCollectionAddress?: boolean
+    poapMetadataUri?: boolean
     categoryId?: boolean
     organizerId?: boolean
     category?: boolean | CategoryDefaultArgs<ExtArgs>
@@ -10462,6 +10814,8 @@ export namespace Prisma {
     orders?: boolean | Event$ordersArgs<ExtArgs>
     tickets?: boolean | Event$ticketsArgs<ExtArgs>
     listings?: boolean | Event$listingsArgs<ExtArgs>
+    attendances?: boolean | Event$attendancesArgs<ExtArgs>
+    scannerCodes?: boolean | Event$scannerCodesArgs<ExtArgs>
     _count?: boolean | EventCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["event"]>
 
@@ -10485,6 +10839,9 @@ export namespace Prisma {
     merkleTreeAddress?: boolean
     merkleTreeDepth?: boolean
     nftType?: boolean
+    poapMerkleTreeAddress?: boolean
+    poapCollectionAddress?: boolean
+    poapMetadataUri?: boolean
     categoryId?: boolean
     organizerId?: boolean
     category?: boolean | CategoryDefaultArgs<ExtArgs>
@@ -10511,6 +10868,9 @@ export namespace Prisma {
     merkleTreeAddress?: boolean
     merkleTreeDepth?: boolean
     nftType?: boolean
+    poapMerkleTreeAddress?: boolean
+    poapCollectionAddress?: boolean
+    poapMetadataUri?: boolean
     categoryId?: boolean
     organizerId?: boolean
     category?: boolean | CategoryDefaultArgs<ExtArgs>
@@ -10537,17 +10897,22 @@ export namespace Prisma {
     merkleTreeAddress?: boolean
     merkleTreeDepth?: boolean
     nftType?: boolean
+    poapMerkleTreeAddress?: boolean
+    poapCollectionAddress?: boolean
+    poapMetadataUri?: boolean
     categoryId?: boolean
     organizerId?: boolean
   }
 
-  export type EventOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "price" | "date" | "time" | "ticketsAvailable" | "ticketsSold" | "imageUrl" | "description" | "fullAddress" | "schedule" | "isActive" | "createdAt" | "updatedAt" | "collectionNftAddress" | "candyMachineAddress" | "merkleTreeAddress" | "merkleTreeDepth" | "nftType" | "categoryId" | "organizerId", ExtArgs["result"]["event"]>
+  export type EventOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "title" | "price" | "date" | "time" | "ticketsAvailable" | "ticketsSold" | "imageUrl" | "description" | "fullAddress" | "schedule" | "isActive" | "createdAt" | "updatedAt" | "collectionNftAddress" | "candyMachineAddress" | "merkleTreeAddress" | "merkleTreeDepth" | "nftType" | "poapMerkleTreeAddress" | "poapCollectionAddress" | "poapMetadataUri" | "categoryId" | "organizerId", ExtArgs["result"]["event"]>
   export type EventInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     category?: boolean | CategoryDefaultArgs<ExtArgs>
     organizer?: boolean | Event$organizerArgs<ExtArgs>
     orders?: boolean | Event$ordersArgs<ExtArgs>
     tickets?: boolean | Event$ticketsArgs<ExtArgs>
     listings?: boolean | Event$listingsArgs<ExtArgs>
+    attendances?: boolean | Event$attendancesArgs<ExtArgs>
+    scannerCodes?: boolean | Event$scannerCodesArgs<ExtArgs>
     _count?: boolean | EventCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type EventIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -10567,6 +10932,8 @@ export namespace Prisma {
       orders: Prisma.$OrderPayload<ExtArgs>[]
       tickets: Prisma.$TicketPayload<ExtArgs>[]
       listings: Prisma.$ListingPayload<ExtArgs>[]
+      attendances: Prisma.$AttendancePayload<ExtArgs>[]
+      scannerCodes: Prisma.$ScannerCodePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -10588,6 +10955,9 @@ export namespace Prisma {
       merkleTreeAddress: string | null
       merkleTreeDepth: number | null
       nftType: string
+      poapMerkleTreeAddress: string | null
+      poapCollectionAddress: string | null
+      poapMetadataUri: string | null
       categoryId: string
       organizerId: string | null
     }, ExtArgs["result"]["event"]>
@@ -10989,6 +11359,8 @@ export namespace Prisma {
     orders<T extends Event$ordersArgs<ExtArgs> = {}>(args?: Subset<T, Event$ordersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     tickets<T extends Event$ticketsArgs<ExtArgs> = {}>(args?: Subset<T, Event$ticketsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TicketPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     listings<T extends Event$listingsArgs<ExtArgs> = {}>(args?: Subset<T, Event$listingsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ListingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    attendances<T extends Event$attendancesArgs<ExtArgs> = {}>(args?: Subset<T, Event$attendancesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    scannerCodes<T extends Event$scannerCodesArgs<ExtArgs> = {}>(args?: Subset<T, Event$scannerCodesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ScannerCodePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -11037,6 +11409,9 @@ export namespace Prisma {
     readonly merkleTreeAddress: FieldRef<"Event", 'String'>
     readonly merkleTreeDepth: FieldRef<"Event", 'Int'>
     readonly nftType: FieldRef<"Event", 'String'>
+    readonly poapMerkleTreeAddress: FieldRef<"Event", 'String'>
+    readonly poapCollectionAddress: FieldRef<"Event", 'String'>
+    readonly poapMetadataUri: FieldRef<"Event", 'String'>
     readonly categoryId: FieldRef<"Event", 'String'>
     readonly organizerId: FieldRef<"Event", 'String'>
   }
@@ -11523,6 +11898,54 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: ListingScalarFieldEnum | ListingScalarFieldEnum[]
+  }
+
+  /**
+   * Event.attendances
+   */
+  export type Event$attendancesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attendance
+     */
+    select?: AttendanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attendance
+     */
+    omit?: AttendanceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttendanceInclude<ExtArgs> | null
+    where?: AttendanceWhereInput
+    orderBy?: AttendanceOrderByWithRelationInput | AttendanceOrderByWithRelationInput[]
+    cursor?: AttendanceWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: AttendanceScalarFieldEnum | AttendanceScalarFieldEnum[]
+  }
+
+  /**
+   * Event.scannerCodes
+   */
+  export type Event$scannerCodesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ScannerCode
+     */
+    select?: ScannerCodeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ScannerCode
+     */
+    omit?: ScannerCodeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ScannerCodeInclude<ExtArgs> | null
+    where?: ScannerCodeWhereInput
+    orderBy?: ScannerCodeOrderByWithRelationInput | ScannerCodeOrderByWithRelationInput[]
+    cursor?: ScannerCodeWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ScannerCodeScalarFieldEnum | ScannerCodeScalarFieldEnum[]
   }
 
   /**
@@ -13059,6 +13482,7 @@ export namespace Prisma {
     event?: boolean | EventDefaultArgs<ExtArgs>
     order?: boolean | OrderDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
+    attendance?: boolean | Ticket$attendanceArgs<ExtArgs>
   }, ExtArgs["result"]["ticket"]>
 
   export type TicketSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -13129,6 +13553,7 @@ export namespace Prisma {
     event?: boolean | EventDefaultArgs<ExtArgs>
     order?: boolean | OrderDefaultArgs<ExtArgs>
     user?: boolean | UserDefaultArgs<ExtArgs>
+    attendance?: boolean | Ticket$attendanceArgs<ExtArgs>
   }
   export type TicketIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     event?: boolean | EventDefaultArgs<ExtArgs>
@@ -13147,6 +13572,7 @@ export namespace Prisma {
       event: Prisma.$EventPayload<ExtArgs>
       order: Prisma.$OrderPayload<ExtArgs>
       user: Prisma.$UserPayload<ExtArgs>
+      attendance: Prisma.$AttendancePayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
       id: string
@@ -13562,6 +13988,7 @@ export namespace Prisma {
     event<T extends EventDefaultArgs<ExtArgs> = {}>(args?: Subset<T, EventDefaultArgs<ExtArgs>>): Prisma__EventClient<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     order<T extends OrderDefaultArgs<ExtArgs> = {}>(args?: Subset<T, OrderDefaultArgs<ExtArgs>>): Prisma__OrderClient<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    attendance<T extends Ticket$attendanceArgs<ExtArgs> = {}>(args?: Subset<T, Ticket$attendanceArgs<ExtArgs>>): Prisma__AttendanceClient<$Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -14000,6 +14427,25 @@ export namespace Prisma {
      * Limit how many Tickets to delete.
      */
     limit?: number
+  }
+
+  /**
+   * Ticket.attendance
+   */
+  export type Ticket$attendanceArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attendance
+     */
+    select?: AttendanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attendance
+     */
+    omit?: AttendanceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttendanceInclude<ExtArgs> | null
+    where?: AttendanceWhereInput
   }
 
   /**
@@ -17442,6 +17888,3412 @@ export namespace Prisma {
 
 
   /**
+   * Model Attendance
+   */
+
+  export type AggregateAttendance = {
+    _count: AttendanceCountAggregateOutputType | null
+    _avg: AttendanceAvgAggregateOutputType | null
+    _sum: AttendanceSumAggregateOutputType | null
+    _min: AttendanceMinAggregateOutputType | null
+    _max: AttendanceMaxAggregateOutputType | null
+  }
+
+  export type AttendanceAvgAggregateOutputType = {
+    poapLeafIndex: number | null
+  }
+
+  export type AttendanceSumAggregateOutputType = {
+    poapLeafIndex: number | null
+  }
+
+  export type AttendanceMinAggregateOutputType = {
+    id: string | null
+    ticketId: string | null
+    eventId: string | null
+    userId: string | null
+    scannedAt: Date | null
+    scannedBy: string | null
+    poapAssetId: string | null
+    poapLeafIndex: number | null
+    poapMintTx: string | null
+    poapStatus: string | null
+  }
+
+  export type AttendanceMaxAggregateOutputType = {
+    id: string | null
+    ticketId: string | null
+    eventId: string | null
+    userId: string | null
+    scannedAt: Date | null
+    scannedBy: string | null
+    poapAssetId: string | null
+    poapLeafIndex: number | null
+    poapMintTx: string | null
+    poapStatus: string | null
+  }
+
+  export type AttendanceCountAggregateOutputType = {
+    id: number
+    ticketId: number
+    eventId: number
+    userId: number
+    scannedAt: number
+    scannedBy: number
+    poapAssetId: number
+    poapLeafIndex: number
+    poapMintTx: number
+    poapStatus: number
+    _all: number
+  }
+
+
+  export type AttendanceAvgAggregateInputType = {
+    poapLeafIndex?: true
+  }
+
+  export type AttendanceSumAggregateInputType = {
+    poapLeafIndex?: true
+  }
+
+  export type AttendanceMinAggregateInputType = {
+    id?: true
+    ticketId?: true
+    eventId?: true
+    userId?: true
+    scannedAt?: true
+    scannedBy?: true
+    poapAssetId?: true
+    poapLeafIndex?: true
+    poapMintTx?: true
+    poapStatus?: true
+  }
+
+  export type AttendanceMaxAggregateInputType = {
+    id?: true
+    ticketId?: true
+    eventId?: true
+    userId?: true
+    scannedAt?: true
+    scannedBy?: true
+    poapAssetId?: true
+    poapLeafIndex?: true
+    poapMintTx?: true
+    poapStatus?: true
+  }
+
+  export type AttendanceCountAggregateInputType = {
+    id?: true
+    ticketId?: true
+    eventId?: true
+    userId?: true
+    scannedAt?: true
+    scannedBy?: true
+    poapAssetId?: true
+    poapLeafIndex?: true
+    poapMintTx?: true
+    poapStatus?: true
+    _all?: true
+  }
+
+  export type AttendanceAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Attendance to aggregate.
+     */
+    where?: AttendanceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Attendances to fetch.
+     */
+    orderBy?: AttendanceOrderByWithRelationInput | AttendanceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: AttendanceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Attendances from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Attendances.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Attendances
+    **/
+    _count?: true | AttendanceCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: AttendanceAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: AttendanceSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: AttendanceMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: AttendanceMaxAggregateInputType
+  }
+
+  export type GetAttendanceAggregateType<T extends AttendanceAggregateArgs> = {
+        [P in keyof T & keyof AggregateAttendance]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateAttendance[P]>
+      : GetScalarType<T[P], AggregateAttendance[P]>
+  }
+
+
+
+
+  export type AttendanceGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: AttendanceWhereInput
+    orderBy?: AttendanceOrderByWithAggregationInput | AttendanceOrderByWithAggregationInput[]
+    by: AttendanceScalarFieldEnum[] | AttendanceScalarFieldEnum
+    having?: AttendanceScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: AttendanceCountAggregateInputType | true
+    _avg?: AttendanceAvgAggregateInputType
+    _sum?: AttendanceSumAggregateInputType
+    _min?: AttendanceMinAggregateInputType
+    _max?: AttendanceMaxAggregateInputType
+  }
+
+  export type AttendanceGroupByOutputType = {
+    id: string
+    ticketId: string
+    eventId: string
+    userId: string
+    scannedAt: Date
+    scannedBy: string
+    poapAssetId: string | null
+    poapLeafIndex: number | null
+    poapMintTx: string | null
+    poapStatus: string
+    _count: AttendanceCountAggregateOutputType | null
+    _avg: AttendanceAvgAggregateOutputType | null
+    _sum: AttendanceSumAggregateOutputType | null
+    _min: AttendanceMinAggregateOutputType | null
+    _max: AttendanceMaxAggregateOutputType | null
+  }
+
+  type GetAttendanceGroupByPayload<T extends AttendanceGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<AttendanceGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof AttendanceGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], AttendanceGroupByOutputType[P]>
+            : GetScalarType<T[P], AttendanceGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type AttendanceSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    ticketId?: boolean
+    eventId?: boolean
+    userId?: boolean
+    scannedAt?: boolean
+    scannedBy?: boolean
+    poapAssetId?: boolean
+    poapLeafIndex?: boolean
+    poapMintTx?: boolean
+    poapStatus?: boolean
+    ticket?: boolean | TicketDefaultArgs<ExtArgs>
+    event?: boolean | EventDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["attendance"]>
+
+  export type AttendanceSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    ticketId?: boolean
+    eventId?: boolean
+    userId?: boolean
+    scannedAt?: boolean
+    scannedBy?: boolean
+    poapAssetId?: boolean
+    poapLeafIndex?: boolean
+    poapMintTx?: boolean
+    poapStatus?: boolean
+    ticket?: boolean | TicketDefaultArgs<ExtArgs>
+    event?: boolean | EventDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["attendance"]>
+
+  export type AttendanceSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    ticketId?: boolean
+    eventId?: boolean
+    userId?: boolean
+    scannedAt?: boolean
+    scannedBy?: boolean
+    poapAssetId?: boolean
+    poapLeafIndex?: boolean
+    poapMintTx?: boolean
+    poapStatus?: boolean
+    ticket?: boolean | TicketDefaultArgs<ExtArgs>
+    event?: boolean | EventDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["attendance"]>
+
+  export type AttendanceSelectScalar = {
+    id?: boolean
+    ticketId?: boolean
+    eventId?: boolean
+    userId?: boolean
+    scannedAt?: boolean
+    scannedBy?: boolean
+    poapAssetId?: boolean
+    poapLeafIndex?: boolean
+    poapMintTx?: boolean
+    poapStatus?: boolean
+  }
+
+  export type AttendanceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "ticketId" | "eventId" | "userId" | "scannedAt" | "scannedBy" | "poapAssetId" | "poapLeafIndex" | "poapMintTx" | "poapStatus", ExtArgs["result"]["attendance"]>
+  export type AttendanceInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    ticket?: boolean | TicketDefaultArgs<ExtArgs>
+    event?: boolean | EventDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type AttendanceIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    ticket?: boolean | TicketDefaultArgs<ExtArgs>
+    event?: boolean | EventDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+  export type AttendanceIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    ticket?: boolean | TicketDefaultArgs<ExtArgs>
+    event?: boolean | EventDefaultArgs<ExtArgs>
+    user?: boolean | UserDefaultArgs<ExtArgs>
+  }
+
+  export type $AttendancePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Attendance"
+    objects: {
+      ticket: Prisma.$TicketPayload<ExtArgs>
+      event: Prisma.$EventPayload<ExtArgs>
+      user: Prisma.$UserPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      ticketId: string
+      eventId: string
+      userId: string
+      scannedAt: Date
+      scannedBy: string
+      poapAssetId: string | null
+      poapLeafIndex: number | null
+      poapMintTx: string | null
+      poapStatus: string
+    }, ExtArgs["result"]["attendance"]>
+    composites: {}
+  }
+
+  type AttendanceGetPayload<S extends boolean | null | undefined | AttendanceDefaultArgs> = $Result.GetResult<Prisma.$AttendancePayload, S>
+
+  type AttendanceCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<AttendanceFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: AttendanceCountAggregateInputType | true
+    }
+
+  export interface AttendanceDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Attendance'], meta: { name: 'Attendance' } }
+    /**
+     * Find zero or one Attendance that matches the filter.
+     * @param {AttendanceFindUniqueArgs} args - Arguments to find a Attendance
+     * @example
+     * // Get one Attendance
+     * const attendance = await prisma.attendance.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends AttendanceFindUniqueArgs>(args: SelectSubset<T, AttendanceFindUniqueArgs<ExtArgs>>): Prisma__AttendanceClient<$Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Attendance that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {AttendanceFindUniqueOrThrowArgs} args - Arguments to find a Attendance
+     * @example
+     * // Get one Attendance
+     * const attendance = await prisma.attendance.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends AttendanceFindUniqueOrThrowArgs>(args: SelectSubset<T, AttendanceFindUniqueOrThrowArgs<ExtArgs>>): Prisma__AttendanceClient<$Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Attendance that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AttendanceFindFirstArgs} args - Arguments to find a Attendance
+     * @example
+     * // Get one Attendance
+     * const attendance = await prisma.attendance.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends AttendanceFindFirstArgs>(args?: SelectSubset<T, AttendanceFindFirstArgs<ExtArgs>>): Prisma__AttendanceClient<$Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Attendance that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AttendanceFindFirstOrThrowArgs} args - Arguments to find a Attendance
+     * @example
+     * // Get one Attendance
+     * const attendance = await prisma.attendance.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends AttendanceFindFirstOrThrowArgs>(args?: SelectSubset<T, AttendanceFindFirstOrThrowArgs<ExtArgs>>): Prisma__AttendanceClient<$Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Attendances that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AttendanceFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Attendances
+     * const attendances = await prisma.attendance.findMany()
+     * 
+     * // Get first 10 Attendances
+     * const attendances = await prisma.attendance.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const attendanceWithIdOnly = await prisma.attendance.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends AttendanceFindManyArgs>(args?: SelectSubset<T, AttendanceFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Attendance.
+     * @param {AttendanceCreateArgs} args - Arguments to create a Attendance.
+     * @example
+     * // Create one Attendance
+     * const Attendance = await prisma.attendance.create({
+     *   data: {
+     *     // ... data to create a Attendance
+     *   }
+     * })
+     * 
+     */
+    create<T extends AttendanceCreateArgs>(args: SelectSubset<T, AttendanceCreateArgs<ExtArgs>>): Prisma__AttendanceClient<$Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Attendances.
+     * @param {AttendanceCreateManyArgs} args - Arguments to create many Attendances.
+     * @example
+     * // Create many Attendances
+     * const attendance = await prisma.attendance.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends AttendanceCreateManyArgs>(args?: SelectSubset<T, AttendanceCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Attendances and returns the data saved in the database.
+     * @param {AttendanceCreateManyAndReturnArgs} args - Arguments to create many Attendances.
+     * @example
+     * // Create many Attendances
+     * const attendance = await prisma.attendance.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Attendances and only return the `id`
+     * const attendanceWithIdOnly = await prisma.attendance.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends AttendanceCreateManyAndReturnArgs>(args?: SelectSubset<T, AttendanceCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Attendance.
+     * @param {AttendanceDeleteArgs} args - Arguments to delete one Attendance.
+     * @example
+     * // Delete one Attendance
+     * const Attendance = await prisma.attendance.delete({
+     *   where: {
+     *     // ... filter to delete one Attendance
+     *   }
+     * })
+     * 
+     */
+    delete<T extends AttendanceDeleteArgs>(args: SelectSubset<T, AttendanceDeleteArgs<ExtArgs>>): Prisma__AttendanceClient<$Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Attendance.
+     * @param {AttendanceUpdateArgs} args - Arguments to update one Attendance.
+     * @example
+     * // Update one Attendance
+     * const attendance = await prisma.attendance.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends AttendanceUpdateArgs>(args: SelectSubset<T, AttendanceUpdateArgs<ExtArgs>>): Prisma__AttendanceClient<$Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Attendances.
+     * @param {AttendanceDeleteManyArgs} args - Arguments to filter Attendances to delete.
+     * @example
+     * // Delete a few Attendances
+     * const { count } = await prisma.attendance.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends AttendanceDeleteManyArgs>(args?: SelectSubset<T, AttendanceDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Attendances.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AttendanceUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Attendances
+     * const attendance = await prisma.attendance.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends AttendanceUpdateManyArgs>(args: SelectSubset<T, AttendanceUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Attendances and returns the data updated in the database.
+     * @param {AttendanceUpdateManyAndReturnArgs} args - Arguments to update many Attendances.
+     * @example
+     * // Update many Attendances
+     * const attendance = await prisma.attendance.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Attendances and only return the `id`
+     * const attendanceWithIdOnly = await prisma.attendance.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends AttendanceUpdateManyAndReturnArgs>(args: SelectSubset<T, AttendanceUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Attendance.
+     * @param {AttendanceUpsertArgs} args - Arguments to update or create a Attendance.
+     * @example
+     * // Update or create a Attendance
+     * const attendance = await prisma.attendance.upsert({
+     *   create: {
+     *     // ... data to create a Attendance
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Attendance we want to update
+     *   }
+     * })
+     */
+    upsert<T extends AttendanceUpsertArgs>(args: SelectSubset<T, AttendanceUpsertArgs<ExtArgs>>): Prisma__AttendanceClient<$Result.GetResult<Prisma.$AttendancePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Attendances.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AttendanceCountArgs} args - Arguments to filter Attendances to count.
+     * @example
+     * // Count the number of Attendances
+     * const count = await prisma.attendance.count({
+     *   where: {
+     *     // ... the filter for the Attendances we want to count
+     *   }
+     * })
+    **/
+    count<T extends AttendanceCountArgs>(
+      args?: Subset<T, AttendanceCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], AttendanceCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Attendance.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AttendanceAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends AttendanceAggregateArgs>(args: Subset<T, AttendanceAggregateArgs>): Prisma.PrismaPromise<GetAttendanceAggregateType<T>>
+
+    /**
+     * Group by Attendance.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {AttendanceGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends AttendanceGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: AttendanceGroupByArgs['orderBy'] }
+        : { orderBy?: AttendanceGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, AttendanceGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetAttendanceGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Attendance model
+   */
+  readonly fields: AttendanceFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Attendance.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__AttendanceClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    ticket<T extends TicketDefaultArgs<ExtArgs> = {}>(args?: Subset<T, TicketDefaultArgs<ExtArgs>>): Prisma__TicketClient<$Result.GetResult<Prisma.$TicketPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    event<T extends EventDefaultArgs<ExtArgs> = {}>(args?: Subset<T, EventDefaultArgs<ExtArgs>>): Prisma__EventClient<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    user<T extends UserDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserDefaultArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the Attendance model
+   */
+  interface AttendanceFieldRefs {
+    readonly id: FieldRef<"Attendance", 'String'>
+    readonly ticketId: FieldRef<"Attendance", 'String'>
+    readonly eventId: FieldRef<"Attendance", 'String'>
+    readonly userId: FieldRef<"Attendance", 'String'>
+    readonly scannedAt: FieldRef<"Attendance", 'DateTime'>
+    readonly scannedBy: FieldRef<"Attendance", 'String'>
+    readonly poapAssetId: FieldRef<"Attendance", 'String'>
+    readonly poapLeafIndex: FieldRef<"Attendance", 'Int'>
+    readonly poapMintTx: FieldRef<"Attendance", 'String'>
+    readonly poapStatus: FieldRef<"Attendance", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * Attendance findUnique
+   */
+  export type AttendanceFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attendance
+     */
+    select?: AttendanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attendance
+     */
+    omit?: AttendanceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttendanceInclude<ExtArgs> | null
+    /**
+     * Filter, which Attendance to fetch.
+     */
+    where: AttendanceWhereUniqueInput
+  }
+
+  /**
+   * Attendance findUniqueOrThrow
+   */
+  export type AttendanceFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attendance
+     */
+    select?: AttendanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attendance
+     */
+    omit?: AttendanceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttendanceInclude<ExtArgs> | null
+    /**
+     * Filter, which Attendance to fetch.
+     */
+    where: AttendanceWhereUniqueInput
+  }
+
+  /**
+   * Attendance findFirst
+   */
+  export type AttendanceFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attendance
+     */
+    select?: AttendanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attendance
+     */
+    omit?: AttendanceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttendanceInclude<ExtArgs> | null
+    /**
+     * Filter, which Attendance to fetch.
+     */
+    where?: AttendanceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Attendances to fetch.
+     */
+    orderBy?: AttendanceOrderByWithRelationInput | AttendanceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Attendances.
+     */
+    cursor?: AttendanceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Attendances from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Attendances.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Attendances.
+     */
+    distinct?: AttendanceScalarFieldEnum | AttendanceScalarFieldEnum[]
+  }
+
+  /**
+   * Attendance findFirstOrThrow
+   */
+  export type AttendanceFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attendance
+     */
+    select?: AttendanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attendance
+     */
+    omit?: AttendanceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttendanceInclude<ExtArgs> | null
+    /**
+     * Filter, which Attendance to fetch.
+     */
+    where?: AttendanceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Attendances to fetch.
+     */
+    orderBy?: AttendanceOrderByWithRelationInput | AttendanceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Attendances.
+     */
+    cursor?: AttendanceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Attendances from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Attendances.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Attendances.
+     */
+    distinct?: AttendanceScalarFieldEnum | AttendanceScalarFieldEnum[]
+  }
+
+  /**
+   * Attendance findMany
+   */
+  export type AttendanceFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attendance
+     */
+    select?: AttendanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attendance
+     */
+    omit?: AttendanceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttendanceInclude<ExtArgs> | null
+    /**
+     * Filter, which Attendances to fetch.
+     */
+    where?: AttendanceWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Attendances to fetch.
+     */
+    orderBy?: AttendanceOrderByWithRelationInput | AttendanceOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Attendances.
+     */
+    cursor?: AttendanceWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Attendances from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Attendances.
+     */
+    skip?: number
+    distinct?: AttendanceScalarFieldEnum | AttendanceScalarFieldEnum[]
+  }
+
+  /**
+   * Attendance create
+   */
+  export type AttendanceCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attendance
+     */
+    select?: AttendanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attendance
+     */
+    omit?: AttendanceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttendanceInclude<ExtArgs> | null
+    /**
+     * The data needed to create a Attendance.
+     */
+    data: XOR<AttendanceCreateInput, AttendanceUncheckedCreateInput>
+  }
+
+  /**
+   * Attendance createMany
+   */
+  export type AttendanceCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Attendances.
+     */
+    data: AttendanceCreateManyInput | AttendanceCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Attendance createManyAndReturn
+   */
+  export type AttendanceCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attendance
+     */
+    select?: AttendanceSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attendance
+     */
+    omit?: AttendanceOmit<ExtArgs> | null
+    /**
+     * The data used to create many Attendances.
+     */
+    data: AttendanceCreateManyInput | AttendanceCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttendanceIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Attendance update
+   */
+  export type AttendanceUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attendance
+     */
+    select?: AttendanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attendance
+     */
+    omit?: AttendanceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttendanceInclude<ExtArgs> | null
+    /**
+     * The data needed to update a Attendance.
+     */
+    data: XOR<AttendanceUpdateInput, AttendanceUncheckedUpdateInput>
+    /**
+     * Choose, which Attendance to update.
+     */
+    where: AttendanceWhereUniqueInput
+  }
+
+  /**
+   * Attendance updateMany
+   */
+  export type AttendanceUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Attendances.
+     */
+    data: XOR<AttendanceUpdateManyMutationInput, AttendanceUncheckedUpdateManyInput>
+    /**
+     * Filter which Attendances to update
+     */
+    where?: AttendanceWhereInput
+    /**
+     * Limit how many Attendances to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Attendance updateManyAndReturn
+   */
+  export type AttendanceUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attendance
+     */
+    select?: AttendanceSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attendance
+     */
+    omit?: AttendanceOmit<ExtArgs> | null
+    /**
+     * The data used to update Attendances.
+     */
+    data: XOR<AttendanceUpdateManyMutationInput, AttendanceUncheckedUpdateManyInput>
+    /**
+     * Filter which Attendances to update
+     */
+    where?: AttendanceWhereInput
+    /**
+     * Limit how many Attendances to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttendanceIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Attendance upsert
+   */
+  export type AttendanceUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attendance
+     */
+    select?: AttendanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attendance
+     */
+    omit?: AttendanceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttendanceInclude<ExtArgs> | null
+    /**
+     * The filter to search for the Attendance to update in case it exists.
+     */
+    where: AttendanceWhereUniqueInput
+    /**
+     * In case the Attendance found by the `where` argument doesn't exist, create a new Attendance with this data.
+     */
+    create: XOR<AttendanceCreateInput, AttendanceUncheckedCreateInput>
+    /**
+     * In case the Attendance was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<AttendanceUpdateInput, AttendanceUncheckedUpdateInput>
+  }
+
+  /**
+   * Attendance delete
+   */
+  export type AttendanceDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attendance
+     */
+    select?: AttendanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attendance
+     */
+    omit?: AttendanceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttendanceInclude<ExtArgs> | null
+    /**
+     * Filter which Attendance to delete.
+     */
+    where: AttendanceWhereUniqueInput
+  }
+
+  /**
+   * Attendance deleteMany
+   */
+  export type AttendanceDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Attendances to delete
+     */
+    where?: AttendanceWhereInput
+    /**
+     * Limit how many Attendances to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * Attendance without action
+   */
+  export type AttendanceDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Attendance
+     */
+    select?: AttendanceSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Attendance
+     */
+    omit?: AttendanceOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: AttendanceInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model ScannerCode
+   */
+
+  export type AggregateScannerCode = {
+    _count: ScannerCodeCountAggregateOutputType | null
+    _avg: ScannerCodeAvgAggregateOutputType | null
+    _sum: ScannerCodeSumAggregateOutputType | null
+    _min: ScannerCodeMinAggregateOutputType | null
+    _max: ScannerCodeMaxAggregateOutputType | null
+  }
+
+  export type ScannerCodeAvgAggregateOutputType = {
+    usageCount: number | null
+  }
+
+  export type ScannerCodeSumAggregateOutputType = {
+    usageCount: number | null
+  }
+
+  export type ScannerCodeMinAggregateOutputType = {
+    id: string | null
+    eventId: string | null
+    code: string | null
+    name: string | null
+    isActive: boolean | null
+    usageCount: number | null
+    createdAt: Date | null
+    expiresAt: Date | null
+  }
+
+  export type ScannerCodeMaxAggregateOutputType = {
+    id: string | null
+    eventId: string | null
+    code: string | null
+    name: string | null
+    isActive: boolean | null
+    usageCount: number | null
+    createdAt: Date | null
+    expiresAt: Date | null
+  }
+
+  export type ScannerCodeCountAggregateOutputType = {
+    id: number
+    eventId: number
+    code: number
+    name: number
+    isActive: number
+    usageCount: number
+    createdAt: number
+    expiresAt: number
+    _all: number
+  }
+
+
+  export type ScannerCodeAvgAggregateInputType = {
+    usageCount?: true
+  }
+
+  export type ScannerCodeSumAggregateInputType = {
+    usageCount?: true
+  }
+
+  export type ScannerCodeMinAggregateInputType = {
+    id?: true
+    eventId?: true
+    code?: true
+    name?: true
+    isActive?: true
+    usageCount?: true
+    createdAt?: true
+    expiresAt?: true
+  }
+
+  export type ScannerCodeMaxAggregateInputType = {
+    id?: true
+    eventId?: true
+    code?: true
+    name?: true
+    isActive?: true
+    usageCount?: true
+    createdAt?: true
+    expiresAt?: true
+  }
+
+  export type ScannerCodeCountAggregateInputType = {
+    id?: true
+    eventId?: true
+    code?: true
+    name?: true
+    isActive?: true
+    usageCount?: true
+    createdAt?: true
+    expiresAt?: true
+    _all?: true
+  }
+
+  export type ScannerCodeAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ScannerCode to aggregate.
+     */
+    where?: ScannerCodeWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ScannerCodes to fetch.
+     */
+    orderBy?: ScannerCodeOrderByWithRelationInput | ScannerCodeOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ScannerCodeWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ScannerCodes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ScannerCodes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ScannerCodes
+    **/
+    _count?: true | ScannerCodeCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: ScannerCodeAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: ScannerCodeSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ScannerCodeMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ScannerCodeMaxAggregateInputType
+  }
+
+  export type GetScannerCodeAggregateType<T extends ScannerCodeAggregateArgs> = {
+        [P in keyof T & keyof AggregateScannerCode]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateScannerCode[P]>
+      : GetScalarType<T[P], AggregateScannerCode[P]>
+  }
+
+
+
+
+  export type ScannerCodeGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ScannerCodeWhereInput
+    orderBy?: ScannerCodeOrderByWithAggregationInput | ScannerCodeOrderByWithAggregationInput[]
+    by: ScannerCodeScalarFieldEnum[] | ScannerCodeScalarFieldEnum
+    having?: ScannerCodeScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ScannerCodeCountAggregateInputType | true
+    _avg?: ScannerCodeAvgAggregateInputType
+    _sum?: ScannerCodeSumAggregateInputType
+    _min?: ScannerCodeMinAggregateInputType
+    _max?: ScannerCodeMaxAggregateInputType
+  }
+
+  export type ScannerCodeGroupByOutputType = {
+    id: string
+    eventId: string
+    code: string
+    name: string
+    isActive: boolean
+    usageCount: number
+    createdAt: Date
+    expiresAt: Date | null
+    _count: ScannerCodeCountAggregateOutputType | null
+    _avg: ScannerCodeAvgAggregateOutputType | null
+    _sum: ScannerCodeSumAggregateOutputType | null
+    _min: ScannerCodeMinAggregateOutputType | null
+    _max: ScannerCodeMaxAggregateOutputType | null
+  }
+
+  type GetScannerCodeGroupByPayload<T extends ScannerCodeGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ScannerCodeGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ScannerCodeGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ScannerCodeGroupByOutputType[P]>
+            : GetScalarType<T[P], ScannerCodeGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ScannerCodeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    eventId?: boolean
+    code?: boolean
+    name?: boolean
+    isActive?: boolean
+    usageCount?: boolean
+    createdAt?: boolean
+    expiresAt?: boolean
+    event?: boolean | EventDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["scannerCode"]>
+
+  export type ScannerCodeSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    eventId?: boolean
+    code?: boolean
+    name?: boolean
+    isActive?: boolean
+    usageCount?: boolean
+    createdAt?: boolean
+    expiresAt?: boolean
+    event?: boolean | EventDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["scannerCode"]>
+
+  export type ScannerCodeSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    eventId?: boolean
+    code?: boolean
+    name?: boolean
+    isActive?: boolean
+    usageCount?: boolean
+    createdAt?: boolean
+    expiresAt?: boolean
+    event?: boolean | EventDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["scannerCode"]>
+
+  export type ScannerCodeSelectScalar = {
+    id?: boolean
+    eventId?: boolean
+    code?: boolean
+    name?: boolean
+    isActive?: boolean
+    usageCount?: boolean
+    createdAt?: boolean
+    expiresAt?: boolean
+  }
+
+  export type ScannerCodeOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "eventId" | "code" | "name" | "isActive" | "usageCount" | "createdAt" | "expiresAt", ExtArgs["result"]["scannerCode"]>
+  export type ScannerCodeInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    event?: boolean | EventDefaultArgs<ExtArgs>
+  }
+  export type ScannerCodeIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    event?: boolean | EventDefaultArgs<ExtArgs>
+  }
+  export type ScannerCodeIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    event?: boolean | EventDefaultArgs<ExtArgs>
+  }
+
+  export type $ScannerCodePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ScannerCode"
+    objects: {
+      event: Prisma.$EventPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      eventId: string
+      code: string
+      name: string
+      isActive: boolean
+      usageCount: number
+      createdAt: Date
+      expiresAt: Date | null
+    }, ExtArgs["result"]["scannerCode"]>
+    composites: {}
+  }
+
+  type ScannerCodeGetPayload<S extends boolean | null | undefined | ScannerCodeDefaultArgs> = $Result.GetResult<Prisma.$ScannerCodePayload, S>
+
+  type ScannerCodeCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ScannerCodeFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ScannerCodeCountAggregateInputType | true
+    }
+
+  export interface ScannerCodeDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ScannerCode'], meta: { name: 'ScannerCode' } }
+    /**
+     * Find zero or one ScannerCode that matches the filter.
+     * @param {ScannerCodeFindUniqueArgs} args - Arguments to find a ScannerCode
+     * @example
+     * // Get one ScannerCode
+     * const scannerCode = await prisma.scannerCode.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ScannerCodeFindUniqueArgs>(args: SelectSubset<T, ScannerCodeFindUniqueArgs<ExtArgs>>): Prisma__ScannerCodeClient<$Result.GetResult<Prisma.$ScannerCodePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one ScannerCode that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ScannerCodeFindUniqueOrThrowArgs} args - Arguments to find a ScannerCode
+     * @example
+     * // Get one ScannerCode
+     * const scannerCode = await prisma.scannerCode.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ScannerCodeFindUniqueOrThrowArgs>(args: SelectSubset<T, ScannerCodeFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ScannerCodeClient<$Result.GetResult<Prisma.$ScannerCodePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ScannerCode that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ScannerCodeFindFirstArgs} args - Arguments to find a ScannerCode
+     * @example
+     * // Get one ScannerCode
+     * const scannerCode = await prisma.scannerCode.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ScannerCodeFindFirstArgs>(args?: SelectSubset<T, ScannerCodeFindFirstArgs<ExtArgs>>): Prisma__ScannerCodeClient<$Result.GetResult<Prisma.$ScannerCodePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ScannerCode that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ScannerCodeFindFirstOrThrowArgs} args - Arguments to find a ScannerCode
+     * @example
+     * // Get one ScannerCode
+     * const scannerCode = await prisma.scannerCode.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ScannerCodeFindFirstOrThrowArgs>(args?: SelectSubset<T, ScannerCodeFindFirstOrThrowArgs<ExtArgs>>): Prisma__ScannerCodeClient<$Result.GetResult<Prisma.$ScannerCodePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more ScannerCodes that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ScannerCodeFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ScannerCodes
+     * const scannerCodes = await prisma.scannerCode.findMany()
+     * 
+     * // Get first 10 ScannerCodes
+     * const scannerCodes = await prisma.scannerCode.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const scannerCodeWithIdOnly = await prisma.scannerCode.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ScannerCodeFindManyArgs>(args?: SelectSubset<T, ScannerCodeFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ScannerCodePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a ScannerCode.
+     * @param {ScannerCodeCreateArgs} args - Arguments to create a ScannerCode.
+     * @example
+     * // Create one ScannerCode
+     * const ScannerCode = await prisma.scannerCode.create({
+     *   data: {
+     *     // ... data to create a ScannerCode
+     *   }
+     * })
+     * 
+     */
+    create<T extends ScannerCodeCreateArgs>(args: SelectSubset<T, ScannerCodeCreateArgs<ExtArgs>>): Prisma__ScannerCodeClient<$Result.GetResult<Prisma.$ScannerCodePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many ScannerCodes.
+     * @param {ScannerCodeCreateManyArgs} args - Arguments to create many ScannerCodes.
+     * @example
+     * // Create many ScannerCodes
+     * const scannerCode = await prisma.scannerCode.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ScannerCodeCreateManyArgs>(args?: SelectSubset<T, ScannerCodeCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many ScannerCodes and returns the data saved in the database.
+     * @param {ScannerCodeCreateManyAndReturnArgs} args - Arguments to create many ScannerCodes.
+     * @example
+     * // Create many ScannerCodes
+     * const scannerCode = await prisma.scannerCode.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many ScannerCodes and only return the `id`
+     * const scannerCodeWithIdOnly = await prisma.scannerCode.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends ScannerCodeCreateManyAndReturnArgs>(args?: SelectSubset<T, ScannerCodeCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ScannerCodePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a ScannerCode.
+     * @param {ScannerCodeDeleteArgs} args - Arguments to delete one ScannerCode.
+     * @example
+     * // Delete one ScannerCode
+     * const ScannerCode = await prisma.scannerCode.delete({
+     *   where: {
+     *     // ... filter to delete one ScannerCode
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ScannerCodeDeleteArgs>(args: SelectSubset<T, ScannerCodeDeleteArgs<ExtArgs>>): Prisma__ScannerCodeClient<$Result.GetResult<Prisma.$ScannerCodePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one ScannerCode.
+     * @param {ScannerCodeUpdateArgs} args - Arguments to update one ScannerCode.
+     * @example
+     * // Update one ScannerCode
+     * const scannerCode = await prisma.scannerCode.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ScannerCodeUpdateArgs>(args: SelectSubset<T, ScannerCodeUpdateArgs<ExtArgs>>): Prisma__ScannerCodeClient<$Result.GetResult<Prisma.$ScannerCodePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more ScannerCodes.
+     * @param {ScannerCodeDeleteManyArgs} args - Arguments to filter ScannerCodes to delete.
+     * @example
+     * // Delete a few ScannerCodes
+     * const { count } = await prisma.scannerCode.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ScannerCodeDeleteManyArgs>(args?: SelectSubset<T, ScannerCodeDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ScannerCodes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ScannerCodeUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ScannerCodes
+     * const scannerCode = await prisma.scannerCode.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ScannerCodeUpdateManyArgs>(args: SelectSubset<T, ScannerCodeUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ScannerCodes and returns the data updated in the database.
+     * @param {ScannerCodeUpdateManyAndReturnArgs} args - Arguments to update many ScannerCodes.
+     * @example
+     * // Update many ScannerCodes
+     * const scannerCode = await prisma.scannerCode.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more ScannerCodes and only return the `id`
+     * const scannerCodeWithIdOnly = await prisma.scannerCode.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends ScannerCodeUpdateManyAndReturnArgs>(args: SelectSubset<T, ScannerCodeUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ScannerCodePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one ScannerCode.
+     * @param {ScannerCodeUpsertArgs} args - Arguments to update or create a ScannerCode.
+     * @example
+     * // Update or create a ScannerCode
+     * const scannerCode = await prisma.scannerCode.upsert({
+     *   create: {
+     *     // ... data to create a ScannerCode
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ScannerCode we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ScannerCodeUpsertArgs>(args: SelectSubset<T, ScannerCodeUpsertArgs<ExtArgs>>): Prisma__ScannerCodeClient<$Result.GetResult<Prisma.$ScannerCodePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of ScannerCodes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ScannerCodeCountArgs} args - Arguments to filter ScannerCodes to count.
+     * @example
+     * // Count the number of ScannerCodes
+     * const count = await prisma.scannerCode.count({
+     *   where: {
+     *     // ... the filter for the ScannerCodes we want to count
+     *   }
+     * })
+    **/
+    count<T extends ScannerCodeCountArgs>(
+      args?: Subset<T, ScannerCodeCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ScannerCodeCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ScannerCode.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ScannerCodeAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ScannerCodeAggregateArgs>(args: Subset<T, ScannerCodeAggregateArgs>): Prisma.PrismaPromise<GetScannerCodeAggregateType<T>>
+
+    /**
+     * Group by ScannerCode.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ScannerCodeGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ScannerCodeGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ScannerCodeGroupByArgs['orderBy'] }
+        : { orderBy?: ScannerCodeGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ScannerCodeGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetScannerCodeGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ScannerCode model
+   */
+  readonly fields: ScannerCodeFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ScannerCode.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ScannerCodeClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    event<T extends EventDefaultArgs<ExtArgs> = {}>(args?: Subset<T, EventDefaultArgs<ExtArgs>>): Prisma__EventClient<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ScannerCode model
+   */
+  interface ScannerCodeFieldRefs {
+    readonly id: FieldRef<"ScannerCode", 'String'>
+    readonly eventId: FieldRef<"ScannerCode", 'String'>
+    readonly code: FieldRef<"ScannerCode", 'String'>
+    readonly name: FieldRef<"ScannerCode", 'String'>
+    readonly isActive: FieldRef<"ScannerCode", 'Boolean'>
+    readonly usageCount: FieldRef<"ScannerCode", 'Int'>
+    readonly createdAt: FieldRef<"ScannerCode", 'DateTime'>
+    readonly expiresAt: FieldRef<"ScannerCode", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ScannerCode findUnique
+   */
+  export type ScannerCodeFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ScannerCode
+     */
+    select?: ScannerCodeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ScannerCode
+     */
+    omit?: ScannerCodeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ScannerCodeInclude<ExtArgs> | null
+    /**
+     * Filter, which ScannerCode to fetch.
+     */
+    where: ScannerCodeWhereUniqueInput
+  }
+
+  /**
+   * ScannerCode findUniqueOrThrow
+   */
+  export type ScannerCodeFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ScannerCode
+     */
+    select?: ScannerCodeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ScannerCode
+     */
+    omit?: ScannerCodeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ScannerCodeInclude<ExtArgs> | null
+    /**
+     * Filter, which ScannerCode to fetch.
+     */
+    where: ScannerCodeWhereUniqueInput
+  }
+
+  /**
+   * ScannerCode findFirst
+   */
+  export type ScannerCodeFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ScannerCode
+     */
+    select?: ScannerCodeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ScannerCode
+     */
+    omit?: ScannerCodeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ScannerCodeInclude<ExtArgs> | null
+    /**
+     * Filter, which ScannerCode to fetch.
+     */
+    where?: ScannerCodeWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ScannerCodes to fetch.
+     */
+    orderBy?: ScannerCodeOrderByWithRelationInput | ScannerCodeOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ScannerCodes.
+     */
+    cursor?: ScannerCodeWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ScannerCodes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ScannerCodes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ScannerCodes.
+     */
+    distinct?: ScannerCodeScalarFieldEnum | ScannerCodeScalarFieldEnum[]
+  }
+
+  /**
+   * ScannerCode findFirstOrThrow
+   */
+  export type ScannerCodeFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ScannerCode
+     */
+    select?: ScannerCodeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ScannerCode
+     */
+    omit?: ScannerCodeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ScannerCodeInclude<ExtArgs> | null
+    /**
+     * Filter, which ScannerCode to fetch.
+     */
+    where?: ScannerCodeWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ScannerCodes to fetch.
+     */
+    orderBy?: ScannerCodeOrderByWithRelationInput | ScannerCodeOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ScannerCodes.
+     */
+    cursor?: ScannerCodeWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ScannerCodes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ScannerCodes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ScannerCodes.
+     */
+    distinct?: ScannerCodeScalarFieldEnum | ScannerCodeScalarFieldEnum[]
+  }
+
+  /**
+   * ScannerCode findMany
+   */
+  export type ScannerCodeFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ScannerCode
+     */
+    select?: ScannerCodeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ScannerCode
+     */
+    omit?: ScannerCodeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ScannerCodeInclude<ExtArgs> | null
+    /**
+     * Filter, which ScannerCodes to fetch.
+     */
+    where?: ScannerCodeWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ScannerCodes to fetch.
+     */
+    orderBy?: ScannerCodeOrderByWithRelationInput | ScannerCodeOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ScannerCodes.
+     */
+    cursor?: ScannerCodeWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ScannerCodes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ScannerCodes.
+     */
+    skip?: number
+    distinct?: ScannerCodeScalarFieldEnum | ScannerCodeScalarFieldEnum[]
+  }
+
+  /**
+   * ScannerCode create
+   */
+  export type ScannerCodeCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ScannerCode
+     */
+    select?: ScannerCodeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ScannerCode
+     */
+    omit?: ScannerCodeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ScannerCodeInclude<ExtArgs> | null
+    /**
+     * The data needed to create a ScannerCode.
+     */
+    data: XOR<ScannerCodeCreateInput, ScannerCodeUncheckedCreateInput>
+  }
+
+  /**
+   * ScannerCode createMany
+   */
+  export type ScannerCodeCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ScannerCodes.
+     */
+    data: ScannerCodeCreateManyInput | ScannerCodeCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ScannerCode createManyAndReturn
+   */
+  export type ScannerCodeCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ScannerCode
+     */
+    select?: ScannerCodeSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ScannerCode
+     */
+    omit?: ScannerCodeOmit<ExtArgs> | null
+    /**
+     * The data used to create many ScannerCodes.
+     */
+    data: ScannerCodeCreateManyInput | ScannerCodeCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ScannerCodeIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * ScannerCode update
+   */
+  export type ScannerCodeUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ScannerCode
+     */
+    select?: ScannerCodeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ScannerCode
+     */
+    omit?: ScannerCodeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ScannerCodeInclude<ExtArgs> | null
+    /**
+     * The data needed to update a ScannerCode.
+     */
+    data: XOR<ScannerCodeUpdateInput, ScannerCodeUncheckedUpdateInput>
+    /**
+     * Choose, which ScannerCode to update.
+     */
+    where: ScannerCodeWhereUniqueInput
+  }
+
+  /**
+   * ScannerCode updateMany
+   */
+  export type ScannerCodeUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ScannerCodes.
+     */
+    data: XOR<ScannerCodeUpdateManyMutationInput, ScannerCodeUncheckedUpdateManyInput>
+    /**
+     * Filter which ScannerCodes to update
+     */
+    where?: ScannerCodeWhereInput
+    /**
+     * Limit how many ScannerCodes to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ScannerCode updateManyAndReturn
+   */
+  export type ScannerCodeUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ScannerCode
+     */
+    select?: ScannerCodeSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ScannerCode
+     */
+    omit?: ScannerCodeOmit<ExtArgs> | null
+    /**
+     * The data used to update ScannerCodes.
+     */
+    data: XOR<ScannerCodeUpdateManyMutationInput, ScannerCodeUncheckedUpdateManyInput>
+    /**
+     * Filter which ScannerCodes to update
+     */
+    where?: ScannerCodeWhereInput
+    /**
+     * Limit how many ScannerCodes to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ScannerCodeIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * ScannerCode upsert
+   */
+  export type ScannerCodeUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ScannerCode
+     */
+    select?: ScannerCodeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ScannerCode
+     */
+    omit?: ScannerCodeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ScannerCodeInclude<ExtArgs> | null
+    /**
+     * The filter to search for the ScannerCode to update in case it exists.
+     */
+    where: ScannerCodeWhereUniqueInput
+    /**
+     * In case the ScannerCode found by the `where` argument doesn't exist, create a new ScannerCode with this data.
+     */
+    create: XOR<ScannerCodeCreateInput, ScannerCodeUncheckedCreateInput>
+    /**
+     * In case the ScannerCode was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ScannerCodeUpdateInput, ScannerCodeUncheckedUpdateInput>
+  }
+
+  /**
+   * ScannerCode delete
+   */
+  export type ScannerCodeDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ScannerCode
+     */
+    select?: ScannerCodeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ScannerCode
+     */
+    omit?: ScannerCodeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ScannerCodeInclude<ExtArgs> | null
+    /**
+     * Filter which ScannerCode to delete.
+     */
+    where: ScannerCodeWhereUniqueInput
+  }
+
+  /**
+   * ScannerCode deleteMany
+   */
+  export type ScannerCodeDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ScannerCodes to delete
+     */
+    where?: ScannerCodeWhereInput
+    /**
+     * Limit how many ScannerCodes to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * ScannerCode without action
+   */
+  export type ScannerCodeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ScannerCode
+     */
+    select?: ScannerCodeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ScannerCode
+     */
+    omit?: ScannerCodeOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ScannerCodeInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model PlatformMerkleTree
+   */
+
+  export type AggregatePlatformMerkleTree = {
+    _count: PlatformMerkleTreeCountAggregateOutputType | null
+    _avg: PlatformMerkleTreeAvgAggregateOutputType | null
+    _sum: PlatformMerkleTreeSumAggregateOutputType | null
+    _min: PlatformMerkleTreeMinAggregateOutputType | null
+    _max: PlatformMerkleTreeMaxAggregateOutputType | null
+  }
+
+  export type PlatformMerkleTreeAvgAggregateOutputType = {
+    maxDepth: number | null
+    capacity: number | null
+    minted: number | null
+  }
+
+  export type PlatformMerkleTreeSumAggregateOutputType = {
+    maxDepth: number | null
+    capacity: number | null
+    minted: number | null
+  }
+
+  export type PlatformMerkleTreeMinAggregateOutputType = {
+    id: string | null
+    address: string | null
+    type: string | null
+    maxDepth: number | null
+    capacity: number | null
+    minted: number | null
+    isActive: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+    collectionAddress: string | null
+  }
+
+  export type PlatformMerkleTreeMaxAggregateOutputType = {
+    id: string | null
+    address: string | null
+    type: string | null
+    maxDepth: number | null
+    capacity: number | null
+    minted: number | null
+    isActive: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+    collectionAddress: string | null
+  }
+
+  export type PlatformMerkleTreeCountAggregateOutputType = {
+    id: number
+    address: number
+    type: number
+    maxDepth: number
+    capacity: number
+    minted: number
+    isActive: number
+    createdAt: number
+    updatedAt: number
+    collectionAddress: number
+    _all: number
+  }
+
+
+  export type PlatformMerkleTreeAvgAggregateInputType = {
+    maxDepth?: true
+    capacity?: true
+    minted?: true
+  }
+
+  export type PlatformMerkleTreeSumAggregateInputType = {
+    maxDepth?: true
+    capacity?: true
+    minted?: true
+  }
+
+  export type PlatformMerkleTreeMinAggregateInputType = {
+    id?: true
+    address?: true
+    type?: true
+    maxDepth?: true
+    capacity?: true
+    minted?: true
+    isActive?: true
+    createdAt?: true
+    updatedAt?: true
+    collectionAddress?: true
+  }
+
+  export type PlatformMerkleTreeMaxAggregateInputType = {
+    id?: true
+    address?: true
+    type?: true
+    maxDepth?: true
+    capacity?: true
+    minted?: true
+    isActive?: true
+    createdAt?: true
+    updatedAt?: true
+    collectionAddress?: true
+  }
+
+  export type PlatformMerkleTreeCountAggregateInputType = {
+    id?: true
+    address?: true
+    type?: true
+    maxDepth?: true
+    capacity?: true
+    minted?: true
+    isActive?: true
+    createdAt?: true
+    updatedAt?: true
+    collectionAddress?: true
+    _all?: true
+  }
+
+  export type PlatformMerkleTreeAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PlatformMerkleTree to aggregate.
+     */
+    where?: PlatformMerkleTreeWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PlatformMerkleTrees to fetch.
+     */
+    orderBy?: PlatformMerkleTreeOrderByWithRelationInput | PlatformMerkleTreeOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: PlatformMerkleTreeWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PlatformMerkleTrees from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PlatformMerkleTrees.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned PlatformMerkleTrees
+    **/
+    _count?: true | PlatformMerkleTreeCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: PlatformMerkleTreeAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: PlatformMerkleTreeSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: PlatformMerkleTreeMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: PlatformMerkleTreeMaxAggregateInputType
+  }
+
+  export type GetPlatformMerkleTreeAggregateType<T extends PlatformMerkleTreeAggregateArgs> = {
+        [P in keyof T & keyof AggregatePlatformMerkleTree]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregatePlatformMerkleTree[P]>
+      : GetScalarType<T[P], AggregatePlatformMerkleTree[P]>
+  }
+
+
+
+
+  export type PlatformMerkleTreeGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: PlatformMerkleTreeWhereInput
+    orderBy?: PlatformMerkleTreeOrderByWithAggregationInput | PlatformMerkleTreeOrderByWithAggregationInput[]
+    by: PlatformMerkleTreeScalarFieldEnum[] | PlatformMerkleTreeScalarFieldEnum
+    having?: PlatformMerkleTreeScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: PlatformMerkleTreeCountAggregateInputType | true
+    _avg?: PlatformMerkleTreeAvgAggregateInputType
+    _sum?: PlatformMerkleTreeSumAggregateInputType
+    _min?: PlatformMerkleTreeMinAggregateInputType
+    _max?: PlatformMerkleTreeMaxAggregateInputType
+  }
+
+  export type PlatformMerkleTreeGroupByOutputType = {
+    id: string
+    address: string
+    type: string
+    maxDepth: number
+    capacity: number
+    minted: number
+    isActive: boolean
+    createdAt: Date
+    updatedAt: Date
+    collectionAddress: string | null
+    _count: PlatformMerkleTreeCountAggregateOutputType | null
+    _avg: PlatformMerkleTreeAvgAggregateOutputType | null
+    _sum: PlatformMerkleTreeSumAggregateOutputType | null
+    _min: PlatformMerkleTreeMinAggregateOutputType | null
+    _max: PlatformMerkleTreeMaxAggregateOutputType | null
+  }
+
+  type GetPlatformMerkleTreeGroupByPayload<T extends PlatformMerkleTreeGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<PlatformMerkleTreeGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof PlatformMerkleTreeGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], PlatformMerkleTreeGroupByOutputType[P]>
+            : GetScalarType<T[P], PlatformMerkleTreeGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type PlatformMerkleTreeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    address?: boolean
+    type?: boolean
+    maxDepth?: boolean
+    capacity?: boolean
+    minted?: boolean
+    isActive?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    collectionAddress?: boolean
+  }, ExtArgs["result"]["platformMerkleTree"]>
+
+  export type PlatformMerkleTreeSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    address?: boolean
+    type?: boolean
+    maxDepth?: boolean
+    capacity?: boolean
+    minted?: boolean
+    isActive?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    collectionAddress?: boolean
+  }, ExtArgs["result"]["platformMerkleTree"]>
+
+  export type PlatformMerkleTreeSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    address?: boolean
+    type?: boolean
+    maxDepth?: boolean
+    capacity?: boolean
+    minted?: boolean
+    isActive?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    collectionAddress?: boolean
+  }, ExtArgs["result"]["platformMerkleTree"]>
+
+  export type PlatformMerkleTreeSelectScalar = {
+    id?: boolean
+    address?: boolean
+    type?: boolean
+    maxDepth?: boolean
+    capacity?: boolean
+    minted?: boolean
+    isActive?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    collectionAddress?: boolean
+  }
+
+  export type PlatformMerkleTreeOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "address" | "type" | "maxDepth" | "capacity" | "minted" | "isActive" | "createdAt" | "updatedAt" | "collectionAddress", ExtArgs["result"]["platformMerkleTree"]>
+
+  export type $PlatformMerkleTreePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "PlatformMerkleTree"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      address: string
+      type: string
+      maxDepth: number
+      capacity: number
+      minted: number
+      isActive: boolean
+      createdAt: Date
+      updatedAt: Date
+      collectionAddress: string | null
+    }, ExtArgs["result"]["platformMerkleTree"]>
+    composites: {}
+  }
+
+  type PlatformMerkleTreeGetPayload<S extends boolean | null | undefined | PlatformMerkleTreeDefaultArgs> = $Result.GetResult<Prisma.$PlatformMerkleTreePayload, S>
+
+  type PlatformMerkleTreeCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<PlatformMerkleTreeFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: PlatformMerkleTreeCountAggregateInputType | true
+    }
+
+  export interface PlatformMerkleTreeDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['PlatformMerkleTree'], meta: { name: 'PlatformMerkleTree' } }
+    /**
+     * Find zero or one PlatformMerkleTree that matches the filter.
+     * @param {PlatformMerkleTreeFindUniqueArgs} args - Arguments to find a PlatformMerkleTree
+     * @example
+     * // Get one PlatformMerkleTree
+     * const platformMerkleTree = await prisma.platformMerkleTree.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends PlatformMerkleTreeFindUniqueArgs>(args: SelectSubset<T, PlatformMerkleTreeFindUniqueArgs<ExtArgs>>): Prisma__PlatformMerkleTreeClient<$Result.GetResult<Prisma.$PlatformMerkleTreePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one PlatformMerkleTree that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {PlatformMerkleTreeFindUniqueOrThrowArgs} args - Arguments to find a PlatformMerkleTree
+     * @example
+     * // Get one PlatformMerkleTree
+     * const platformMerkleTree = await prisma.platformMerkleTree.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends PlatformMerkleTreeFindUniqueOrThrowArgs>(args: SelectSubset<T, PlatformMerkleTreeFindUniqueOrThrowArgs<ExtArgs>>): Prisma__PlatformMerkleTreeClient<$Result.GetResult<Prisma.$PlatformMerkleTreePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PlatformMerkleTree that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformMerkleTreeFindFirstArgs} args - Arguments to find a PlatformMerkleTree
+     * @example
+     * // Get one PlatformMerkleTree
+     * const platformMerkleTree = await prisma.platformMerkleTree.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends PlatformMerkleTreeFindFirstArgs>(args?: SelectSubset<T, PlatformMerkleTreeFindFirstArgs<ExtArgs>>): Prisma__PlatformMerkleTreeClient<$Result.GetResult<Prisma.$PlatformMerkleTreePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first PlatformMerkleTree that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformMerkleTreeFindFirstOrThrowArgs} args - Arguments to find a PlatformMerkleTree
+     * @example
+     * // Get one PlatformMerkleTree
+     * const platformMerkleTree = await prisma.platformMerkleTree.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends PlatformMerkleTreeFindFirstOrThrowArgs>(args?: SelectSubset<T, PlatformMerkleTreeFindFirstOrThrowArgs<ExtArgs>>): Prisma__PlatformMerkleTreeClient<$Result.GetResult<Prisma.$PlatformMerkleTreePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more PlatformMerkleTrees that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformMerkleTreeFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all PlatformMerkleTrees
+     * const platformMerkleTrees = await prisma.platformMerkleTree.findMany()
+     * 
+     * // Get first 10 PlatformMerkleTrees
+     * const platformMerkleTrees = await prisma.platformMerkleTree.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const platformMerkleTreeWithIdOnly = await prisma.platformMerkleTree.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends PlatformMerkleTreeFindManyArgs>(args?: SelectSubset<T, PlatformMerkleTreeFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PlatformMerkleTreePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a PlatformMerkleTree.
+     * @param {PlatformMerkleTreeCreateArgs} args - Arguments to create a PlatformMerkleTree.
+     * @example
+     * // Create one PlatformMerkleTree
+     * const PlatformMerkleTree = await prisma.platformMerkleTree.create({
+     *   data: {
+     *     // ... data to create a PlatformMerkleTree
+     *   }
+     * })
+     * 
+     */
+    create<T extends PlatformMerkleTreeCreateArgs>(args: SelectSubset<T, PlatformMerkleTreeCreateArgs<ExtArgs>>): Prisma__PlatformMerkleTreeClient<$Result.GetResult<Prisma.$PlatformMerkleTreePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many PlatformMerkleTrees.
+     * @param {PlatformMerkleTreeCreateManyArgs} args - Arguments to create many PlatformMerkleTrees.
+     * @example
+     * // Create many PlatformMerkleTrees
+     * const platformMerkleTree = await prisma.platformMerkleTree.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends PlatformMerkleTreeCreateManyArgs>(args?: SelectSubset<T, PlatformMerkleTreeCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many PlatformMerkleTrees and returns the data saved in the database.
+     * @param {PlatformMerkleTreeCreateManyAndReturnArgs} args - Arguments to create many PlatformMerkleTrees.
+     * @example
+     * // Create many PlatformMerkleTrees
+     * const platformMerkleTree = await prisma.platformMerkleTree.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many PlatformMerkleTrees and only return the `id`
+     * const platformMerkleTreeWithIdOnly = await prisma.platformMerkleTree.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends PlatformMerkleTreeCreateManyAndReturnArgs>(args?: SelectSubset<T, PlatformMerkleTreeCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PlatformMerkleTreePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a PlatformMerkleTree.
+     * @param {PlatformMerkleTreeDeleteArgs} args - Arguments to delete one PlatformMerkleTree.
+     * @example
+     * // Delete one PlatformMerkleTree
+     * const PlatformMerkleTree = await prisma.platformMerkleTree.delete({
+     *   where: {
+     *     // ... filter to delete one PlatformMerkleTree
+     *   }
+     * })
+     * 
+     */
+    delete<T extends PlatformMerkleTreeDeleteArgs>(args: SelectSubset<T, PlatformMerkleTreeDeleteArgs<ExtArgs>>): Prisma__PlatformMerkleTreeClient<$Result.GetResult<Prisma.$PlatformMerkleTreePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one PlatformMerkleTree.
+     * @param {PlatformMerkleTreeUpdateArgs} args - Arguments to update one PlatformMerkleTree.
+     * @example
+     * // Update one PlatformMerkleTree
+     * const platformMerkleTree = await prisma.platformMerkleTree.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends PlatformMerkleTreeUpdateArgs>(args: SelectSubset<T, PlatformMerkleTreeUpdateArgs<ExtArgs>>): Prisma__PlatformMerkleTreeClient<$Result.GetResult<Prisma.$PlatformMerkleTreePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more PlatformMerkleTrees.
+     * @param {PlatformMerkleTreeDeleteManyArgs} args - Arguments to filter PlatformMerkleTrees to delete.
+     * @example
+     * // Delete a few PlatformMerkleTrees
+     * const { count } = await prisma.platformMerkleTree.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends PlatformMerkleTreeDeleteManyArgs>(args?: SelectSubset<T, PlatformMerkleTreeDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PlatformMerkleTrees.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformMerkleTreeUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many PlatformMerkleTrees
+     * const platformMerkleTree = await prisma.platformMerkleTree.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends PlatformMerkleTreeUpdateManyArgs>(args: SelectSubset<T, PlatformMerkleTreeUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more PlatformMerkleTrees and returns the data updated in the database.
+     * @param {PlatformMerkleTreeUpdateManyAndReturnArgs} args - Arguments to update many PlatformMerkleTrees.
+     * @example
+     * // Update many PlatformMerkleTrees
+     * const platformMerkleTree = await prisma.platformMerkleTree.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more PlatformMerkleTrees and only return the `id`
+     * const platformMerkleTreeWithIdOnly = await prisma.platformMerkleTree.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends PlatformMerkleTreeUpdateManyAndReturnArgs>(args: SelectSubset<T, PlatformMerkleTreeUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$PlatformMerkleTreePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one PlatformMerkleTree.
+     * @param {PlatformMerkleTreeUpsertArgs} args - Arguments to update or create a PlatformMerkleTree.
+     * @example
+     * // Update or create a PlatformMerkleTree
+     * const platformMerkleTree = await prisma.platformMerkleTree.upsert({
+     *   create: {
+     *     // ... data to create a PlatformMerkleTree
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the PlatformMerkleTree we want to update
+     *   }
+     * })
+     */
+    upsert<T extends PlatformMerkleTreeUpsertArgs>(args: SelectSubset<T, PlatformMerkleTreeUpsertArgs<ExtArgs>>): Prisma__PlatformMerkleTreeClient<$Result.GetResult<Prisma.$PlatformMerkleTreePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of PlatformMerkleTrees.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformMerkleTreeCountArgs} args - Arguments to filter PlatformMerkleTrees to count.
+     * @example
+     * // Count the number of PlatformMerkleTrees
+     * const count = await prisma.platformMerkleTree.count({
+     *   where: {
+     *     // ... the filter for the PlatformMerkleTrees we want to count
+     *   }
+     * })
+    **/
+    count<T extends PlatformMerkleTreeCountArgs>(
+      args?: Subset<T, PlatformMerkleTreeCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], PlatformMerkleTreeCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a PlatformMerkleTree.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformMerkleTreeAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends PlatformMerkleTreeAggregateArgs>(args: Subset<T, PlatformMerkleTreeAggregateArgs>): Prisma.PrismaPromise<GetPlatformMerkleTreeAggregateType<T>>
+
+    /**
+     * Group by PlatformMerkleTree.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {PlatformMerkleTreeGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends PlatformMerkleTreeGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: PlatformMerkleTreeGroupByArgs['orderBy'] }
+        : { orderBy?: PlatformMerkleTreeGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, PlatformMerkleTreeGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetPlatformMerkleTreeGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the PlatformMerkleTree model
+   */
+  readonly fields: PlatformMerkleTreeFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for PlatformMerkleTree.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__PlatformMerkleTreeClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the PlatformMerkleTree model
+   */
+  interface PlatformMerkleTreeFieldRefs {
+    readonly id: FieldRef<"PlatformMerkleTree", 'String'>
+    readonly address: FieldRef<"PlatformMerkleTree", 'String'>
+    readonly type: FieldRef<"PlatformMerkleTree", 'String'>
+    readonly maxDepth: FieldRef<"PlatformMerkleTree", 'Int'>
+    readonly capacity: FieldRef<"PlatformMerkleTree", 'Int'>
+    readonly minted: FieldRef<"PlatformMerkleTree", 'Int'>
+    readonly isActive: FieldRef<"PlatformMerkleTree", 'Boolean'>
+    readonly createdAt: FieldRef<"PlatformMerkleTree", 'DateTime'>
+    readonly updatedAt: FieldRef<"PlatformMerkleTree", 'DateTime'>
+    readonly collectionAddress: FieldRef<"PlatformMerkleTree", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * PlatformMerkleTree findUnique
+   */
+  export type PlatformMerkleTreeFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformMerkleTree
+     */
+    select?: PlatformMerkleTreeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PlatformMerkleTree
+     */
+    omit?: PlatformMerkleTreeOmit<ExtArgs> | null
+    /**
+     * Filter, which PlatformMerkleTree to fetch.
+     */
+    where: PlatformMerkleTreeWhereUniqueInput
+  }
+
+  /**
+   * PlatformMerkleTree findUniqueOrThrow
+   */
+  export type PlatformMerkleTreeFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformMerkleTree
+     */
+    select?: PlatformMerkleTreeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PlatformMerkleTree
+     */
+    omit?: PlatformMerkleTreeOmit<ExtArgs> | null
+    /**
+     * Filter, which PlatformMerkleTree to fetch.
+     */
+    where: PlatformMerkleTreeWhereUniqueInput
+  }
+
+  /**
+   * PlatformMerkleTree findFirst
+   */
+  export type PlatformMerkleTreeFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformMerkleTree
+     */
+    select?: PlatformMerkleTreeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PlatformMerkleTree
+     */
+    omit?: PlatformMerkleTreeOmit<ExtArgs> | null
+    /**
+     * Filter, which PlatformMerkleTree to fetch.
+     */
+    where?: PlatformMerkleTreeWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PlatformMerkleTrees to fetch.
+     */
+    orderBy?: PlatformMerkleTreeOrderByWithRelationInput | PlatformMerkleTreeOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PlatformMerkleTrees.
+     */
+    cursor?: PlatformMerkleTreeWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PlatformMerkleTrees from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PlatformMerkleTrees.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PlatformMerkleTrees.
+     */
+    distinct?: PlatformMerkleTreeScalarFieldEnum | PlatformMerkleTreeScalarFieldEnum[]
+  }
+
+  /**
+   * PlatformMerkleTree findFirstOrThrow
+   */
+  export type PlatformMerkleTreeFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformMerkleTree
+     */
+    select?: PlatformMerkleTreeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PlatformMerkleTree
+     */
+    omit?: PlatformMerkleTreeOmit<ExtArgs> | null
+    /**
+     * Filter, which PlatformMerkleTree to fetch.
+     */
+    where?: PlatformMerkleTreeWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PlatformMerkleTrees to fetch.
+     */
+    orderBy?: PlatformMerkleTreeOrderByWithRelationInput | PlatformMerkleTreeOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for PlatformMerkleTrees.
+     */
+    cursor?: PlatformMerkleTreeWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PlatformMerkleTrees from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PlatformMerkleTrees.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of PlatformMerkleTrees.
+     */
+    distinct?: PlatformMerkleTreeScalarFieldEnum | PlatformMerkleTreeScalarFieldEnum[]
+  }
+
+  /**
+   * PlatformMerkleTree findMany
+   */
+  export type PlatformMerkleTreeFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformMerkleTree
+     */
+    select?: PlatformMerkleTreeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PlatformMerkleTree
+     */
+    omit?: PlatformMerkleTreeOmit<ExtArgs> | null
+    /**
+     * Filter, which PlatformMerkleTrees to fetch.
+     */
+    where?: PlatformMerkleTreeWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of PlatformMerkleTrees to fetch.
+     */
+    orderBy?: PlatformMerkleTreeOrderByWithRelationInput | PlatformMerkleTreeOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing PlatformMerkleTrees.
+     */
+    cursor?: PlatformMerkleTreeWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` PlatformMerkleTrees from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` PlatformMerkleTrees.
+     */
+    skip?: number
+    distinct?: PlatformMerkleTreeScalarFieldEnum | PlatformMerkleTreeScalarFieldEnum[]
+  }
+
+  /**
+   * PlatformMerkleTree create
+   */
+  export type PlatformMerkleTreeCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformMerkleTree
+     */
+    select?: PlatformMerkleTreeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PlatformMerkleTree
+     */
+    omit?: PlatformMerkleTreeOmit<ExtArgs> | null
+    /**
+     * The data needed to create a PlatformMerkleTree.
+     */
+    data: XOR<PlatformMerkleTreeCreateInput, PlatformMerkleTreeUncheckedCreateInput>
+  }
+
+  /**
+   * PlatformMerkleTree createMany
+   */
+  export type PlatformMerkleTreeCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many PlatformMerkleTrees.
+     */
+    data: PlatformMerkleTreeCreateManyInput | PlatformMerkleTreeCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PlatformMerkleTree createManyAndReturn
+   */
+  export type PlatformMerkleTreeCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformMerkleTree
+     */
+    select?: PlatformMerkleTreeSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the PlatformMerkleTree
+     */
+    omit?: PlatformMerkleTreeOmit<ExtArgs> | null
+    /**
+     * The data used to create many PlatformMerkleTrees.
+     */
+    data: PlatformMerkleTreeCreateManyInput | PlatformMerkleTreeCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * PlatformMerkleTree update
+   */
+  export type PlatformMerkleTreeUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformMerkleTree
+     */
+    select?: PlatformMerkleTreeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PlatformMerkleTree
+     */
+    omit?: PlatformMerkleTreeOmit<ExtArgs> | null
+    /**
+     * The data needed to update a PlatformMerkleTree.
+     */
+    data: XOR<PlatformMerkleTreeUpdateInput, PlatformMerkleTreeUncheckedUpdateInput>
+    /**
+     * Choose, which PlatformMerkleTree to update.
+     */
+    where: PlatformMerkleTreeWhereUniqueInput
+  }
+
+  /**
+   * PlatformMerkleTree updateMany
+   */
+  export type PlatformMerkleTreeUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update PlatformMerkleTrees.
+     */
+    data: XOR<PlatformMerkleTreeUpdateManyMutationInput, PlatformMerkleTreeUncheckedUpdateManyInput>
+    /**
+     * Filter which PlatformMerkleTrees to update
+     */
+    where?: PlatformMerkleTreeWhereInput
+    /**
+     * Limit how many PlatformMerkleTrees to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PlatformMerkleTree updateManyAndReturn
+   */
+  export type PlatformMerkleTreeUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformMerkleTree
+     */
+    select?: PlatformMerkleTreeSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the PlatformMerkleTree
+     */
+    omit?: PlatformMerkleTreeOmit<ExtArgs> | null
+    /**
+     * The data used to update PlatformMerkleTrees.
+     */
+    data: XOR<PlatformMerkleTreeUpdateManyMutationInput, PlatformMerkleTreeUncheckedUpdateManyInput>
+    /**
+     * Filter which PlatformMerkleTrees to update
+     */
+    where?: PlatformMerkleTreeWhereInput
+    /**
+     * Limit how many PlatformMerkleTrees to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * PlatformMerkleTree upsert
+   */
+  export type PlatformMerkleTreeUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformMerkleTree
+     */
+    select?: PlatformMerkleTreeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PlatformMerkleTree
+     */
+    omit?: PlatformMerkleTreeOmit<ExtArgs> | null
+    /**
+     * The filter to search for the PlatformMerkleTree to update in case it exists.
+     */
+    where: PlatformMerkleTreeWhereUniqueInput
+    /**
+     * In case the PlatformMerkleTree found by the `where` argument doesn't exist, create a new PlatformMerkleTree with this data.
+     */
+    create: XOR<PlatformMerkleTreeCreateInput, PlatformMerkleTreeUncheckedCreateInput>
+    /**
+     * In case the PlatformMerkleTree was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<PlatformMerkleTreeUpdateInput, PlatformMerkleTreeUncheckedUpdateInput>
+  }
+
+  /**
+   * PlatformMerkleTree delete
+   */
+  export type PlatformMerkleTreeDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformMerkleTree
+     */
+    select?: PlatformMerkleTreeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PlatformMerkleTree
+     */
+    omit?: PlatformMerkleTreeOmit<ExtArgs> | null
+    /**
+     * Filter which PlatformMerkleTree to delete.
+     */
+    where: PlatformMerkleTreeWhereUniqueInput
+  }
+
+  /**
+   * PlatformMerkleTree deleteMany
+   */
+  export type PlatformMerkleTreeDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which PlatformMerkleTrees to delete
+     */
+    where?: PlatformMerkleTreeWhereInput
+    /**
+     * Limit how many PlatformMerkleTrees to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * PlatformMerkleTree without action
+   */
+  export type PlatformMerkleTreeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the PlatformMerkleTree
+     */
+    select?: PlatformMerkleTreeSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the PlatformMerkleTree
+     */
+    omit?: PlatformMerkleTreeOmit<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -17578,6 +21430,9 @@ export namespace Prisma {
     merkleTreeAddress: 'merkleTreeAddress',
     merkleTreeDepth: 'merkleTreeDepth',
     nftType: 'nftType',
+    poapMerkleTreeAddress: 'poapMerkleTreeAddress',
+    poapCollectionAddress: 'poapCollectionAddress',
+    poapMetadataUri: 'poapMetadataUri',
     categoryId: 'categoryId',
     organizerId: 'organizerId'
   };
@@ -17671,6 +21526,52 @@ export namespace Prisma {
   };
 
   export type PaymentDistributionScalarFieldEnum = (typeof PaymentDistributionScalarFieldEnum)[keyof typeof PaymentDistributionScalarFieldEnum]
+
+
+  export const AttendanceScalarFieldEnum: {
+    id: 'id',
+    ticketId: 'ticketId',
+    eventId: 'eventId',
+    userId: 'userId',
+    scannedAt: 'scannedAt',
+    scannedBy: 'scannedBy',
+    poapAssetId: 'poapAssetId',
+    poapLeafIndex: 'poapLeafIndex',
+    poapMintTx: 'poapMintTx',
+    poapStatus: 'poapStatus'
+  };
+
+  export type AttendanceScalarFieldEnum = (typeof AttendanceScalarFieldEnum)[keyof typeof AttendanceScalarFieldEnum]
+
+
+  export const ScannerCodeScalarFieldEnum: {
+    id: 'id',
+    eventId: 'eventId',
+    code: 'code',
+    name: 'name',
+    isActive: 'isActive',
+    usageCount: 'usageCount',
+    createdAt: 'createdAt',
+    expiresAt: 'expiresAt'
+  };
+
+  export type ScannerCodeScalarFieldEnum = (typeof ScannerCodeScalarFieldEnum)[keyof typeof ScannerCodeScalarFieldEnum]
+
+
+  export const PlatformMerkleTreeScalarFieldEnum: {
+    id: 'id',
+    address: 'address',
+    type: 'type',
+    maxDepth: 'maxDepth',
+    capacity: 'capacity',
+    minted: 'minted',
+    isActive: 'isActive',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt',
+    collectionAddress: 'collectionAddress'
+  };
+
+  export type PlatformMerkleTreeScalarFieldEnum = (typeof PlatformMerkleTreeScalarFieldEnum)[keyof typeof PlatformMerkleTreeScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -17819,6 +21720,7 @@ export namespace Prisma {
     orders?: OrderListRelationFilter
     tickets?: TicketListRelationFilter
     listings?: ListingListRelationFilter
+    attendances?: AttendanceListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
@@ -17841,6 +21743,7 @@ export namespace Prisma {
     orders?: OrderOrderByRelationAggregateInput
     tickets?: TicketOrderByRelationAggregateInput
     listings?: ListingOrderByRelationAggregateInput
+    attendances?: AttendanceOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -17866,6 +21769,7 @@ export namespace Prisma {
     orders?: OrderListRelationFilter
     tickets?: TicketListRelationFilter
     listings?: ListingListRelationFilter
+    attendances?: AttendanceListRelationFilter
   }, "id" | "email" | "walletAddress" | "internalWalletAddress">
 
   export type UserOrderByWithAggregationInput = {
@@ -18356,6 +22260,9 @@ export namespace Prisma {
     merkleTreeAddress?: StringNullableFilter<"Event"> | string | null
     merkleTreeDepth?: IntNullableFilter<"Event"> | number | null
     nftType?: StringFilter<"Event"> | string
+    poapMerkleTreeAddress?: StringNullableFilter<"Event"> | string | null
+    poapCollectionAddress?: StringNullableFilter<"Event"> | string | null
+    poapMetadataUri?: StringNullableFilter<"Event"> | string | null
     categoryId?: StringFilter<"Event"> | string
     organizerId?: StringNullableFilter<"Event"> | string | null
     category?: XOR<CategoryScalarRelationFilter, CategoryWhereInput>
@@ -18363,6 +22270,8 @@ export namespace Prisma {
     orders?: OrderListRelationFilter
     tickets?: TicketListRelationFilter
     listings?: ListingListRelationFilter
+    attendances?: AttendanceListRelationFilter
+    scannerCodes?: ScannerCodeListRelationFilter
   }
 
   export type EventOrderByWithRelationInput = {
@@ -18385,6 +22294,9 @@ export namespace Prisma {
     merkleTreeAddress?: SortOrderInput | SortOrder
     merkleTreeDepth?: SortOrderInput | SortOrder
     nftType?: SortOrder
+    poapMerkleTreeAddress?: SortOrderInput | SortOrder
+    poapCollectionAddress?: SortOrderInput | SortOrder
+    poapMetadataUri?: SortOrderInput | SortOrder
     categoryId?: SortOrder
     organizerId?: SortOrderInput | SortOrder
     category?: CategoryOrderByWithRelationInput
@@ -18392,6 +22304,8 @@ export namespace Prisma {
     orders?: OrderOrderByRelationAggregateInput
     tickets?: TicketOrderByRelationAggregateInput
     listings?: ListingOrderByRelationAggregateInput
+    attendances?: AttendanceOrderByRelationAggregateInput
+    scannerCodes?: ScannerCodeOrderByRelationAggregateInput
   }
 
   export type EventWhereUniqueInput = Prisma.AtLeast<{
@@ -18399,6 +22313,8 @@ export namespace Prisma {
     collectionNftAddress?: string
     candyMachineAddress?: string
     merkleTreeAddress?: string
+    poapMerkleTreeAddress?: string
+    poapCollectionAddress?: string
     AND?: EventWhereInput | EventWhereInput[]
     OR?: EventWhereInput[]
     NOT?: EventWhereInput | EventWhereInput[]
@@ -18417,6 +22333,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"Event"> | Date | string
     merkleTreeDepth?: IntNullableFilter<"Event"> | number | null
     nftType?: StringFilter<"Event"> | string
+    poapMetadataUri?: StringNullableFilter<"Event"> | string | null
     categoryId?: StringFilter<"Event"> | string
     organizerId?: StringNullableFilter<"Event"> | string | null
     category?: XOR<CategoryScalarRelationFilter, CategoryWhereInput>
@@ -18424,7 +22341,9 @@ export namespace Prisma {
     orders?: OrderListRelationFilter
     tickets?: TicketListRelationFilter
     listings?: ListingListRelationFilter
-  }, "id" | "collectionNftAddress" | "candyMachineAddress" | "merkleTreeAddress">
+    attendances?: AttendanceListRelationFilter
+    scannerCodes?: ScannerCodeListRelationFilter
+  }, "id" | "collectionNftAddress" | "candyMachineAddress" | "merkleTreeAddress" | "poapMerkleTreeAddress" | "poapCollectionAddress">
 
   export type EventOrderByWithAggregationInput = {
     id?: SortOrder
@@ -18446,6 +22365,9 @@ export namespace Prisma {
     merkleTreeAddress?: SortOrderInput | SortOrder
     merkleTreeDepth?: SortOrderInput | SortOrder
     nftType?: SortOrder
+    poapMerkleTreeAddress?: SortOrderInput | SortOrder
+    poapCollectionAddress?: SortOrderInput | SortOrder
+    poapMetadataUri?: SortOrderInput | SortOrder
     categoryId?: SortOrder
     organizerId?: SortOrderInput | SortOrder
     _count?: EventCountOrderByAggregateInput
@@ -18478,6 +22400,9 @@ export namespace Prisma {
     merkleTreeAddress?: StringNullableWithAggregatesFilter<"Event"> | string | null
     merkleTreeDepth?: IntNullableWithAggregatesFilter<"Event"> | number | null
     nftType?: StringWithAggregatesFilter<"Event"> | string
+    poapMerkleTreeAddress?: StringNullableWithAggregatesFilter<"Event"> | string | null
+    poapCollectionAddress?: StringNullableWithAggregatesFilter<"Event"> | string | null
+    poapMetadataUri?: StringNullableWithAggregatesFilter<"Event"> | string | null
     categoryId?: StringWithAggregatesFilter<"Event"> | string
     organizerId?: StringNullableWithAggregatesFilter<"Event"> | string | null
   }
@@ -18596,6 +22521,7 @@ export namespace Prisma {
     event?: XOR<EventScalarRelationFilter, EventWhereInput>
     order?: XOR<OrderScalarRelationFilter, OrderWhereInput>
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
+    attendance?: XOR<AttendanceNullableScalarRelationFilter, AttendanceWhereInput> | null
   }
 
   export type TicketOrderByWithRelationInput = {
@@ -18618,6 +22544,7 @@ export namespace Prisma {
     event?: EventOrderByWithRelationInput
     order?: OrderOrderByWithRelationInput
     user?: UserOrderByWithRelationInput
+    attendance?: AttendanceOrderByWithRelationInput
   }
 
   export type TicketWhereUniqueInput = Prisma.AtLeast<{
@@ -18643,6 +22570,7 @@ export namespace Prisma {
     event?: XOR<EventScalarRelationFilter, EventWhereInput>
     order?: XOR<OrderScalarRelationFilter, OrderWhereInput>
     user?: XOR<UserScalarRelationFilter, UserWhereInput>
+    attendance?: XOR<AttendanceNullableScalarRelationFilter, AttendanceWhereInput> | null
   }, "id" | "nftMintAddress" | "assetId">
 
   export type TicketOrderByWithAggregationInput = {
@@ -18945,6 +22873,245 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter<"PaymentDistribution"> | Date | string
   }
 
+  export type AttendanceWhereInput = {
+    AND?: AttendanceWhereInput | AttendanceWhereInput[]
+    OR?: AttendanceWhereInput[]
+    NOT?: AttendanceWhereInput | AttendanceWhereInput[]
+    id?: StringFilter<"Attendance"> | string
+    ticketId?: StringFilter<"Attendance"> | string
+    eventId?: StringFilter<"Attendance"> | string
+    userId?: StringFilter<"Attendance"> | string
+    scannedAt?: DateTimeFilter<"Attendance"> | Date | string
+    scannedBy?: StringFilter<"Attendance"> | string
+    poapAssetId?: StringNullableFilter<"Attendance"> | string | null
+    poapLeafIndex?: IntNullableFilter<"Attendance"> | number | null
+    poapMintTx?: StringNullableFilter<"Attendance"> | string | null
+    poapStatus?: StringFilter<"Attendance"> | string
+    ticket?: XOR<TicketScalarRelationFilter, TicketWhereInput>
+    event?: XOR<EventScalarRelationFilter, EventWhereInput>
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }
+
+  export type AttendanceOrderByWithRelationInput = {
+    id?: SortOrder
+    ticketId?: SortOrder
+    eventId?: SortOrder
+    userId?: SortOrder
+    scannedAt?: SortOrder
+    scannedBy?: SortOrder
+    poapAssetId?: SortOrderInput | SortOrder
+    poapLeafIndex?: SortOrderInput | SortOrder
+    poapMintTx?: SortOrderInput | SortOrder
+    poapStatus?: SortOrder
+    ticket?: TicketOrderByWithRelationInput
+    event?: EventOrderByWithRelationInput
+    user?: UserOrderByWithRelationInput
+  }
+
+  export type AttendanceWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    ticketId?: string
+    poapAssetId?: string
+    AND?: AttendanceWhereInput | AttendanceWhereInput[]
+    OR?: AttendanceWhereInput[]
+    NOT?: AttendanceWhereInput | AttendanceWhereInput[]
+    eventId?: StringFilter<"Attendance"> | string
+    userId?: StringFilter<"Attendance"> | string
+    scannedAt?: DateTimeFilter<"Attendance"> | Date | string
+    scannedBy?: StringFilter<"Attendance"> | string
+    poapLeafIndex?: IntNullableFilter<"Attendance"> | number | null
+    poapMintTx?: StringNullableFilter<"Attendance"> | string | null
+    poapStatus?: StringFilter<"Attendance"> | string
+    ticket?: XOR<TicketScalarRelationFilter, TicketWhereInput>
+    event?: XOR<EventScalarRelationFilter, EventWhereInput>
+    user?: XOR<UserScalarRelationFilter, UserWhereInput>
+  }, "id" | "ticketId" | "poapAssetId">
+
+  export type AttendanceOrderByWithAggregationInput = {
+    id?: SortOrder
+    ticketId?: SortOrder
+    eventId?: SortOrder
+    userId?: SortOrder
+    scannedAt?: SortOrder
+    scannedBy?: SortOrder
+    poapAssetId?: SortOrderInput | SortOrder
+    poapLeafIndex?: SortOrderInput | SortOrder
+    poapMintTx?: SortOrderInput | SortOrder
+    poapStatus?: SortOrder
+    _count?: AttendanceCountOrderByAggregateInput
+    _avg?: AttendanceAvgOrderByAggregateInput
+    _max?: AttendanceMaxOrderByAggregateInput
+    _min?: AttendanceMinOrderByAggregateInput
+    _sum?: AttendanceSumOrderByAggregateInput
+  }
+
+  export type AttendanceScalarWhereWithAggregatesInput = {
+    AND?: AttendanceScalarWhereWithAggregatesInput | AttendanceScalarWhereWithAggregatesInput[]
+    OR?: AttendanceScalarWhereWithAggregatesInput[]
+    NOT?: AttendanceScalarWhereWithAggregatesInput | AttendanceScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"Attendance"> | string
+    ticketId?: StringWithAggregatesFilter<"Attendance"> | string
+    eventId?: StringWithAggregatesFilter<"Attendance"> | string
+    userId?: StringWithAggregatesFilter<"Attendance"> | string
+    scannedAt?: DateTimeWithAggregatesFilter<"Attendance"> | Date | string
+    scannedBy?: StringWithAggregatesFilter<"Attendance"> | string
+    poapAssetId?: StringNullableWithAggregatesFilter<"Attendance"> | string | null
+    poapLeafIndex?: IntNullableWithAggregatesFilter<"Attendance"> | number | null
+    poapMintTx?: StringNullableWithAggregatesFilter<"Attendance"> | string | null
+    poapStatus?: StringWithAggregatesFilter<"Attendance"> | string
+  }
+
+  export type ScannerCodeWhereInput = {
+    AND?: ScannerCodeWhereInput | ScannerCodeWhereInput[]
+    OR?: ScannerCodeWhereInput[]
+    NOT?: ScannerCodeWhereInput | ScannerCodeWhereInput[]
+    id?: StringFilter<"ScannerCode"> | string
+    eventId?: StringFilter<"ScannerCode"> | string
+    code?: StringFilter<"ScannerCode"> | string
+    name?: StringFilter<"ScannerCode"> | string
+    isActive?: BoolFilter<"ScannerCode"> | boolean
+    usageCount?: IntFilter<"ScannerCode"> | number
+    createdAt?: DateTimeFilter<"ScannerCode"> | Date | string
+    expiresAt?: DateTimeNullableFilter<"ScannerCode"> | Date | string | null
+    event?: XOR<EventScalarRelationFilter, EventWhereInput>
+  }
+
+  export type ScannerCodeOrderByWithRelationInput = {
+    id?: SortOrder
+    eventId?: SortOrder
+    code?: SortOrder
+    name?: SortOrder
+    isActive?: SortOrder
+    usageCount?: SortOrder
+    createdAt?: SortOrder
+    expiresAt?: SortOrderInput | SortOrder
+    event?: EventOrderByWithRelationInput
+  }
+
+  export type ScannerCodeWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    code?: string
+    AND?: ScannerCodeWhereInput | ScannerCodeWhereInput[]
+    OR?: ScannerCodeWhereInput[]
+    NOT?: ScannerCodeWhereInput | ScannerCodeWhereInput[]
+    eventId?: StringFilter<"ScannerCode"> | string
+    name?: StringFilter<"ScannerCode"> | string
+    isActive?: BoolFilter<"ScannerCode"> | boolean
+    usageCount?: IntFilter<"ScannerCode"> | number
+    createdAt?: DateTimeFilter<"ScannerCode"> | Date | string
+    expiresAt?: DateTimeNullableFilter<"ScannerCode"> | Date | string | null
+    event?: XOR<EventScalarRelationFilter, EventWhereInput>
+  }, "id" | "code">
+
+  export type ScannerCodeOrderByWithAggregationInput = {
+    id?: SortOrder
+    eventId?: SortOrder
+    code?: SortOrder
+    name?: SortOrder
+    isActive?: SortOrder
+    usageCount?: SortOrder
+    createdAt?: SortOrder
+    expiresAt?: SortOrderInput | SortOrder
+    _count?: ScannerCodeCountOrderByAggregateInput
+    _avg?: ScannerCodeAvgOrderByAggregateInput
+    _max?: ScannerCodeMaxOrderByAggregateInput
+    _min?: ScannerCodeMinOrderByAggregateInput
+    _sum?: ScannerCodeSumOrderByAggregateInput
+  }
+
+  export type ScannerCodeScalarWhereWithAggregatesInput = {
+    AND?: ScannerCodeScalarWhereWithAggregatesInput | ScannerCodeScalarWhereWithAggregatesInput[]
+    OR?: ScannerCodeScalarWhereWithAggregatesInput[]
+    NOT?: ScannerCodeScalarWhereWithAggregatesInput | ScannerCodeScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"ScannerCode"> | string
+    eventId?: StringWithAggregatesFilter<"ScannerCode"> | string
+    code?: StringWithAggregatesFilter<"ScannerCode"> | string
+    name?: StringWithAggregatesFilter<"ScannerCode"> | string
+    isActive?: BoolWithAggregatesFilter<"ScannerCode"> | boolean
+    usageCount?: IntWithAggregatesFilter<"ScannerCode"> | number
+    createdAt?: DateTimeWithAggregatesFilter<"ScannerCode"> | Date | string
+    expiresAt?: DateTimeNullableWithAggregatesFilter<"ScannerCode"> | Date | string | null
+  }
+
+  export type PlatformMerkleTreeWhereInput = {
+    AND?: PlatformMerkleTreeWhereInput | PlatformMerkleTreeWhereInput[]
+    OR?: PlatformMerkleTreeWhereInput[]
+    NOT?: PlatformMerkleTreeWhereInput | PlatformMerkleTreeWhereInput[]
+    id?: StringFilter<"PlatformMerkleTree"> | string
+    address?: StringFilter<"PlatformMerkleTree"> | string
+    type?: StringFilter<"PlatformMerkleTree"> | string
+    maxDepth?: IntFilter<"PlatformMerkleTree"> | number
+    capacity?: IntFilter<"PlatformMerkleTree"> | number
+    minted?: IntFilter<"PlatformMerkleTree"> | number
+    isActive?: BoolFilter<"PlatformMerkleTree"> | boolean
+    createdAt?: DateTimeFilter<"PlatformMerkleTree"> | Date | string
+    updatedAt?: DateTimeFilter<"PlatformMerkleTree"> | Date | string
+    collectionAddress?: StringNullableFilter<"PlatformMerkleTree"> | string | null
+  }
+
+  export type PlatformMerkleTreeOrderByWithRelationInput = {
+    id?: SortOrder
+    address?: SortOrder
+    type?: SortOrder
+    maxDepth?: SortOrder
+    capacity?: SortOrder
+    minted?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    collectionAddress?: SortOrderInput | SortOrder
+  }
+
+  export type PlatformMerkleTreeWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    address?: string
+    collectionAddress?: string
+    AND?: PlatformMerkleTreeWhereInput | PlatformMerkleTreeWhereInput[]
+    OR?: PlatformMerkleTreeWhereInput[]
+    NOT?: PlatformMerkleTreeWhereInput | PlatformMerkleTreeWhereInput[]
+    type?: StringFilter<"PlatformMerkleTree"> | string
+    maxDepth?: IntFilter<"PlatformMerkleTree"> | number
+    capacity?: IntFilter<"PlatformMerkleTree"> | number
+    minted?: IntFilter<"PlatformMerkleTree"> | number
+    isActive?: BoolFilter<"PlatformMerkleTree"> | boolean
+    createdAt?: DateTimeFilter<"PlatformMerkleTree"> | Date | string
+    updatedAt?: DateTimeFilter<"PlatformMerkleTree"> | Date | string
+  }, "id" | "address" | "collectionAddress">
+
+  export type PlatformMerkleTreeOrderByWithAggregationInput = {
+    id?: SortOrder
+    address?: SortOrder
+    type?: SortOrder
+    maxDepth?: SortOrder
+    capacity?: SortOrder
+    minted?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    collectionAddress?: SortOrderInput | SortOrder
+    _count?: PlatformMerkleTreeCountOrderByAggregateInput
+    _avg?: PlatformMerkleTreeAvgOrderByAggregateInput
+    _max?: PlatformMerkleTreeMaxOrderByAggregateInput
+    _min?: PlatformMerkleTreeMinOrderByAggregateInput
+    _sum?: PlatformMerkleTreeSumOrderByAggregateInput
+  }
+
+  export type PlatformMerkleTreeScalarWhereWithAggregatesInput = {
+    AND?: PlatformMerkleTreeScalarWhereWithAggregatesInput | PlatformMerkleTreeScalarWhereWithAggregatesInput[]
+    OR?: PlatformMerkleTreeScalarWhereWithAggregatesInput[]
+    NOT?: PlatformMerkleTreeScalarWhereWithAggregatesInput | PlatformMerkleTreeScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"PlatformMerkleTree"> | string
+    address?: StringWithAggregatesFilter<"PlatformMerkleTree"> | string
+    type?: StringWithAggregatesFilter<"PlatformMerkleTree"> | string
+    maxDepth?: IntWithAggregatesFilter<"PlatformMerkleTree"> | number
+    capacity?: IntWithAggregatesFilter<"PlatformMerkleTree"> | number
+    minted?: IntWithAggregatesFilter<"PlatformMerkleTree"> | number
+    isActive?: BoolWithAggregatesFilter<"PlatformMerkleTree"> | boolean
+    createdAt?: DateTimeWithAggregatesFilter<"PlatformMerkleTree"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"PlatformMerkleTree"> | Date | string
+    collectionAddress?: StringNullableWithAggregatesFilter<"PlatformMerkleTree"> | string | null
+  }
+
   export type UserCreateInput = {
     id?: string
     email?: string | null
@@ -18965,6 +23132,7 @@ export namespace Prisma {
     orders?: OrderCreateNestedManyWithoutUserInput
     tickets?: TicketCreateNestedManyWithoutUserInput
     listings?: ListingCreateNestedManyWithoutSellerInput
+    attendances?: AttendanceCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateInput = {
@@ -18987,6 +23155,7 @@ export namespace Prisma {
     orders?: OrderUncheckedCreateNestedManyWithoutUserInput
     tickets?: TicketUncheckedCreateNestedManyWithoutUserInput
     listings?: ListingUncheckedCreateNestedManyWithoutSellerInput
+    attendances?: AttendanceUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserUpdateInput = {
@@ -19009,6 +23178,7 @@ export namespace Prisma {
     orders?: OrderUpdateManyWithoutUserNestedInput
     tickets?: TicketUpdateManyWithoutUserNestedInput
     listings?: ListingUpdateManyWithoutSellerNestedInput
+    attendances?: AttendanceUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
@@ -19031,6 +23201,7 @@ export namespace Prisma {
     orders?: OrderUncheckedUpdateManyWithoutUserNestedInput
     tickets?: TicketUncheckedUpdateManyWithoutUserNestedInput
     listings?: ListingUncheckedUpdateManyWithoutSellerNestedInput
+    attendances?: AttendanceUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateManyInput = {
@@ -19571,11 +23742,16 @@ export namespace Prisma {
     merkleTreeAddress?: string | null
     merkleTreeDepth?: number | null
     nftType?: string
+    poapMerkleTreeAddress?: string | null
+    poapCollectionAddress?: string | null
+    poapMetadataUri?: string | null
     category: CategoryCreateNestedOneWithoutEventsInput
     organizer?: OrganizerCreateNestedOneWithoutEventsInput
     orders?: OrderCreateNestedManyWithoutEventInput
     tickets?: TicketCreateNestedManyWithoutEventInput
     listings?: ListingCreateNestedManyWithoutEventInput
+    attendances?: AttendanceCreateNestedManyWithoutEventInput
+    scannerCodes?: ScannerCodeCreateNestedManyWithoutEventInput
   }
 
   export type EventUncheckedCreateInput = {
@@ -19598,11 +23774,16 @@ export namespace Prisma {
     merkleTreeAddress?: string | null
     merkleTreeDepth?: number | null
     nftType?: string
+    poapMerkleTreeAddress?: string | null
+    poapCollectionAddress?: string | null
+    poapMetadataUri?: string | null
     categoryId: string
     organizerId?: string | null
     orders?: OrderUncheckedCreateNestedManyWithoutEventInput
     tickets?: TicketUncheckedCreateNestedManyWithoutEventInput
     listings?: ListingUncheckedCreateNestedManyWithoutEventInput
+    attendances?: AttendanceUncheckedCreateNestedManyWithoutEventInput
+    scannerCodes?: ScannerCodeUncheckedCreateNestedManyWithoutEventInput
   }
 
   export type EventUpdateInput = {
@@ -19625,11 +23806,16 @@ export namespace Prisma {
     merkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
     merkleTreeDepth?: NullableIntFieldUpdateOperationsInput | number | null
     nftType?: StringFieldUpdateOperationsInput | string
+    poapMerkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapCollectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapMetadataUri?: NullableStringFieldUpdateOperationsInput | string | null
     category?: CategoryUpdateOneRequiredWithoutEventsNestedInput
     organizer?: OrganizerUpdateOneWithoutEventsNestedInput
     orders?: OrderUpdateManyWithoutEventNestedInput
     tickets?: TicketUpdateManyWithoutEventNestedInput
     listings?: ListingUpdateManyWithoutEventNestedInput
+    attendances?: AttendanceUpdateManyWithoutEventNestedInput
+    scannerCodes?: ScannerCodeUpdateManyWithoutEventNestedInput
   }
 
   export type EventUncheckedUpdateInput = {
@@ -19652,11 +23838,16 @@ export namespace Prisma {
     merkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
     merkleTreeDepth?: NullableIntFieldUpdateOperationsInput | number | null
     nftType?: StringFieldUpdateOperationsInput | string
+    poapMerkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapCollectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapMetadataUri?: NullableStringFieldUpdateOperationsInput | string | null
     categoryId?: StringFieldUpdateOperationsInput | string
     organizerId?: NullableStringFieldUpdateOperationsInput | string | null
     orders?: OrderUncheckedUpdateManyWithoutEventNestedInput
     tickets?: TicketUncheckedUpdateManyWithoutEventNestedInput
     listings?: ListingUncheckedUpdateManyWithoutEventNestedInput
+    attendances?: AttendanceUncheckedUpdateManyWithoutEventNestedInput
+    scannerCodes?: ScannerCodeUncheckedUpdateManyWithoutEventNestedInput
   }
 
   export type EventCreateManyInput = {
@@ -19679,6 +23870,9 @@ export namespace Prisma {
     merkleTreeAddress?: string | null
     merkleTreeDepth?: number | null
     nftType?: string
+    poapMerkleTreeAddress?: string | null
+    poapCollectionAddress?: string | null
+    poapMetadataUri?: string | null
     categoryId: string
     organizerId?: string | null
   }
@@ -19703,6 +23897,9 @@ export namespace Prisma {
     merkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
     merkleTreeDepth?: NullableIntFieldUpdateOperationsInput | number | null
     nftType?: StringFieldUpdateOperationsInput | string
+    poapMerkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapCollectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapMetadataUri?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type EventUncheckedUpdateManyInput = {
@@ -19725,6 +23922,9 @@ export namespace Prisma {
     merkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
     merkleTreeDepth?: NullableIntFieldUpdateOperationsInput | number | null
     nftType?: StringFieldUpdateOperationsInput | string
+    poapMerkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapCollectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapMetadataUri?: NullableStringFieldUpdateOperationsInput | string | null
     categoryId?: StringFieldUpdateOperationsInput | string
     organizerId?: NullableStringFieldUpdateOperationsInput | string | null
   }
@@ -19843,6 +24043,7 @@ export namespace Prisma {
     event: EventCreateNestedOneWithoutTicketsInput
     order: OrderCreateNestedOneWithoutTicketsInput
     user: UserCreateNestedOneWithoutTicketsInput
+    attendance?: AttendanceCreateNestedOneWithoutTicketInput
   }
 
   export type TicketUncheckedCreateInput = {
@@ -19862,6 +24063,7 @@ export namespace Prisma {
     dataHash?: string | null
     creatorHash?: string | null
     nftType?: string
+    attendance?: AttendanceUncheckedCreateNestedOneWithoutTicketInput
   }
 
   export type TicketUpdateInput = {
@@ -19881,6 +24083,7 @@ export namespace Prisma {
     event?: EventUpdateOneRequiredWithoutTicketsNestedInput
     order?: OrderUpdateOneRequiredWithoutTicketsNestedInput
     user?: UserUpdateOneRequiredWithoutTicketsNestedInput
+    attendance?: AttendanceUpdateOneWithoutTicketNestedInput
   }
 
   export type TicketUncheckedUpdateInput = {
@@ -19900,6 +24103,7 @@ export namespace Prisma {
     dataHash?: NullableStringFieldUpdateOperationsInput | string | null
     creatorHash?: NullableStringFieldUpdateOperationsInput | string | null
     nftType?: StringFieldUpdateOperationsInput | string
+    attendance?: AttendanceUncheckedUpdateOneWithoutTicketNestedInput
   }
 
   export type TicketCreateManyInput = {
@@ -20240,6 +24444,261 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type AttendanceCreateInput = {
+    id?: string
+    scannedAt?: Date | string
+    scannedBy: string
+    poapAssetId?: string | null
+    poapLeafIndex?: number | null
+    poapMintTx?: string | null
+    poapStatus?: string
+    ticket: TicketCreateNestedOneWithoutAttendanceInput
+    event: EventCreateNestedOneWithoutAttendancesInput
+    user: UserCreateNestedOneWithoutAttendancesInput
+  }
+
+  export type AttendanceUncheckedCreateInput = {
+    id?: string
+    ticketId: string
+    eventId: string
+    userId: string
+    scannedAt?: Date | string
+    scannedBy: string
+    poapAssetId?: string | null
+    poapLeafIndex?: number | null
+    poapMintTx?: string | null
+    poapStatus?: string
+  }
+
+  export type AttendanceUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    scannedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    scannedBy?: StringFieldUpdateOperationsInput | string
+    poapAssetId?: NullableStringFieldUpdateOperationsInput | string | null
+    poapLeafIndex?: NullableIntFieldUpdateOperationsInput | number | null
+    poapMintTx?: NullableStringFieldUpdateOperationsInput | string | null
+    poapStatus?: StringFieldUpdateOperationsInput | string
+    ticket?: TicketUpdateOneRequiredWithoutAttendanceNestedInput
+    event?: EventUpdateOneRequiredWithoutAttendancesNestedInput
+    user?: UserUpdateOneRequiredWithoutAttendancesNestedInput
+  }
+
+  export type AttendanceUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ticketId?: StringFieldUpdateOperationsInput | string
+    eventId?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    scannedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    scannedBy?: StringFieldUpdateOperationsInput | string
+    poapAssetId?: NullableStringFieldUpdateOperationsInput | string | null
+    poapLeafIndex?: NullableIntFieldUpdateOperationsInput | number | null
+    poapMintTx?: NullableStringFieldUpdateOperationsInput | string | null
+    poapStatus?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type AttendanceCreateManyInput = {
+    id?: string
+    ticketId: string
+    eventId: string
+    userId: string
+    scannedAt?: Date | string
+    scannedBy: string
+    poapAssetId?: string | null
+    poapLeafIndex?: number | null
+    poapMintTx?: string | null
+    poapStatus?: string
+  }
+
+  export type AttendanceUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    scannedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    scannedBy?: StringFieldUpdateOperationsInput | string
+    poapAssetId?: NullableStringFieldUpdateOperationsInput | string | null
+    poapLeafIndex?: NullableIntFieldUpdateOperationsInput | number | null
+    poapMintTx?: NullableStringFieldUpdateOperationsInput | string | null
+    poapStatus?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type AttendanceUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ticketId?: StringFieldUpdateOperationsInput | string
+    eventId?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    scannedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    scannedBy?: StringFieldUpdateOperationsInput | string
+    poapAssetId?: NullableStringFieldUpdateOperationsInput | string | null
+    poapLeafIndex?: NullableIntFieldUpdateOperationsInput | number | null
+    poapMintTx?: NullableStringFieldUpdateOperationsInput | string | null
+    poapStatus?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type ScannerCodeCreateInput = {
+    id?: string
+    code: string
+    name: string
+    isActive?: boolean
+    usageCount?: number
+    createdAt?: Date | string
+    expiresAt?: Date | string | null
+    event: EventCreateNestedOneWithoutScannerCodesInput
+  }
+
+  export type ScannerCodeUncheckedCreateInput = {
+    id?: string
+    eventId: string
+    code: string
+    name: string
+    isActive?: boolean
+    usageCount?: number
+    createdAt?: Date | string
+    expiresAt?: Date | string | null
+  }
+
+  export type ScannerCodeUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    usageCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    event?: EventUpdateOneRequiredWithoutScannerCodesNestedInput
+  }
+
+  export type ScannerCodeUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    eventId?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    usageCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type ScannerCodeCreateManyInput = {
+    id?: string
+    eventId: string
+    code: string
+    name: string
+    isActive?: boolean
+    usageCount?: number
+    createdAt?: Date | string
+    expiresAt?: Date | string | null
+  }
+
+  export type ScannerCodeUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    usageCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type ScannerCodeUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    eventId?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    usageCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type PlatformMerkleTreeCreateInput = {
+    id?: string
+    address: string
+    type: string
+    maxDepth: number
+    capacity: number
+    minted?: number
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    collectionAddress?: string | null
+  }
+
+  export type PlatformMerkleTreeUncheckedCreateInput = {
+    id?: string
+    address: string
+    type: string
+    maxDepth: number
+    capacity: number
+    minted?: number
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    collectionAddress?: string | null
+  }
+
+  export type PlatformMerkleTreeUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    address?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    maxDepth?: IntFieldUpdateOperationsInput | number
+    capacity?: IntFieldUpdateOperationsInput | number
+    minted?: IntFieldUpdateOperationsInput | number
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    collectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type PlatformMerkleTreeUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    address?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    maxDepth?: IntFieldUpdateOperationsInput | number
+    capacity?: IntFieldUpdateOperationsInput | number
+    minted?: IntFieldUpdateOperationsInput | number
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    collectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type PlatformMerkleTreeCreateManyInput = {
+    id?: string
+    address: string
+    type: string
+    maxDepth: number
+    capacity: number
+    minted?: number
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    collectionAddress?: string | null
+  }
+
+  export type PlatformMerkleTreeUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    address?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    maxDepth?: IntFieldUpdateOperationsInput | number
+    capacity?: IntFieldUpdateOperationsInput | number
+    minted?: IntFieldUpdateOperationsInput | number
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    collectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type PlatformMerkleTreeUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    address?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    maxDepth?: IntFieldUpdateOperationsInput | number
+    capacity?: IntFieldUpdateOperationsInput | number
+    minted?: IntFieldUpdateOperationsInput | number
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    collectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -20339,6 +24798,12 @@ export namespace Prisma {
     none?: ListingWhereInput
   }
 
+  export type AttendanceListRelationFilter = {
+    every?: AttendanceWhereInput
+    some?: AttendanceWhereInput
+    none?: AttendanceWhereInput
+  }
+
   export type SortOrderInput = {
     sort: SortOrder
     nulls?: NullsOrder
@@ -20361,6 +24826,10 @@ export namespace Prisma {
   }
 
   export type ListingOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type AttendanceOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -20801,6 +25270,16 @@ export namespace Prisma {
     isNot?: CategoryWhereInput
   }
 
+  export type ScannerCodeListRelationFilter = {
+    every?: ScannerCodeWhereInput
+    some?: ScannerCodeWhereInput
+    none?: ScannerCodeWhereInput
+  }
+
+  export type ScannerCodeOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
   export type EventCountOrderByAggregateInput = {
     id?: SortOrder
     title?: SortOrder
@@ -20821,6 +25300,9 @@ export namespace Prisma {
     merkleTreeAddress?: SortOrder
     merkleTreeDepth?: SortOrder
     nftType?: SortOrder
+    poapMerkleTreeAddress?: SortOrder
+    poapCollectionAddress?: SortOrder
+    poapMetadataUri?: SortOrder
     categoryId?: SortOrder
     organizerId?: SortOrder
   }
@@ -20852,6 +25334,9 @@ export namespace Prisma {
     merkleTreeAddress?: SortOrder
     merkleTreeDepth?: SortOrder
     nftType?: SortOrder
+    poapMerkleTreeAddress?: SortOrder
+    poapCollectionAddress?: SortOrder
+    poapMetadataUri?: SortOrder
     categoryId?: SortOrder
     organizerId?: SortOrder
   }
@@ -20876,6 +25361,9 @@ export namespace Prisma {
     merkleTreeAddress?: SortOrder
     merkleTreeDepth?: SortOrder
     nftType?: SortOrder
+    poapMerkleTreeAddress?: SortOrder
+    poapCollectionAddress?: SortOrder
+    poapMetadataUri?: SortOrder
     categoryId?: SortOrder
     organizerId?: SortOrder
   }
@@ -20981,6 +25469,11 @@ export namespace Prisma {
   export type OrderScalarRelationFilter = {
     is?: OrderWhereInput
     isNot?: OrderWhereInput
+  }
+
+  export type AttendanceNullableScalarRelationFilter = {
+    is?: AttendanceWhereInput | null
+    isNot?: AttendanceWhereInput | null
   }
 
   export type TicketCountOrderByAggregateInput = {
@@ -21195,6 +25688,150 @@ export namespace Prisma {
     platformShare?: SortOrder
   }
 
+  export type TicketScalarRelationFilter = {
+    is?: TicketWhereInput
+    isNot?: TicketWhereInput
+  }
+
+  export type AttendanceCountOrderByAggregateInput = {
+    id?: SortOrder
+    ticketId?: SortOrder
+    eventId?: SortOrder
+    userId?: SortOrder
+    scannedAt?: SortOrder
+    scannedBy?: SortOrder
+    poapAssetId?: SortOrder
+    poapLeafIndex?: SortOrder
+    poapMintTx?: SortOrder
+    poapStatus?: SortOrder
+  }
+
+  export type AttendanceAvgOrderByAggregateInput = {
+    poapLeafIndex?: SortOrder
+  }
+
+  export type AttendanceMaxOrderByAggregateInput = {
+    id?: SortOrder
+    ticketId?: SortOrder
+    eventId?: SortOrder
+    userId?: SortOrder
+    scannedAt?: SortOrder
+    scannedBy?: SortOrder
+    poapAssetId?: SortOrder
+    poapLeafIndex?: SortOrder
+    poapMintTx?: SortOrder
+    poapStatus?: SortOrder
+  }
+
+  export type AttendanceMinOrderByAggregateInput = {
+    id?: SortOrder
+    ticketId?: SortOrder
+    eventId?: SortOrder
+    userId?: SortOrder
+    scannedAt?: SortOrder
+    scannedBy?: SortOrder
+    poapAssetId?: SortOrder
+    poapLeafIndex?: SortOrder
+    poapMintTx?: SortOrder
+    poapStatus?: SortOrder
+  }
+
+  export type AttendanceSumOrderByAggregateInput = {
+    poapLeafIndex?: SortOrder
+  }
+
+  export type ScannerCodeCountOrderByAggregateInput = {
+    id?: SortOrder
+    eventId?: SortOrder
+    code?: SortOrder
+    name?: SortOrder
+    isActive?: SortOrder
+    usageCount?: SortOrder
+    createdAt?: SortOrder
+    expiresAt?: SortOrder
+  }
+
+  export type ScannerCodeAvgOrderByAggregateInput = {
+    usageCount?: SortOrder
+  }
+
+  export type ScannerCodeMaxOrderByAggregateInput = {
+    id?: SortOrder
+    eventId?: SortOrder
+    code?: SortOrder
+    name?: SortOrder
+    isActive?: SortOrder
+    usageCount?: SortOrder
+    createdAt?: SortOrder
+    expiresAt?: SortOrder
+  }
+
+  export type ScannerCodeMinOrderByAggregateInput = {
+    id?: SortOrder
+    eventId?: SortOrder
+    code?: SortOrder
+    name?: SortOrder
+    isActive?: SortOrder
+    usageCount?: SortOrder
+    createdAt?: SortOrder
+    expiresAt?: SortOrder
+  }
+
+  export type ScannerCodeSumOrderByAggregateInput = {
+    usageCount?: SortOrder
+  }
+
+  export type PlatformMerkleTreeCountOrderByAggregateInput = {
+    id?: SortOrder
+    address?: SortOrder
+    type?: SortOrder
+    maxDepth?: SortOrder
+    capacity?: SortOrder
+    minted?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    collectionAddress?: SortOrder
+  }
+
+  export type PlatformMerkleTreeAvgOrderByAggregateInput = {
+    maxDepth?: SortOrder
+    capacity?: SortOrder
+    minted?: SortOrder
+  }
+
+  export type PlatformMerkleTreeMaxOrderByAggregateInput = {
+    id?: SortOrder
+    address?: SortOrder
+    type?: SortOrder
+    maxDepth?: SortOrder
+    capacity?: SortOrder
+    minted?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    collectionAddress?: SortOrder
+  }
+
+  export type PlatformMerkleTreeMinOrderByAggregateInput = {
+    id?: SortOrder
+    address?: SortOrder
+    type?: SortOrder
+    maxDepth?: SortOrder
+    capacity?: SortOrder
+    minted?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    collectionAddress?: SortOrder
+  }
+
+  export type PlatformMerkleTreeSumOrderByAggregateInput = {
+    maxDepth?: SortOrder
+    capacity?: SortOrder
+    minted?: SortOrder
+  }
+
   export type AccountCreateNestedManyWithoutUserInput = {
     create?: XOR<AccountCreateWithoutUserInput, AccountUncheckedCreateWithoutUserInput> | AccountCreateWithoutUserInput[] | AccountUncheckedCreateWithoutUserInput[]
     connectOrCreate?: AccountCreateOrConnectWithoutUserInput | AccountCreateOrConnectWithoutUserInput[]
@@ -21242,6 +25879,13 @@ export namespace Prisma {
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
   }
 
+  export type AttendanceCreateNestedManyWithoutUserInput = {
+    create?: XOR<AttendanceCreateWithoutUserInput, AttendanceUncheckedCreateWithoutUserInput> | AttendanceCreateWithoutUserInput[] | AttendanceUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: AttendanceCreateOrConnectWithoutUserInput | AttendanceCreateOrConnectWithoutUserInput[]
+    createMany?: AttendanceCreateManyUserInputEnvelope
+    connect?: AttendanceWhereUniqueInput | AttendanceWhereUniqueInput[]
+  }
+
   export type AccountUncheckedCreateNestedManyWithoutUserInput = {
     create?: XOR<AccountCreateWithoutUserInput, AccountUncheckedCreateWithoutUserInput> | AccountCreateWithoutUserInput[] | AccountUncheckedCreateWithoutUserInput[]
     connectOrCreate?: AccountCreateOrConnectWithoutUserInput | AccountCreateOrConnectWithoutUserInput[]
@@ -21287,6 +25931,13 @@ export namespace Prisma {
     connectOrCreate?: ListingCreateOrConnectWithoutSellerInput | ListingCreateOrConnectWithoutSellerInput[]
     createMany?: ListingCreateManySellerInputEnvelope
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
+  }
+
+  export type AttendanceUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<AttendanceCreateWithoutUserInput, AttendanceUncheckedCreateWithoutUserInput> | AttendanceCreateWithoutUserInput[] | AttendanceUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: AttendanceCreateOrConnectWithoutUserInput | AttendanceCreateOrConnectWithoutUserInput[]
+    createMany?: AttendanceCreateManyUserInputEnvelope
+    connect?: AttendanceWhereUniqueInput | AttendanceWhereUniqueInput[]
   }
 
   export type StringFieldUpdateOperationsInput = {
@@ -21399,6 +26050,20 @@ export namespace Prisma {
     deleteMany?: ListingScalarWhereInput | ListingScalarWhereInput[]
   }
 
+  export type AttendanceUpdateManyWithoutUserNestedInput = {
+    create?: XOR<AttendanceCreateWithoutUserInput, AttendanceUncheckedCreateWithoutUserInput> | AttendanceCreateWithoutUserInput[] | AttendanceUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: AttendanceCreateOrConnectWithoutUserInput | AttendanceCreateOrConnectWithoutUserInput[]
+    upsert?: AttendanceUpsertWithWhereUniqueWithoutUserInput | AttendanceUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: AttendanceCreateManyUserInputEnvelope
+    set?: AttendanceWhereUniqueInput | AttendanceWhereUniqueInput[]
+    disconnect?: AttendanceWhereUniqueInput | AttendanceWhereUniqueInput[]
+    delete?: AttendanceWhereUniqueInput | AttendanceWhereUniqueInput[]
+    connect?: AttendanceWhereUniqueInput | AttendanceWhereUniqueInput[]
+    update?: AttendanceUpdateWithWhereUniqueWithoutUserInput | AttendanceUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: AttendanceUpdateManyWithWhereWithoutUserInput | AttendanceUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: AttendanceScalarWhereInput | AttendanceScalarWhereInput[]
+  }
+
   export type AccountUncheckedUpdateManyWithoutUserNestedInput = {
     create?: XOR<AccountCreateWithoutUserInput, AccountUncheckedCreateWithoutUserInput> | AccountCreateWithoutUserInput[] | AccountUncheckedCreateWithoutUserInput[]
     connectOrCreate?: AccountCreateOrConnectWithoutUserInput | AccountCreateOrConnectWithoutUserInput[]
@@ -21487,6 +26152,20 @@ export namespace Prisma {
     update?: ListingUpdateWithWhereUniqueWithoutSellerInput | ListingUpdateWithWhereUniqueWithoutSellerInput[]
     updateMany?: ListingUpdateManyWithWhereWithoutSellerInput | ListingUpdateManyWithWhereWithoutSellerInput[]
     deleteMany?: ListingScalarWhereInput | ListingScalarWhereInput[]
+  }
+
+  export type AttendanceUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<AttendanceCreateWithoutUserInput, AttendanceUncheckedCreateWithoutUserInput> | AttendanceCreateWithoutUserInput[] | AttendanceUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: AttendanceCreateOrConnectWithoutUserInput | AttendanceCreateOrConnectWithoutUserInput[]
+    upsert?: AttendanceUpsertWithWhereUniqueWithoutUserInput | AttendanceUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: AttendanceCreateManyUserInputEnvelope
+    set?: AttendanceWhereUniqueInput | AttendanceWhereUniqueInput[]
+    disconnect?: AttendanceWhereUniqueInput | AttendanceWhereUniqueInput[]
+    delete?: AttendanceWhereUniqueInput | AttendanceWhereUniqueInput[]
+    connect?: AttendanceWhereUniqueInput | AttendanceWhereUniqueInput[]
+    update?: AttendanceUpdateWithWhereUniqueWithoutUserInput | AttendanceUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: AttendanceUpdateManyWithWhereWithoutUserInput | AttendanceUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: AttendanceScalarWhereInput | AttendanceScalarWhereInput[]
   }
 
   export type UserCreateNestedOneWithoutAccountsInput = {
@@ -21678,6 +26357,20 @@ export namespace Prisma {
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
   }
 
+  export type AttendanceCreateNestedManyWithoutEventInput = {
+    create?: XOR<AttendanceCreateWithoutEventInput, AttendanceUncheckedCreateWithoutEventInput> | AttendanceCreateWithoutEventInput[] | AttendanceUncheckedCreateWithoutEventInput[]
+    connectOrCreate?: AttendanceCreateOrConnectWithoutEventInput | AttendanceCreateOrConnectWithoutEventInput[]
+    createMany?: AttendanceCreateManyEventInputEnvelope
+    connect?: AttendanceWhereUniqueInput | AttendanceWhereUniqueInput[]
+  }
+
+  export type ScannerCodeCreateNestedManyWithoutEventInput = {
+    create?: XOR<ScannerCodeCreateWithoutEventInput, ScannerCodeUncheckedCreateWithoutEventInput> | ScannerCodeCreateWithoutEventInput[] | ScannerCodeUncheckedCreateWithoutEventInput[]
+    connectOrCreate?: ScannerCodeCreateOrConnectWithoutEventInput | ScannerCodeCreateOrConnectWithoutEventInput[]
+    createMany?: ScannerCodeCreateManyEventInputEnvelope
+    connect?: ScannerCodeWhereUniqueInput | ScannerCodeWhereUniqueInput[]
+  }
+
   export type OrderUncheckedCreateNestedManyWithoutEventInput = {
     create?: XOR<OrderCreateWithoutEventInput, OrderUncheckedCreateWithoutEventInput> | OrderCreateWithoutEventInput[] | OrderUncheckedCreateWithoutEventInput[]
     connectOrCreate?: OrderCreateOrConnectWithoutEventInput | OrderCreateOrConnectWithoutEventInput[]
@@ -21697,6 +26390,20 @@ export namespace Prisma {
     connectOrCreate?: ListingCreateOrConnectWithoutEventInput | ListingCreateOrConnectWithoutEventInput[]
     createMany?: ListingCreateManyEventInputEnvelope
     connect?: ListingWhereUniqueInput | ListingWhereUniqueInput[]
+  }
+
+  export type AttendanceUncheckedCreateNestedManyWithoutEventInput = {
+    create?: XOR<AttendanceCreateWithoutEventInput, AttendanceUncheckedCreateWithoutEventInput> | AttendanceCreateWithoutEventInput[] | AttendanceUncheckedCreateWithoutEventInput[]
+    connectOrCreate?: AttendanceCreateOrConnectWithoutEventInput | AttendanceCreateOrConnectWithoutEventInput[]
+    createMany?: AttendanceCreateManyEventInputEnvelope
+    connect?: AttendanceWhereUniqueInput | AttendanceWhereUniqueInput[]
+  }
+
+  export type ScannerCodeUncheckedCreateNestedManyWithoutEventInput = {
+    create?: XOR<ScannerCodeCreateWithoutEventInput, ScannerCodeUncheckedCreateWithoutEventInput> | ScannerCodeCreateWithoutEventInput[] | ScannerCodeUncheckedCreateWithoutEventInput[]
+    connectOrCreate?: ScannerCodeCreateOrConnectWithoutEventInput | ScannerCodeCreateOrConnectWithoutEventInput[]
+    createMany?: ScannerCodeCreateManyEventInputEnvelope
+    connect?: ScannerCodeWhereUniqueInput | ScannerCodeWhereUniqueInput[]
   }
 
   export type FloatFieldUpdateOperationsInput = {
@@ -21775,6 +26482,34 @@ export namespace Prisma {
     deleteMany?: ListingScalarWhereInput | ListingScalarWhereInput[]
   }
 
+  export type AttendanceUpdateManyWithoutEventNestedInput = {
+    create?: XOR<AttendanceCreateWithoutEventInput, AttendanceUncheckedCreateWithoutEventInput> | AttendanceCreateWithoutEventInput[] | AttendanceUncheckedCreateWithoutEventInput[]
+    connectOrCreate?: AttendanceCreateOrConnectWithoutEventInput | AttendanceCreateOrConnectWithoutEventInput[]
+    upsert?: AttendanceUpsertWithWhereUniqueWithoutEventInput | AttendanceUpsertWithWhereUniqueWithoutEventInput[]
+    createMany?: AttendanceCreateManyEventInputEnvelope
+    set?: AttendanceWhereUniqueInput | AttendanceWhereUniqueInput[]
+    disconnect?: AttendanceWhereUniqueInput | AttendanceWhereUniqueInput[]
+    delete?: AttendanceWhereUniqueInput | AttendanceWhereUniqueInput[]
+    connect?: AttendanceWhereUniqueInput | AttendanceWhereUniqueInput[]
+    update?: AttendanceUpdateWithWhereUniqueWithoutEventInput | AttendanceUpdateWithWhereUniqueWithoutEventInput[]
+    updateMany?: AttendanceUpdateManyWithWhereWithoutEventInput | AttendanceUpdateManyWithWhereWithoutEventInput[]
+    deleteMany?: AttendanceScalarWhereInput | AttendanceScalarWhereInput[]
+  }
+
+  export type ScannerCodeUpdateManyWithoutEventNestedInput = {
+    create?: XOR<ScannerCodeCreateWithoutEventInput, ScannerCodeUncheckedCreateWithoutEventInput> | ScannerCodeCreateWithoutEventInput[] | ScannerCodeUncheckedCreateWithoutEventInput[]
+    connectOrCreate?: ScannerCodeCreateOrConnectWithoutEventInput | ScannerCodeCreateOrConnectWithoutEventInput[]
+    upsert?: ScannerCodeUpsertWithWhereUniqueWithoutEventInput | ScannerCodeUpsertWithWhereUniqueWithoutEventInput[]
+    createMany?: ScannerCodeCreateManyEventInputEnvelope
+    set?: ScannerCodeWhereUniqueInput | ScannerCodeWhereUniqueInput[]
+    disconnect?: ScannerCodeWhereUniqueInput | ScannerCodeWhereUniqueInput[]
+    delete?: ScannerCodeWhereUniqueInput | ScannerCodeWhereUniqueInput[]
+    connect?: ScannerCodeWhereUniqueInput | ScannerCodeWhereUniqueInput[]
+    update?: ScannerCodeUpdateWithWhereUniqueWithoutEventInput | ScannerCodeUpdateWithWhereUniqueWithoutEventInput[]
+    updateMany?: ScannerCodeUpdateManyWithWhereWithoutEventInput | ScannerCodeUpdateManyWithWhereWithoutEventInput[]
+    deleteMany?: ScannerCodeScalarWhereInput | ScannerCodeScalarWhereInput[]
+  }
+
   export type OrderUncheckedUpdateManyWithoutEventNestedInput = {
     create?: XOR<OrderCreateWithoutEventInput, OrderUncheckedCreateWithoutEventInput> | OrderCreateWithoutEventInput[] | OrderUncheckedCreateWithoutEventInput[]
     connectOrCreate?: OrderCreateOrConnectWithoutEventInput | OrderCreateOrConnectWithoutEventInput[]
@@ -21815,6 +26550,34 @@ export namespace Prisma {
     update?: ListingUpdateWithWhereUniqueWithoutEventInput | ListingUpdateWithWhereUniqueWithoutEventInput[]
     updateMany?: ListingUpdateManyWithWhereWithoutEventInput | ListingUpdateManyWithWhereWithoutEventInput[]
     deleteMany?: ListingScalarWhereInput | ListingScalarWhereInput[]
+  }
+
+  export type AttendanceUncheckedUpdateManyWithoutEventNestedInput = {
+    create?: XOR<AttendanceCreateWithoutEventInput, AttendanceUncheckedCreateWithoutEventInput> | AttendanceCreateWithoutEventInput[] | AttendanceUncheckedCreateWithoutEventInput[]
+    connectOrCreate?: AttendanceCreateOrConnectWithoutEventInput | AttendanceCreateOrConnectWithoutEventInput[]
+    upsert?: AttendanceUpsertWithWhereUniqueWithoutEventInput | AttendanceUpsertWithWhereUniqueWithoutEventInput[]
+    createMany?: AttendanceCreateManyEventInputEnvelope
+    set?: AttendanceWhereUniqueInput | AttendanceWhereUniqueInput[]
+    disconnect?: AttendanceWhereUniqueInput | AttendanceWhereUniqueInput[]
+    delete?: AttendanceWhereUniqueInput | AttendanceWhereUniqueInput[]
+    connect?: AttendanceWhereUniqueInput | AttendanceWhereUniqueInput[]
+    update?: AttendanceUpdateWithWhereUniqueWithoutEventInput | AttendanceUpdateWithWhereUniqueWithoutEventInput[]
+    updateMany?: AttendanceUpdateManyWithWhereWithoutEventInput | AttendanceUpdateManyWithWhereWithoutEventInput[]
+    deleteMany?: AttendanceScalarWhereInput | AttendanceScalarWhereInput[]
+  }
+
+  export type ScannerCodeUncheckedUpdateManyWithoutEventNestedInput = {
+    create?: XOR<ScannerCodeCreateWithoutEventInput, ScannerCodeUncheckedCreateWithoutEventInput> | ScannerCodeCreateWithoutEventInput[] | ScannerCodeUncheckedCreateWithoutEventInput[]
+    connectOrCreate?: ScannerCodeCreateOrConnectWithoutEventInput | ScannerCodeCreateOrConnectWithoutEventInput[]
+    upsert?: ScannerCodeUpsertWithWhereUniqueWithoutEventInput | ScannerCodeUpsertWithWhereUniqueWithoutEventInput[]
+    createMany?: ScannerCodeCreateManyEventInputEnvelope
+    set?: ScannerCodeWhereUniqueInput | ScannerCodeWhereUniqueInput[]
+    disconnect?: ScannerCodeWhereUniqueInput | ScannerCodeWhereUniqueInput[]
+    delete?: ScannerCodeWhereUniqueInput | ScannerCodeWhereUniqueInput[]
+    connect?: ScannerCodeWhereUniqueInput | ScannerCodeWhereUniqueInput[]
+    update?: ScannerCodeUpdateWithWhereUniqueWithoutEventInput | ScannerCodeUpdateWithWhereUniqueWithoutEventInput[]
+    updateMany?: ScannerCodeUpdateManyWithWhereWithoutEventInput | ScannerCodeUpdateManyWithWhereWithoutEventInput[]
+    deleteMany?: ScannerCodeScalarWhereInput | ScannerCodeScalarWhereInput[]
   }
 
   export type EventCreateNestedOneWithoutOrdersInput = {
@@ -21937,6 +26700,18 @@ export namespace Prisma {
     connect?: UserWhereUniqueInput
   }
 
+  export type AttendanceCreateNestedOneWithoutTicketInput = {
+    create?: XOR<AttendanceCreateWithoutTicketInput, AttendanceUncheckedCreateWithoutTicketInput>
+    connectOrCreate?: AttendanceCreateOrConnectWithoutTicketInput
+    connect?: AttendanceWhereUniqueInput
+  }
+
+  export type AttendanceUncheckedCreateNestedOneWithoutTicketInput = {
+    create?: XOR<AttendanceCreateWithoutTicketInput, AttendanceUncheckedCreateWithoutTicketInput>
+    connectOrCreate?: AttendanceCreateOrConnectWithoutTicketInput
+    connect?: AttendanceWhereUniqueInput
+  }
+
   export type EventUpdateOneRequiredWithoutTicketsNestedInput = {
     create?: XOR<EventCreateWithoutTicketsInput, EventUncheckedCreateWithoutTicketsInput>
     connectOrCreate?: EventCreateOrConnectWithoutTicketsInput
@@ -21959,6 +26734,26 @@ export namespace Prisma {
     upsert?: UserUpsertWithoutTicketsInput
     connect?: UserWhereUniqueInput
     update?: XOR<XOR<UserUpdateToOneWithWhereWithoutTicketsInput, UserUpdateWithoutTicketsInput>, UserUncheckedUpdateWithoutTicketsInput>
+  }
+
+  export type AttendanceUpdateOneWithoutTicketNestedInput = {
+    create?: XOR<AttendanceCreateWithoutTicketInput, AttendanceUncheckedCreateWithoutTicketInput>
+    connectOrCreate?: AttendanceCreateOrConnectWithoutTicketInput
+    upsert?: AttendanceUpsertWithoutTicketInput
+    disconnect?: AttendanceWhereInput | boolean
+    delete?: AttendanceWhereInput | boolean
+    connect?: AttendanceWhereUniqueInput
+    update?: XOR<XOR<AttendanceUpdateToOneWithWhereWithoutTicketInput, AttendanceUpdateWithoutTicketInput>, AttendanceUncheckedUpdateWithoutTicketInput>
+  }
+
+  export type AttendanceUncheckedUpdateOneWithoutTicketNestedInput = {
+    create?: XOR<AttendanceCreateWithoutTicketInput, AttendanceUncheckedCreateWithoutTicketInput>
+    connectOrCreate?: AttendanceCreateOrConnectWithoutTicketInput
+    upsert?: AttendanceUpsertWithoutTicketInput
+    disconnect?: AttendanceWhereInput | boolean
+    delete?: AttendanceWhereInput | boolean
+    connect?: AttendanceWhereUniqueInput
+    update?: XOR<XOR<AttendanceUpdateToOneWithWhereWithoutTicketInput, AttendanceUpdateWithoutTicketInput>, AttendanceUncheckedUpdateWithoutTicketInput>
   }
 
   export type EventCreateNestedOneWithoutListingsInput = {
@@ -22001,6 +26796,62 @@ export namespace Prisma {
     upsert?: OrderUpsertWithoutPaymentDistributionInput
     connect?: OrderWhereUniqueInput
     update?: XOR<XOR<OrderUpdateToOneWithWhereWithoutPaymentDistributionInput, OrderUpdateWithoutPaymentDistributionInput>, OrderUncheckedUpdateWithoutPaymentDistributionInput>
+  }
+
+  export type TicketCreateNestedOneWithoutAttendanceInput = {
+    create?: XOR<TicketCreateWithoutAttendanceInput, TicketUncheckedCreateWithoutAttendanceInput>
+    connectOrCreate?: TicketCreateOrConnectWithoutAttendanceInput
+    connect?: TicketWhereUniqueInput
+  }
+
+  export type EventCreateNestedOneWithoutAttendancesInput = {
+    create?: XOR<EventCreateWithoutAttendancesInput, EventUncheckedCreateWithoutAttendancesInput>
+    connectOrCreate?: EventCreateOrConnectWithoutAttendancesInput
+    connect?: EventWhereUniqueInput
+  }
+
+  export type UserCreateNestedOneWithoutAttendancesInput = {
+    create?: XOR<UserCreateWithoutAttendancesInput, UserUncheckedCreateWithoutAttendancesInput>
+    connectOrCreate?: UserCreateOrConnectWithoutAttendancesInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type TicketUpdateOneRequiredWithoutAttendanceNestedInput = {
+    create?: XOR<TicketCreateWithoutAttendanceInput, TicketUncheckedCreateWithoutAttendanceInput>
+    connectOrCreate?: TicketCreateOrConnectWithoutAttendanceInput
+    upsert?: TicketUpsertWithoutAttendanceInput
+    connect?: TicketWhereUniqueInput
+    update?: XOR<XOR<TicketUpdateToOneWithWhereWithoutAttendanceInput, TicketUpdateWithoutAttendanceInput>, TicketUncheckedUpdateWithoutAttendanceInput>
+  }
+
+  export type EventUpdateOneRequiredWithoutAttendancesNestedInput = {
+    create?: XOR<EventCreateWithoutAttendancesInput, EventUncheckedCreateWithoutAttendancesInput>
+    connectOrCreate?: EventCreateOrConnectWithoutAttendancesInput
+    upsert?: EventUpsertWithoutAttendancesInput
+    connect?: EventWhereUniqueInput
+    update?: XOR<XOR<EventUpdateToOneWithWhereWithoutAttendancesInput, EventUpdateWithoutAttendancesInput>, EventUncheckedUpdateWithoutAttendancesInput>
+  }
+
+  export type UserUpdateOneRequiredWithoutAttendancesNestedInput = {
+    create?: XOR<UserCreateWithoutAttendancesInput, UserUncheckedCreateWithoutAttendancesInput>
+    connectOrCreate?: UserCreateOrConnectWithoutAttendancesInput
+    upsert?: UserUpsertWithoutAttendancesInput
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutAttendancesInput, UserUpdateWithoutAttendancesInput>, UserUncheckedUpdateWithoutAttendancesInput>
+  }
+
+  export type EventCreateNestedOneWithoutScannerCodesInput = {
+    create?: XOR<EventCreateWithoutScannerCodesInput, EventUncheckedCreateWithoutScannerCodesInput>
+    connectOrCreate?: EventCreateOrConnectWithoutScannerCodesInput
+    connect?: EventWhereUniqueInput
+  }
+
+  export type EventUpdateOneRequiredWithoutScannerCodesNestedInput = {
+    create?: XOR<EventCreateWithoutScannerCodesInput, EventUncheckedCreateWithoutScannerCodesInput>
+    connectOrCreate?: EventCreateOrConnectWithoutScannerCodesInput
+    upsert?: EventUpsertWithoutScannerCodesInput
+    connect?: EventWhereUniqueInput
+    update?: XOR<XOR<EventUpdateToOneWithWhereWithoutScannerCodesInput, EventUpdateWithoutScannerCodesInput>, EventUncheckedUpdateWithoutScannerCodesInput>
   }
 
   export type NestedStringFilter<$PrismaModel = never> = {
@@ -22436,6 +27287,7 @@ export namespace Prisma {
     nftType?: string
     event: EventCreateNestedOneWithoutTicketsInput
     order: OrderCreateNestedOneWithoutTicketsInput
+    attendance?: AttendanceCreateNestedOneWithoutTicketInput
   }
 
   export type TicketUncheckedCreateWithoutUserInput = {
@@ -22454,6 +27306,7 @@ export namespace Prisma {
     dataHash?: string | null
     creatorHash?: string | null
     nftType?: string
+    attendance?: AttendanceUncheckedCreateNestedOneWithoutTicketInput
   }
 
   export type TicketCreateOrConnectWithoutUserInput = {
@@ -22511,6 +27364,40 @@ export namespace Prisma {
 
   export type ListingCreateManySellerInputEnvelope = {
     data: ListingCreateManySellerInput | ListingCreateManySellerInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type AttendanceCreateWithoutUserInput = {
+    id?: string
+    scannedAt?: Date | string
+    scannedBy: string
+    poapAssetId?: string | null
+    poapLeafIndex?: number | null
+    poapMintTx?: string | null
+    poapStatus?: string
+    ticket: TicketCreateNestedOneWithoutAttendanceInput
+    event: EventCreateNestedOneWithoutAttendancesInput
+  }
+
+  export type AttendanceUncheckedCreateWithoutUserInput = {
+    id?: string
+    ticketId: string
+    eventId: string
+    scannedAt?: Date | string
+    scannedBy: string
+    poapAssetId?: string | null
+    poapLeafIndex?: number | null
+    poapMintTx?: string | null
+    poapStatus?: string
+  }
+
+  export type AttendanceCreateOrConnectWithoutUserInput = {
+    where: AttendanceWhereUniqueInput
+    create: XOR<AttendanceCreateWithoutUserInput, AttendanceUncheckedCreateWithoutUserInput>
+  }
+
+  export type AttendanceCreateManyUserInputEnvelope = {
+    data: AttendanceCreateManyUserInput | AttendanceCreateManyUserInput[]
     skipDuplicates?: boolean
   }
 
@@ -22763,6 +27650,38 @@ export namespace Prisma {
     nftType?: StringFilter<"Listing"> | string
   }
 
+  export type AttendanceUpsertWithWhereUniqueWithoutUserInput = {
+    where: AttendanceWhereUniqueInput
+    update: XOR<AttendanceUpdateWithoutUserInput, AttendanceUncheckedUpdateWithoutUserInput>
+    create: XOR<AttendanceCreateWithoutUserInput, AttendanceUncheckedCreateWithoutUserInput>
+  }
+
+  export type AttendanceUpdateWithWhereUniqueWithoutUserInput = {
+    where: AttendanceWhereUniqueInput
+    data: XOR<AttendanceUpdateWithoutUserInput, AttendanceUncheckedUpdateWithoutUserInput>
+  }
+
+  export type AttendanceUpdateManyWithWhereWithoutUserInput = {
+    where: AttendanceScalarWhereInput
+    data: XOR<AttendanceUpdateManyMutationInput, AttendanceUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type AttendanceScalarWhereInput = {
+    AND?: AttendanceScalarWhereInput | AttendanceScalarWhereInput[]
+    OR?: AttendanceScalarWhereInput[]
+    NOT?: AttendanceScalarWhereInput | AttendanceScalarWhereInput[]
+    id?: StringFilter<"Attendance"> | string
+    ticketId?: StringFilter<"Attendance"> | string
+    eventId?: StringFilter<"Attendance"> | string
+    userId?: StringFilter<"Attendance"> | string
+    scannedAt?: DateTimeFilter<"Attendance"> | Date | string
+    scannedBy?: StringFilter<"Attendance"> | string
+    poapAssetId?: StringNullableFilter<"Attendance"> | string | null
+    poapLeafIndex?: IntNullableFilter<"Attendance"> | number | null
+    poapMintTx?: StringNullableFilter<"Attendance"> | string | null
+    poapStatus?: StringFilter<"Attendance"> | string
+  }
+
   export type UserCreateWithoutAccountsInput = {
     id?: string
     email?: string | null
@@ -22782,6 +27701,7 @@ export namespace Prisma {
     orders?: OrderCreateNestedManyWithoutUserInput
     tickets?: TicketCreateNestedManyWithoutUserInput
     listings?: ListingCreateNestedManyWithoutSellerInput
+    attendances?: AttendanceCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutAccountsInput = {
@@ -22803,6 +27723,7 @@ export namespace Prisma {
     orders?: OrderUncheckedCreateNestedManyWithoutUserInput
     tickets?: TicketUncheckedCreateNestedManyWithoutUserInput
     listings?: ListingUncheckedCreateNestedManyWithoutSellerInput
+    attendances?: AttendanceUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutAccountsInput = {
@@ -22840,6 +27761,7 @@ export namespace Prisma {
     orders?: OrderUpdateManyWithoutUserNestedInput
     tickets?: TicketUpdateManyWithoutUserNestedInput
     listings?: ListingUpdateManyWithoutSellerNestedInput
+    attendances?: AttendanceUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -22861,6 +27783,7 @@ export namespace Prisma {
     orders?: OrderUncheckedUpdateManyWithoutUserNestedInput
     tickets?: TicketUncheckedUpdateManyWithoutUserNestedInput
     listings?: ListingUncheckedUpdateManyWithoutSellerNestedInput
+    attendances?: AttendanceUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateWithoutSessionsInput = {
@@ -22882,6 +27805,7 @@ export namespace Prisma {
     orders?: OrderCreateNestedManyWithoutUserInput
     tickets?: TicketCreateNestedManyWithoutUserInput
     listings?: ListingCreateNestedManyWithoutSellerInput
+    attendances?: AttendanceCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutSessionsInput = {
@@ -22903,6 +27827,7 @@ export namespace Prisma {
     orders?: OrderUncheckedCreateNestedManyWithoutUserInput
     tickets?: TicketUncheckedCreateNestedManyWithoutUserInput
     listings?: ListingUncheckedCreateNestedManyWithoutSellerInput
+    attendances?: AttendanceUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutSessionsInput = {
@@ -22940,6 +27865,7 @@ export namespace Prisma {
     orders?: OrderUpdateManyWithoutUserNestedInput
     tickets?: TicketUpdateManyWithoutUserNestedInput
     listings?: ListingUpdateManyWithoutSellerNestedInput
+    attendances?: AttendanceUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -22961,6 +27887,7 @@ export namespace Prisma {
     orders?: OrderUncheckedUpdateManyWithoutUserNestedInput
     tickets?: TicketUncheckedUpdateManyWithoutUserNestedInput
     listings?: ListingUncheckedUpdateManyWithoutSellerNestedInput
+    attendances?: AttendanceUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateWithoutProfileInput = {
@@ -22982,6 +27909,7 @@ export namespace Prisma {
     orders?: OrderCreateNestedManyWithoutUserInput
     tickets?: TicketCreateNestedManyWithoutUserInput
     listings?: ListingCreateNestedManyWithoutSellerInput
+    attendances?: AttendanceCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutProfileInput = {
@@ -23003,6 +27931,7 @@ export namespace Prisma {
     orders?: OrderUncheckedCreateNestedManyWithoutUserInput
     tickets?: TicketUncheckedCreateNestedManyWithoutUserInput
     listings?: ListingUncheckedCreateNestedManyWithoutSellerInput
+    attendances?: AttendanceUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutProfileInput = {
@@ -23040,6 +27969,7 @@ export namespace Prisma {
     orders?: OrderUpdateManyWithoutUserNestedInput
     tickets?: TicketUpdateManyWithoutUserNestedInput
     listings?: ListingUpdateManyWithoutSellerNestedInput
+    attendances?: AttendanceUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutProfileInput = {
@@ -23061,6 +27991,7 @@ export namespace Prisma {
     orders?: OrderUncheckedUpdateManyWithoutUserNestedInput
     tickets?: TicketUncheckedUpdateManyWithoutUserNestedInput
     listings?: ListingUncheckedUpdateManyWithoutSellerNestedInput
+    attendances?: AttendanceUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateWithoutOrganizerInput = {
@@ -23082,6 +28013,7 @@ export namespace Prisma {
     orders?: OrderCreateNestedManyWithoutUserInput
     tickets?: TicketCreateNestedManyWithoutUserInput
     listings?: ListingCreateNestedManyWithoutSellerInput
+    attendances?: AttendanceCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutOrganizerInput = {
@@ -23103,6 +28035,7 @@ export namespace Prisma {
     orders?: OrderUncheckedCreateNestedManyWithoutUserInput
     tickets?: TicketUncheckedCreateNestedManyWithoutUserInput
     listings?: ListingUncheckedCreateNestedManyWithoutSellerInput
+    attendances?: AttendanceUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutOrganizerInput = {
@@ -23130,10 +28063,15 @@ export namespace Prisma {
     merkleTreeAddress?: string | null
     merkleTreeDepth?: number | null
     nftType?: string
+    poapMerkleTreeAddress?: string | null
+    poapCollectionAddress?: string | null
+    poapMetadataUri?: string | null
     category: CategoryCreateNestedOneWithoutEventsInput
     orders?: OrderCreateNestedManyWithoutEventInput
     tickets?: TicketCreateNestedManyWithoutEventInput
     listings?: ListingCreateNestedManyWithoutEventInput
+    attendances?: AttendanceCreateNestedManyWithoutEventInput
+    scannerCodes?: ScannerCodeCreateNestedManyWithoutEventInput
   }
 
   export type EventUncheckedCreateWithoutOrganizerInput = {
@@ -23156,10 +28094,15 @@ export namespace Prisma {
     merkleTreeAddress?: string | null
     merkleTreeDepth?: number | null
     nftType?: string
+    poapMerkleTreeAddress?: string | null
+    poapCollectionAddress?: string | null
+    poapMetadataUri?: string | null
     categoryId: string
     orders?: OrderUncheckedCreateNestedManyWithoutEventInput
     tickets?: TicketUncheckedCreateNestedManyWithoutEventInput
     listings?: ListingUncheckedCreateNestedManyWithoutEventInput
+    attendances?: AttendanceUncheckedCreateNestedManyWithoutEventInput
+    scannerCodes?: ScannerCodeUncheckedCreateNestedManyWithoutEventInput
   }
 
   export type EventCreateOrConnectWithoutOrganizerInput = {
@@ -23202,6 +28145,7 @@ export namespace Prisma {
     orders?: OrderUpdateManyWithoutUserNestedInput
     tickets?: TicketUpdateManyWithoutUserNestedInput
     listings?: ListingUpdateManyWithoutSellerNestedInput
+    attendances?: AttendanceUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutOrganizerInput = {
@@ -23223,6 +28167,7 @@ export namespace Prisma {
     orders?: OrderUncheckedUpdateManyWithoutUserNestedInput
     tickets?: TicketUncheckedUpdateManyWithoutUserNestedInput
     listings?: ListingUncheckedUpdateManyWithoutSellerNestedInput
+    attendances?: AttendanceUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type EventUpsertWithWhereUniqueWithoutOrganizerInput = {
@@ -23264,6 +28209,9 @@ export namespace Prisma {
     merkleTreeAddress?: StringNullableFilter<"Event"> | string | null
     merkleTreeDepth?: IntNullableFilter<"Event"> | number | null
     nftType?: StringFilter<"Event"> | string
+    poapMerkleTreeAddress?: StringNullableFilter<"Event"> | string | null
+    poapCollectionAddress?: StringNullableFilter<"Event"> | string | null
+    poapMetadataUri?: StringNullableFilter<"Event"> | string | null
     categoryId?: StringFilter<"Event"> | string
     organizerId?: StringNullableFilter<"Event"> | string | null
   }
@@ -23288,10 +28236,15 @@ export namespace Prisma {
     merkleTreeAddress?: string | null
     merkleTreeDepth?: number | null
     nftType?: string
+    poapMerkleTreeAddress?: string | null
+    poapCollectionAddress?: string | null
+    poapMetadataUri?: string | null
     organizer?: OrganizerCreateNestedOneWithoutEventsInput
     orders?: OrderCreateNestedManyWithoutEventInput
     tickets?: TicketCreateNestedManyWithoutEventInput
     listings?: ListingCreateNestedManyWithoutEventInput
+    attendances?: AttendanceCreateNestedManyWithoutEventInput
+    scannerCodes?: ScannerCodeCreateNestedManyWithoutEventInput
   }
 
   export type EventUncheckedCreateWithoutCategoryInput = {
@@ -23314,10 +28267,15 @@ export namespace Prisma {
     merkleTreeAddress?: string | null
     merkleTreeDepth?: number | null
     nftType?: string
+    poapMerkleTreeAddress?: string | null
+    poapCollectionAddress?: string | null
+    poapMetadataUri?: string | null
     organizerId?: string | null
     orders?: OrderUncheckedCreateNestedManyWithoutEventInput
     tickets?: TicketUncheckedCreateNestedManyWithoutEventInput
     listings?: ListingUncheckedCreateNestedManyWithoutEventInput
+    attendances?: AttendanceUncheckedCreateNestedManyWithoutEventInput
+    scannerCodes?: ScannerCodeUncheckedCreateNestedManyWithoutEventInput
   }
 
   export type EventCreateOrConnectWithoutCategoryInput = {
@@ -23468,6 +28426,7 @@ export namespace Prisma {
     nftType?: string
     order: OrderCreateNestedOneWithoutTicketsInput
     user: UserCreateNestedOneWithoutTicketsInput
+    attendance?: AttendanceCreateNestedOneWithoutTicketInput
   }
 
   export type TicketUncheckedCreateWithoutEventInput = {
@@ -23486,6 +28445,7 @@ export namespace Prisma {
     dataHash?: string | null
     creatorHash?: string | null
     nftType?: string
+    attendance?: AttendanceUncheckedCreateNestedOneWithoutTicketInput
   }
 
   export type TicketCreateOrConnectWithoutEventInput = {
@@ -23543,6 +28503,70 @@ export namespace Prisma {
 
   export type ListingCreateManyEventInputEnvelope = {
     data: ListingCreateManyEventInput | ListingCreateManyEventInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type AttendanceCreateWithoutEventInput = {
+    id?: string
+    scannedAt?: Date | string
+    scannedBy: string
+    poapAssetId?: string | null
+    poapLeafIndex?: number | null
+    poapMintTx?: string | null
+    poapStatus?: string
+    ticket: TicketCreateNestedOneWithoutAttendanceInput
+    user: UserCreateNestedOneWithoutAttendancesInput
+  }
+
+  export type AttendanceUncheckedCreateWithoutEventInput = {
+    id?: string
+    ticketId: string
+    userId: string
+    scannedAt?: Date | string
+    scannedBy: string
+    poapAssetId?: string | null
+    poapLeafIndex?: number | null
+    poapMintTx?: string | null
+    poapStatus?: string
+  }
+
+  export type AttendanceCreateOrConnectWithoutEventInput = {
+    where: AttendanceWhereUniqueInput
+    create: XOR<AttendanceCreateWithoutEventInput, AttendanceUncheckedCreateWithoutEventInput>
+  }
+
+  export type AttendanceCreateManyEventInputEnvelope = {
+    data: AttendanceCreateManyEventInput | AttendanceCreateManyEventInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type ScannerCodeCreateWithoutEventInput = {
+    id?: string
+    code: string
+    name: string
+    isActive?: boolean
+    usageCount?: number
+    createdAt?: Date | string
+    expiresAt?: Date | string | null
+  }
+
+  export type ScannerCodeUncheckedCreateWithoutEventInput = {
+    id?: string
+    code: string
+    name: string
+    isActive?: boolean
+    usageCount?: number
+    createdAt?: Date | string
+    expiresAt?: Date | string | null
+  }
+
+  export type ScannerCodeCreateOrConnectWithoutEventInput = {
+    where: ScannerCodeWhereUniqueInput
+    create: XOR<ScannerCodeCreateWithoutEventInput, ScannerCodeUncheckedCreateWithoutEventInput>
+  }
+
+  export type ScannerCodeCreateManyEventInputEnvelope = {
+    data: ScannerCodeCreateManyEventInput | ScannerCodeCreateManyEventInput[]
     skipDuplicates?: boolean
   }
 
@@ -23674,6 +28698,52 @@ export namespace Prisma {
     data: XOR<ListingUpdateManyMutationInput, ListingUncheckedUpdateManyWithoutEventInput>
   }
 
+  export type AttendanceUpsertWithWhereUniqueWithoutEventInput = {
+    where: AttendanceWhereUniqueInput
+    update: XOR<AttendanceUpdateWithoutEventInput, AttendanceUncheckedUpdateWithoutEventInput>
+    create: XOR<AttendanceCreateWithoutEventInput, AttendanceUncheckedCreateWithoutEventInput>
+  }
+
+  export type AttendanceUpdateWithWhereUniqueWithoutEventInput = {
+    where: AttendanceWhereUniqueInput
+    data: XOR<AttendanceUpdateWithoutEventInput, AttendanceUncheckedUpdateWithoutEventInput>
+  }
+
+  export type AttendanceUpdateManyWithWhereWithoutEventInput = {
+    where: AttendanceScalarWhereInput
+    data: XOR<AttendanceUpdateManyMutationInput, AttendanceUncheckedUpdateManyWithoutEventInput>
+  }
+
+  export type ScannerCodeUpsertWithWhereUniqueWithoutEventInput = {
+    where: ScannerCodeWhereUniqueInput
+    update: XOR<ScannerCodeUpdateWithoutEventInput, ScannerCodeUncheckedUpdateWithoutEventInput>
+    create: XOR<ScannerCodeCreateWithoutEventInput, ScannerCodeUncheckedCreateWithoutEventInput>
+  }
+
+  export type ScannerCodeUpdateWithWhereUniqueWithoutEventInput = {
+    where: ScannerCodeWhereUniqueInput
+    data: XOR<ScannerCodeUpdateWithoutEventInput, ScannerCodeUncheckedUpdateWithoutEventInput>
+  }
+
+  export type ScannerCodeUpdateManyWithWhereWithoutEventInput = {
+    where: ScannerCodeScalarWhereInput
+    data: XOR<ScannerCodeUpdateManyMutationInput, ScannerCodeUncheckedUpdateManyWithoutEventInput>
+  }
+
+  export type ScannerCodeScalarWhereInput = {
+    AND?: ScannerCodeScalarWhereInput | ScannerCodeScalarWhereInput[]
+    OR?: ScannerCodeScalarWhereInput[]
+    NOT?: ScannerCodeScalarWhereInput | ScannerCodeScalarWhereInput[]
+    id?: StringFilter<"ScannerCode"> | string
+    eventId?: StringFilter<"ScannerCode"> | string
+    code?: StringFilter<"ScannerCode"> | string
+    name?: StringFilter<"ScannerCode"> | string
+    isActive?: BoolFilter<"ScannerCode"> | boolean
+    usageCount?: IntFilter<"ScannerCode"> | number
+    createdAt?: DateTimeFilter<"ScannerCode"> | Date | string
+    expiresAt?: DateTimeNullableFilter<"ScannerCode"> | Date | string | null
+  }
+
   export type EventCreateWithoutOrdersInput = {
     id?: string
     title: string
@@ -23694,10 +28764,15 @@ export namespace Prisma {
     merkleTreeAddress?: string | null
     merkleTreeDepth?: number | null
     nftType?: string
+    poapMerkleTreeAddress?: string | null
+    poapCollectionAddress?: string | null
+    poapMetadataUri?: string | null
     category: CategoryCreateNestedOneWithoutEventsInput
     organizer?: OrganizerCreateNestedOneWithoutEventsInput
     tickets?: TicketCreateNestedManyWithoutEventInput
     listings?: ListingCreateNestedManyWithoutEventInput
+    attendances?: AttendanceCreateNestedManyWithoutEventInput
+    scannerCodes?: ScannerCodeCreateNestedManyWithoutEventInput
   }
 
   export type EventUncheckedCreateWithoutOrdersInput = {
@@ -23720,10 +28795,15 @@ export namespace Prisma {
     merkleTreeAddress?: string | null
     merkleTreeDepth?: number | null
     nftType?: string
+    poapMerkleTreeAddress?: string | null
+    poapCollectionAddress?: string | null
+    poapMetadataUri?: string | null
     categoryId: string
     organizerId?: string | null
     tickets?: TicketUncheckedCreateNestedManyWithoutEventInput
     listings?: ListingUncheckedCreateNestedManyWithoutEventInput
+    attendances?: AttendanceUncheckedCreateNestedManyWithoutEventInput
+    scannerCodes?: ScannerCodeUncheckedCreateNestedManyWithoutEventInput
   }
 
   export type EventCreateOrConnectWithoutOrdersInput = {
@@ -23750,6 +28830,7 @@ export namespace Prisma {
     organizer?: OrganizerCreateNestedOneWithoutUserInput
     tickets?: TicketCreateNestedManyWithoutUserInput
     listings?: ListingCreateNestedManyWithoutSellerInput
+    attendances?: AttendanceCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutOrdersInput = {
@@ -23771,6 +28852,7 @@ export namespace Prisma {
     organizer?: OrganizerUncheckedCreateNestedOneWithoutUserInput
     tickets?: TicketUncheckedCreateNestedManyWithoutUserInput
     listings?: ListingUncheckedCreateNestedManyWithoutSellerInput
+    attendances?: AttendanceUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutOrdersInput = {
@@ -23794,6 +28876,7 @@ export namespace Prisma {
     nftType?: string
     event: EventCreateNestedOneWithoutTicketsInput
     user: UserCreateNestedOneWithoutTicketsInput
+    attendance?: AttendanceCreateNestedOneWithoutTicketInput
   }
 
   export type TicketUncheckedCreateWithoutOrderInput = {
@@ -23812,6 +28895,7 @@ export namespace Prisma {
     dataHash?: string | null
     creatorHash?: string | null
     nftType?: string
+    attendance?: AttendanceUncheckedCreateNestedOneWithoutTicketInput
   }
 
   export type TicketCreateOrConnectWithoutOrderInput = {
@@ -23884,10 +28968,15 @@ export namespace Prisma {
     merkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
     merkleTreeDepth?: NullableIntFieldUpdateOperationsInput | number | null
     nftType?: StringFieldUpdateOperationsInput | string
+    poapMerkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapCollectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapMetadataUri?: NullableStringFieldUpdateOperationsInput | string | null
     category?: CategoryUpdateOneRequiredWithoutEventsNestedInput
     organizer?: OrganizerUpdateOneWithoutEventsNestedInput
     tickets?: TicketUpdateManyWithoutEventNestedInput
     listings?: ListingUpdateManyWithoutEventNestedInput
+    attendances?: AttendanceUpdateManyWithoutEventNestedInput
+    scannerCodes?: ScannerCodeUpdateManyWithoutEventNestedInput
   }
 
   export type EventUncheckedUpdateWithoutOrdersInput = {
@@ -23910,10 +28999,15 @@ export namespace Prisma {
     merkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
     merkleTreeDepth?: NullableIntFieldUpdateOperationsInput | number | null
     nftType?: StringFieldUpdateOperationsInput | string
+    poapMerkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapCollectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapMetadataUri?: NullableStringFieldUpdateOperationsInput | string | null
     categoryId?: StringFieldUpdateOperationsInput | string
     organizerId?: NullableStringFieldUpdateOperationsInput | string | null
     tickets?: TicketUncheckedUpdateManyWithoutEventNestedInput
     listings?: ListingUncheckedUpdateManyWithoutEventNestedInput
+    attendances?: AttendanceUncheckedUpdateManyWithoutEventNestedInput
+    scannerCodes?: ScannerCodeUncheckedUpdateManyWithoutEventNestedInput
   }
 
   export type UserUpsertWithoutOrdersInput = {
@@ -23946,6 +29040,7 @@ export namespace Prisma {
     organizer?: OrganizerUpdateOneWithoutUserNestedInput
     tickets?: TicketUpdateManyWithoutUserNestedInput
     listings?: ListingUpdateManyWithoutSellerNestedInput
+    attendances?: AttendanceUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutOrdersInput = {
@@ -23967,6 +29062,7 @@ export namespace Prisma {
     organizer?: OrganizerUncheckedUpdateOneWithoutUserNestedInput
     tickets?: TicketUncheckedUpdateManyWithoutUserNestedInput
     listings?: ListingUncheckedUpdateManyWithoutSellerNestedInput
+    attendances?: AttendanceUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type TicketUpsertWithWhereUniqueWithoutOrderInput = {
@@ -24040,10 +29136,15 @@ export namespace Prisma {
     merkleTreeAddress?: string | null
     merkleTreeDepth?: number | null
     nftType?: string
+    poapMerkleTreeAddress?: string | null
+    poapCollectionAddress?: string | null
+    poapMetadataUri?: string | null
     category: CategoryCreateNestedOneWithoutEventsInput
     organizer?: OrganizerCreateNestedOneWithoutEventsInput
     orders?: OrderCreateNestedManyWithoutEventInput
     listings?: ListingCreateNestedManyWithoutEventInput
+    attendances?: AttendanceCreateNestedManyWithoutEventInput
+    scannerCodes?: ScannerCodeCreateNestedManyWithoutEventInput
   }
 
   export type EventUncheckedCreateWithoutTicketsInput = {
@@ -24066,10 +29167,15 @@ export namespace Prisma {
     merkleTreeAddress?: string | null
     merkleTreeDepth?: number | null
     nftType?: string
+    poapMerkleTreeAddress?: string | null
+    poapCollectionAddress?: string | null
+    poapMetadataUri?: string | null
     categoryId: string
     organizerId?: string | null
     orders?: OrderUncheckedCreateNestedManyWithoutEventInput
     listings?: ListingUncheckedCreateNestedManyWithoutEventInput
+    attendances?: AttendanceUncheckedCreateNestedManyWithoutEventInput
+    scannerCodes?: ScannerCodeUncheckedCreateNestedManyWithoutEventInput
   }
 
   export type EventCreateOrConnectWithoutTicketsInput = {
@@ -24129,6 +29235,7 @@ export namespace Prisma {
     organizer?: OrganizerCreateNestedOneWithoutUserInput
     orders?: OrderCreateNestedManyWithoutUserInput
     listings?: ListingCreateNestedManyWithoutSellerInput
+    attendances?: AttendanceCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutTicketsInput = {
@@ -24150,11 +29257,41 @@ export namespace Prisma {
     organizer?: OrganizerUncheckedCreateNestedOneWithoutUserInput
     orders?: OrderUncheckedCreateNestedManyWithoutUserInput
     listings?: ListingUncheckedCreateNestedManyWithoutSellerInput
+    attendances?: AttendanceUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutTicketsInput = {
     where: UserWhereUniqueInput
     create: XOR<UserCreateWithoutTicketsInput, UserUncheckedCreateWithoutTicketsInput>
+  }
+
+  export type AttendanceCreateWithoutTicketInput = {
+    id?: string
+    scannedAt?: Date | string
+    scannedBy: string
+    poapAssetId?: string | null
+    poapLeafIndex?: number | null
+    poapMintTx?: string | null
+    poapStatus?: string
+    event: EventCreateNestedOneWithoutAttendancesInput
+    user: UserCreateNestedOneWithoutAttendancesInput
+  }
+
+  export type AttendanceUncheckedCreateWithoutTicketInput = {
+    id?: string
+    eventId: string
+    userId: string
+    scannedAt?: Date | string
+    scannedBy: string
+    poapAssetId?: string | null
+    poapLeafIndex?: number | null
+    poapMintTx?: string | null
+    poapStatus?: string
+  }
+
+  export type AttendanceCreateOrConnectWithoutTicketInput = {
+    where: AttendanceWhereUniqueInput
+    create: XOR<AttendanceCreateWithoutTicketInput, AttendanceUncheckedCreateWithoutTicketInput>
   }
 
   export type EventUpsertWithoutTicketsInput = {
@@ -24188,10 +29325,15 @@ export namespace Prisma {
     merkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
     merkleTreeDepth?: NullableIntFieldUpdateOperationsInput | number | null
     nftType?: StringFieldUpdateOperationsInput | string
+    poapMerkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapCollectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapMetadataUri?: NullableStringFieldUpdateOperationsInput | string | null
     category?: CategoryUpdateOneRequiredWithoutEventsNestedInput
     organizer?: OrganizerUpdateOneWithoutEventsNestedInput
     orders?: OrderUpdateManyWithoutEventNestedInput
     listings?: ListingUpdateManyWithoutEventNestedInput
+    attendances?: AttendanceUpdateManyWithoutEventNestedInput
+    scannerCodes?: ScannerCodeUpdateManyWithoutEventNestedInput
   }
 
   export type EventUncheckedUpdateWithoutTicketsInput = {
@@ -24214,10 +29356,15 @@ export namespace Prisma {
     merkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
     merkleTreeDepth?: NullableIntFieldUpdateOperationsInput | number | null
     nftType?: StringFieldUpdateOperationsInput | string
+    poapMerkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapCollectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapMetadataUri?: NullableStringFieldUpdateOperationsInput | string | null
     categoryId?: StringFieldUpdateOperationsInput | string
     organizerId?: NullableStringFieldUpdateOperationsInput | string | null
     orders?: OrderUncheckedUpdateManyWithoutEventNestedInput
     listings?: ListingUncheckedUpdateManyWithoutEventNestedInput
+    attendances?: AttendanceUncheckedUpdateManyWithoutEventNestedInput
+    scannerCodes?: ScannerCodeUncheckedUpdateManyWithoutEventNestedInput
   }
 
   export type OrderUpsertWithoutTicketsInput = {
@@ -24289,6 +29436,7 @@ export namespace Prisma {
     organizer?: OrganizerUpdateOneWithoutUserNestedInput
     orders?: OrderUpdateManyWithoutUserNestedInput
     listings?: ListingUpdateManyWithoutSellerNestedInput
+    attendances?: AttendanceUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutTicketsInput = {
@@ -24310,6 +29458,42 @@ export namespace Prisma {
     organizer?: OrganizerUncheckedUpdateOneWithoutUserNestedInput
     orders?: OrderUncheckedUpdateManyWithoutUserNestedInput
     listings?: ListingUncheckedUpdateManyWithoutSellerNestedInput
+    attendances?: AttendanceUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type AttendanceUpsertWithoutTicketInput = {
+    update: XOR<AttendanceUpdateWithoutTicketInput, AttendanceUncheckedUpdateWithoutTicketInput>
+    create: XOR<AttendanceCreateWithoutTicketInput, AttendanceUncheckedCreateWithoutTicketInput>
+    where?: AttendanceWhereInput
+  }
+
+  export type AttendanceUpdateToOneWithWhereWithoutTicketInput = {
+    where?: AttendanceWhereInput
+    data: XOR<AttendanceUpdateWithoutTicketInput, AttendanceUncheckedUpdateWithoutTicketInput>
+  }
+
+  export type AttendanceUpdateWithoutTicketInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    scannedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    scannedBy?: StringFieldUpdateOperationsInput | string
+    poapAssetId?: NullableStringFieldUpdateOperationsInput | string | null
+    poapLeafIndex?: NullableIntFieldUpdateOperationsInput | number | null
+    poapMintTx?: NullableStringFieldUpdateOperationsInput | string | null
+    poapStatus?: StringFieldUpdateOperationsInput | string
+    event?: EventUpdateOneRequiredWithoutAttendancesNestedInput
+    user?: UserUpdateOneRequiredWithoutAttendancesNestedInput
+  }
+
+  export type AttendanceUncheckedUpdateWithoutTicketInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    eventId?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    scannedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    scannedBy?: StringFieldUpdateOperationsInput | string
+    poapAssetId?: NullableStringFieldUpdateOperationsInput | string | null
+    poapLeafIndex?: NullableIntFieldUpdateOperationsInput | number | null
+    poapMintTx?: NullableStringFieldUpdateOperationsInput | string | null
+    poapStatus?: StringFieldUpdateOperationsInput | string
   }
 
   export type EventCreateWithoutListingsInput = {
@@ -24332,10 +29516,15 @@ export namespace Prisma {
     merkleTreeAddress?: string | null
     merkleTreeDepth?: number | null
     nftType?: string
+    poapMerkleTreeAddress?: string | null
+    poapCollectionAddress?: string | null
+    poapMetadataUri?: string | null
     category: CategoryCreateNestedOneWithoutEventsInput
     organizer?: OrganizerCreateNestedOneWithoutEventsInput
     orders?: OrderCreateNestedManyWithoutEventInput
     tickets?: TicketCreateNestedManyWithoutEventInput
+    attendances?: AttendanceCreateNestedManyWithoutEventInput
+    scannerCodes?: ScannerCodeCreateNestedManyWithoutEventInput
   }
 
   export type EventUncheckedCreateWithoutListingsInput = {
@@ -24358,10 +29547,15 @@ export namespace Prisma {
     merkleTreeAddress?: string | null
     merkleTreeDepth?: number | null
     nftType?: string
+    poapMerkleTreeAddress?: string | null
+    poapCollectionAddress?: string | null
+    poapMetadataUri?: string | null
     categoryId: string
     organizerId?: string | null
     orders?: OrderUncheckedCreateNestedManyWithoutEventInput
     tickets?: TicketUncheckedCreateNestedManyWithoutEventInput
+    attendances?: AttendanceUncheckedCreateNestedManyWithoutEventInput
+    scannerCodes?: ScannerCodeUncheckedCreateNestedManyWithoutEventInput
   }
 
   export type EventCreateOrConnectWithoutListingsInput = {
@@ -24388,6 +29582,7 @@ export namespace Prisma {
     organizer?: OrganizerCreateNestedOneWithoutUserInput
     orders?: OrderCreateNestedManyWithoutUserInput
     tickets?: TicketCreateNestedManyWithoutUserInput
+    attendances?: AttendanceCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutListingsInput = {
@@ -24409,6 +29604,7 @@ export namespace Prisma {
     organizer?: OrganizerUncheckedCreateNestedOneWithoutUserInput
     orders?: OrderUncheckedCreateNestedManyWithoutUserInput
     tickets?: TicketUncheckedCreateNestedManyWithoutUserInput
+    attendances?: AttendanceUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutListingsInput = {
@@ -24447,10 +29643,15 @@ export namespace Prisma {
     merkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
     merkleTreeDepth?: NullableIntFieldUpdateOperationsInput | number | null
     nftType?: StringFieldUpdateOperationsInput | string
+    poapMerkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapCollectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapMetadataUri?: NullableStringFieldUpdateOperationsInput | string | null
     category?: CategoryUpdateOneRequiredWithoutEventsNestedInput
     organizer?: OrganizerUpdateOneWithoutEventsNestedInput
     orders?: OrderUpdateManyWithoutEventNestedInput
     tickets?: TicketUpdateManyWithoutEventNestedInput
+    attendances?: AttendanceUpdateManyWithoutEventNestedInput
+    scannerCodes?: ScannerCodeUpdateManyWithoutEventNestedInput
   }
 
   export type EventUncheckedUpdateWithoutListingsInput = {
@@ -24473,10 +29674,15 @@ export namespace Prisma {
     merkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
     merkleTreeDepth?: NullableIntFieldUpdateOperationsInput | number | null
     nftType?: StringFieldUpdateOperationsInput | string
+    poapMerkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapCollectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapMetadataUri?: NullableStringFieldUpdateOperationsInput | string | null
     categoryId?: StringFieldUpdateOperationsInput | string
     organizerId?: NullableStringFieldUpdateOperationsInput | string | null
     orders?: OrderUncheckedUpdateManyWithoutEventNestedInput
     tickets?: TicketUncheckedUpdateManyWithoutEventNestedInput
+    attendances?: AttendanceUncheckedUpdateManyWithoutEventNestedInput
+    scannerCodes?: ScannerCodeUncheckedUpdateManyWithoutEventNestedInput
   }
 
   export type UserUpsertWithoutListingsInput = {
@@ -24509,6 +29715,7 @@ export namespace Prisma {
     organizer?: OrganizerUpdateOneWithoutUserNestedInput
     orders?: OrderUpdateManyWithoutUserNestedInput
     tickets?: TicketUpdateManyWithoutUserNestedInput
+    attendances?: AttendanceUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutListingsInput = {
@@ -24530,6 +29737,7 @@ export namespace Prisma {
     organizer?: OrganizerUncheckedUpdateOneWithoutUserNestedInput
     orders?: OrderUncheckedUpdateManyWithoutUserNestedInput
     tickets?: TicketUncheckedUpdateManyWithoutUserNestedInput
+    attendances?: AttendanceUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type OrderCreateWithoutPaymentDistributionInput = {
@@ -24604,6 +29812,482 @@ export namespace Prisma {
     tickets?: TicketUncheckedUpdateManyWithoutOrderNestedInput
   }
 
+  export type TicketCreateWithoutAttendanceInput = {
+    id?: string
+    nftMintAddress: string
+    tokenId: number
+    metadataUri?: string | null
+    isValid?: boolean
+    isUsed?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    assetId?: string | null
+    leafIndex?: number | null
+    dataHash?: string | null
+    creatorHash?: string | null
+    nftType?: string
+    event: EventCreateNestedOneWithoutTicketsInput
+    order: OrderCreateNestedOneWithoutTicketsInput
+    user: UserCreateNestedOneWithoutTicketsInput
+  }
+
+  export type TicketUncheckedCreateWithoutAttendanceInput = {
+    id?: string
+    eventId: string
+    orderId: string
+    userId: string
+    nftMintAddress: string
+    tokenId: number
+    metadataUri?: string | null
+    isValid?: boolean
+    isUsed?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    assetId?: string | null
+    leafIndex?: number | null
+    dataHash?: string | null
+    creatorHash?: string | null
+    nftType?: string
+  }
+
+  export type TicketCreateOrConnectWithoutAttendanceInput = {
+    where: TicketWhereUniqueInput
+    create: XOR<TicketCreateWithoutAttendanceInput, TicketUncheckedCreateWithoutAttendanceInput>
+  }
+
+  export type EventCreateWithoutAttendancesInput = {
+    id?: string
+    title: string
+    price: number
+    date: Date | string
+    time: string
+    ticketsAvailable: number
+    ticketsSold?: number
+    imageUrl: string
+    description: string
+    fullAddress: string
+    schedule: string
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    collectionNftAddress?: string | null
+    candyMachineAddress?: string | null
+    merkleTreeAddress?: string | null
+    merkleTreeDepth?: number | null
+    nftType?: string
+    poapMerkleTreeAddress?: string | null
+    poapCollectionAddress?: string | null
+    poapMetadataUri?: string | null
+    category: CategoryCreateNestedOneWithoutEventsInput
+    organizer?: OrganizerCreateNestedOneWithoutEventsInput
+    orders?: OrderCreateNestedManyWithoutEventInput
+    tickets?: TicketCreateNestedManyWithoutEventInput
+    listings?: ListingCreateNestedManyWithoutEventInput
+    scannerCodes?: ScannerCodeCreateNestedManyWithoutEventInput
+  }
+
+  export type EventUncheckedCreateWithoutAttendancesInput = {
+    id?: string
+    title: string
+    price: number
+    date: Date | string
+    time: string
+    ticketsAvailable: number
+    ticketsSold?: number
+    imageUrl: string
+    description: string
+    fullAddress: string
+    schedule: string
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    collectionNftAddress?: string | null
+    candyMachineAddress?: string | null
+    merkleTreeAddress?: string | null
+    merkleTreeDepth?: number | null
+    nftType?: string
+    poapMerkleTreeAddress?: string | null
+    poapCollectionAddress?: string | null
+    poapMetadataUri?: string | null
+    categoryId: string
+    organizerId?: string | null
+    orders?: OrderUncheckedCreateNestedManyWithoutEventInput
+    tickets?: TicketUncheckedCreateNestedManyWithoutEventInput
+    listings?: ListingUncheckedCreateNestedManyWithoutEventInput
+    scannerCodes?: ScannerCodeUncheckedCreateNestedManyWithoutEventInput
+  }
+
+  export type EventCreateOrConnectWithoutAttendancesInput = {
+    where: EventWhereUniqueInput
+    create: XOR<EventCreateWithoutAttendancesInput, EventUncheckedCreateWithoutAttendancesInput>
+  }
+
+  export type UserCreateWithoutAttendancesInput = {
+    id?: string
+    email?: string | null
+    emailVerified?: Date | string | null
+    password?: string | null
+    name?: string | null
+    image?: string | null
+    role?: $Enums.Role
+    walletAddress?: string | null
+    internalWalletAddress?: string | null
+    walletLinkedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    accounts?: AccountCreateNestedManyWithoutUserInput
+    sessions?: SessionCreateNestedManyWithoutUserInput
+    profile?: ProfileCreateNestedOneWithoutUserInput
+    organizer?: OrganizerCreateNestedOneWithoutUserInput
+    orders?: OrderCreateNestedManyWithoutUserInput
+    tickets?: TicketCreateNestedManyWithoutUserInput
+    listings?: ListingCreateNestedManyWithoutSellerInput
+  }
+
+  export type UserUncheckedCreateWithoutAttendancesInput = {
+    id?: string
+    email?: string | null
+    emailVerified?: Date | string | null
+    password?: string | null
+    name?: string | null
+    image?: string | null
+    role?: $Enums.Role
+    walletAddress?: string | null
+    internalWalletAddress?: string | null
+    walletLinkedAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    accounts?: AccountUncheckedCreateNestedManyWithoutUserInput
+    sessions?: SessionUncheckedCreateNestedManyWithoutUserInput
+    profile?: ProfileUncheckedCreateNestedOneWithoutUserInput
+    organizer?: OrganizerUncheckedCreateNestedOneWithoutUserInput
+    orders?: OrderUncheckedCreateNestedManyWithoutUserInput
+    tickets?: TicketUncheckedCreateNestedManyWithoutUserInput
+    listings?: ListingUncheckedCreateNestedManyWithoutSellerInput
+  }
+
+  export type UserCreateOrConnectWithoutAttendancesInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutAttendancesInput, UserUncheckedCreateWithoutAttendancesInput>
+  }
+
+  export type TicketUpsertWithoutAttendanceInput = {
+    update: XOR<TicketUpdateWithoutAttendanceInput, TicketUncheckedUpdateWithoutAttendanceInput>
+    create: XOR<TicketCreateWithoutAttendanceInput, TicketUncheckedCreateWithoutAttendanceInput>
+    where?: TicketWhereInput
+  }
+
+  export type TicketUpdateToOneWithWhereWithoutAttendanceInput = {
+    where?: TicketWhereInput
+    data: XOR<TicketUpdateWithoutAttendanceInput, TicketUncheckedUpdateWithoutAttendanceInput>
+  }
+
+  export type TicketUpdateWithoutAttendanceInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    nftMintAddress?: StringFieldUpdateOperationsInput | string
+    tokenId?: IntFieldUpdateOperationsInput | number
+    metadataUri?: NullableStringFieldUpdateOperationsInput | string | null
+    isValid?: BoolFieldUpdateOperationsInput | boolean
+    isUsed?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    assetId?: NullableStringFieldUpdateOperationsInput | string | null
+    leafIndex?: NullableIntFieldUpdateOperationsInput | number | null
+    dataHash?: NullableStringFieldUpdateOperationsInput | string | null
+    creatorHash?: NullableStringFieldUpdateOperationsInput | string | null
+    nftType?: StringFieldUpdateOperationsInput | string
+    event?: EventUpdateOneRequiredWithoutTicketsNestedInput
+    order?: OrderUpdateOneRequiredWithoutTicketsNestedInput
+    user?: UserUpdateOneRequiredWithoutTicketsNestedInput
+  }
+
+  export type TicketUncheckedUpdateWithoutAttendanceInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    eventId?: StringFieldUpdateOperationsInput | string
+    orderId?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    nftMintAddress?: StringFieldUpdateOperationsInput | string
+    tokenId?: IntFieldUpdateOperationsInput | number
+    metadataUri?: NullableStringFieldUpdateOperationsInput | string | null
+    isValid?: BoolFieldUpdateOperationsInput | boolean
+    isUsed?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    assetId?: NullableStringFieldUpdateOperationsInput | string | null
+    leafIndex?: NullableIntFieldUpdateOperationsInput | number | null
+    dataHash?: NullableStringFieldUpdateOperationsInput | string | null
+    creatorHash?: NullableStringFieldUpdateOperationsInput | string | null
+    nftType?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type EventUpsertWithoutAttendancesInput = {
+    update: XOR<EventUpdateWithoutAttendancesInput, EventUncheckedUpdateWithoutAttendancesInput>
+    create: XOR<EventCreateWithoutAttendancesInput, EventUncheckedCreateWithoutAttendancesInput>
+    where?: EventWhereInput
+  }
+
+  export type EventUpdateToOneWithWhereWithoutAttendancesInput = {
+    where?: EventWhereInput
+    data: XOR<EventUpdateWithoutAttendancesInput, EventUncheckedUpdateWithoutAttendancesInput>
+  }
+
+  export type EventUpdateWithoutAttendancesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    price?: FloatFieldUpdateOperationsInput | number
+    date?: DateTimeFieldUpdateOperationsInput | Date | string
+    time?: StringFieldUpdateOperationsInput | string
+    ticketsAvailable?: IntFieldUpdateOperationsInput | number
+    ticketsSold?: IntFieldUpdateOperationsInput | number
+    imageUrl?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    fullAddress?: StringFieldUpdateOperationsInput | string
+    schedule?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    collectionNftAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    candyMachineAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    merkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    merkleTreeDepth?: NullableIntFieldUpdateOperationsInput | number | null
+    nftType?: StringFieldUpdateOperationsInput | string
+    poapMerkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapCollectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapMetadataUri?: NullableStringFieldUpdateOperationsInput | string | null
+    category?: CategoryUpdateOneRequiredWithoutEventsNestedInput
+    organizer?: OrganizerUpdateOneWithoutEventsNestedInput
+    orders?: OrderUpdateManyWithoutEventNestedInput
+    tickets?: TicketUpdateManyWithoutEventNestedInput
+    listings?: ListingUpdateManyWithoutEventNestedInput
+    scannerCodes?: ScannerCodeUpdateManyWithoutEventNestedInput
+  }
+
+  export type EventUncheckedUpdateWithoutAttendancesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    price?: FloatFieldUpdateOperationsInput | number
+    date?: DateTimeFieldUpdateOperationsInput | Date | string
+    time?: StringFieldUpdateOperationsInput | string
+    ticketsAvailable?: IntFieldUpdateOperationsInput | number
+    ticketsSold?: IntFieldUpdateOperationsInput | number
+    imageUrl?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    fullAddress?: StringFieldUpdateOperationsInput | string
+    schedule?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    collectionNftAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    candyMachineAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    merkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    merkleTreeDepth?: NullableIntFieldUpdateOperationsInput | number | null
+    nftType?: StringFieldUpdateOperationsInput | string
+    poapMerkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapCollectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapMetadataUri?: NullableStringFieldUpdateOperationsInput | string | null
+    categoryId?: StringFieldUpdateOperationsInput | string
+    organizerId?: NullableStringFieldUpdateOperationsInput | string | null
+    orders?: OrderUncheckedUpdateManyWithoutEventNestedInput
+    tickets?: TicketUncheckedUpdateManyWithoutEventNestedInput
+    listings?: ListingUncheckedUpdateManyWithoutEventNestedInput
+    scannerCodes?: ScannerCodeUncheckedUpdateManyWithoutEventNestedInput
+  }
+
+  export type UserUpsertWithoutAttendancesInput = {
+    update: XOR<UserUpdateWithoutAttendancesInput, UserUncheckedUpdateWithoutAttendancesInput>
+    create: XOR<UserCreateWithoutAttendancesInput, UserUncheckedCreateWithoutAttendancesInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutAttendancesInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutAttendancesInput, UserUncheckedUpdateWithoutAttendancesInput>
+  }
+
+  export type UserUpdateWithoutAttendancesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    password?: NullableStringFieldUpdateOperationsInput | string | null
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    walletAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    internalWalletAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    walletLinkedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    accounts?: AccountUpdateManyWithoutUserNestedInput
+    sessions?: SessionUpdateManyWithoutUserNestedInput
+    profile?: ProfileUpdateOneWithoutUserNestedInput
+    organizer?: OrganizerUpdateOneWithoutUserNestedInput
+    orders?: OrderUpdateManyWithoutUserNestedInput
+    tickets?: TicketUpdateManyWithoutUserNestedInput
+    listings?: ListingUpdateManyWithoutSellerNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutAttendancesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    emailVerified?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    password?: NullableStringFieldUpdateOperationsInput | string | null
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    image?: NullableStringFieldUpdateOperationsInput | string | null
+    role?: EnumRoleFieldUpdateOperationsInput | $Enums.Role
+    walletAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    internalWalletAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    walletLinkedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    accounts?: AccountUncheckedUpdateManyWithoutUserNestedInput
+    sessions?: SessionUncheckedUpdateManyWithoutUserNestedInput
+    profile?: ProfileUncheckedUpdateOneWithoutUserNestedInput
+    organizer?: OrganizerUncheckedUpdateOneWithoutUserNestedInput
+    orders?: OrderUncheckedUpdateManyWithoutUserNestedInput
+    tickets?: TicketUncheckedUpdateManyWithoutUserNestedInput
+    listings?: ListingUncheckedUpdateManyWithoutSellerNestedInput
+  }
+
+  export type EventCreateWithoutScannerCodesInput = {
+    id?: string
+    title: string
+    price: number
+    date: Date | string
+    time: string
+    ticketsAvailable: number
+    ticketsSold?: number
+    imageUrl: string
+    description: string
+    fullAddress: string
+    schedule: string
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    collectionNftAddress?: string | null
+    candyMachineAddress?: string | null
+    merkleTreeAddress?: string | null
+    merkleTreeDepth?: number | null
+    nftType?: string
+    poapMerkleTreeAddress?: string | null
+    poapCollectionAddress?: string | null
+    poapMetadataUri?: string | null
+    category: CategoryCreateNestedOneWithoutEventsInput
+    organizer?: OrganizerCreateNestedOneWithoutEventsInput
+    orders?: OrderCreateNestedManyWithoutEventInput
+    tickets?: TicketCreateNestedManyWithoutEventInput
+    listings?: ListingCreateNestedManyWithoutEventInput
+    attendances?: AttendanceCreateNestedManyWithoutEventInput
+  }
+
+  export type EventUncheckedCreateWithoutScannerCodesInput = {
+    id?: string
+    title: string
+    price: number
+    date: Date | string
+    time: string
+    ticketsAvailable: number
+    ticketsSold?: number
+    imageUrl: string
+    description: string
+    fullAddress: string
+    schedule: string
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    collectionNftAddress?: string | null
+    candyMachineAddress?: string | null
+    merkleTreeAddress?: string | null
+    merkleTreeDepth?: number | null
+    nftType?: string
+    poapMerkleTreeAddress?: string | null
+    poapCollectionAddress?: string | null
+    poapMetadataUri?: string | null
+    categoryId: string
+    organizerId?: string | null
+    orders?: OrderUncheckedCreateNestedManyWithoutEventInput
+    tickets?: TicketUncheckedCreateNestedManyWithoutEventInput
+    listings?: ListingUncheckedCreateNestedManyWithoutEventInput
+    attendances?: AttendanceUncheckedCreateNestedManyWithoutEventInput
+  }
+
+  export type EventCreateOrConnectWithoutScannerCodesInput = {
+    where: EventWhereUniqueInput
+    create: XOR<EventCreateWithoutScannerCodesInput, EventUncheckedCreateWithoutScannerCodesInput>
+  }
+
+  export type EventUpsertWithoutScannerCodesInput = {
+    update: XOR<EventUpdateWithoutScannerCodesInput, EventUncheckedUpdateWithoutScannerCodesInput>
+    create: XOR<EventCreateWithoutScannerCodesInput, EventUncheckedCreateWithoutScannerCodesInput>
+    where?: EventWhereInput
+  }
+
+  export type EventUpdateToOneWithWhereWithoutScannerCodesInput = {
+    where?: EventWhereInput
+    data: XOR<EventUpdateWithoutScannerCodesInput, EventUncheckedUpdateWithoutScannerCodesInput>
+  }
+
+  export type EventUpdateWithoutScannerCodesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    price?: FloatFieldUpdateOperationsInput | number
+    date?: DateTimeFieldUpdateOperationsInput | Date | string
+    time?: StringFieldUpdateOperationsInput | string
+    ticketsAvailable?: IntFieldUpdateOperationsInput | number
+    ticketsSold?: IntFieldUpdateOperationsInput | number
+    imageUrl?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    fullAddress?: StringFieldUpdateOperationsInput | string
+    schedule?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    collectionNftAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    candyMachineAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    merkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    merkleTreeDepth?: NullableIntFieldUpdateOperationsInput | number | null
+    nftType?: StringFieldUpdateOperationsInput | string
+    poapMerkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapCollectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapMetadataUri?: NullableStringFieldUpdateOperationsInput | string | null
+    category?: CategoryUpdateOneRequiredWithoutEventsNestedInput
+    organizer?: OrganizerUpdateOneWithoutEventsNestedInput
+    orders?: OrderUpdateManyWithoutEventNestedInput
+    tickets?: TicketUpdateManyWithoutEventNestedInput
+    listings?: ListingUpdateManyWithoutEventNestedInput
+    attendances?: AttendanceUpdateManyWithoutEventNestedInput
+  }
+
+  export type EventUncheckedUpdateWithoutScannerCodesInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    price?: FloatFieldUpdateOperationsInput | number
+    date?: DateTimeFieldUpdateOperationsInput | Date | string
+    time?: StringFieldUpdateOperationsInput | string
+    ticketsAvailable?: IntFieldUpdateOperationsInput | number
+    ticketsSold?: IntFieldUpdateOperationsInput | number
+    imageUrl?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    fullAddress?: StringFieldUpdateOperationsInput | string
+    schedule?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    collectionNftAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    candyMachineAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    merkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    merkleTreeDepth?: NullableIntFieldUpdateOperationsInput | number | null
+    nftType?: StringFieldUpdateOperationsInput | string
+    poapMerkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapCollectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapMetadataUri?: NullableStringFieldUpdateOperationsInput | string | null
+    categoryId?: StringFieldUpdateOperationsInput | string
+    organizerId?: NullableStringFieldUpdateOperationsInput | string | null
+    orders?: OrderUncheckedUpdateManyWithoutEventNestedInput
+    tickets?: TicketUncheckedUpdateManyWithoutEventNestedInput
+    listings?: ListingUncheckedUpdateManyWithoutEventNestedInput
+    attendances?: AttendanceUncheckedUpdateManyWithoutEventNestedInput
+  }
+
   export type AccountCreateManyUserInput = {
     id?: string
     type: string
@@ -24671,6 +30355,18 @@ export namespace Prisma {
     updatedAt?: Date | string
     assetId?: string | null
     nftType?: string
+  }
+
+  export type AttendanceCreateManyUserInput = {
+    id?: string
+    ticketId: string
+    eventId: string
+    scannedAt?: Date | string
+    scannedBy: string
+    poapAssetId?: string | null
+    poapLeafIndex?: number | null
+    poapMintTx?: string | null
+    poapStatus?: string
   }
 
   export type AccountUpdateWithoutUserInput = {
@@ -24789,6 +30485,7 @@ export namespace Prisma {
     nftType?: StringFieldUpdateOperationsInput | string
     event?: EventUpdateOneRequiredWithoutTicketsNestedInput
     order?: OrderUpdateOneRequiredWithoutTicketsNestedInput
+    attendance?: AttendanceUpdateOneWithoutTicketNestedInput
   }
 
   export type TicketUncheckedUpdateWithoutUserInput = {
@@ -24807,6 +30504,7 @@ export namespace Prisma {
     dataHash?: NullableStringFieldUpdateOperationsInput | string | null
     creatorHash?: NullableStringFieldUpdateOperationsInput | string | null
     nftType?: StringFieldUpdateOperationsInput | string
+    attendance?: AttendanceUncheckedUpdateOneWithoutTicketNestedInput
   }
 
   export type TicketUncheckedUpdateManyWithoutUserInput = {
@@ -24884,6 +30582,42 @@ export namespace Prisma {
     nftType?: StringFieldUpdateOperationsInput | string
   }
 
+  export type AttendanceUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    scannedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    scannedBy?: StringFieldUpdateOperationsInput | string
+    poapAssetId?: NullableStringFieldUpdateOperationsInput | string | null
+    poapLeafIndex?: NullableIntFieldUpdateOperationsInput | number | null
+    poapMintTx?: NullableStringFieldUpdateOperationsInput | string | null
+    poapStatus?: StringFieldUpdateOperationsInput | string
+    ticket?: TicketUpdateOneRequiredWithoutAttendanceNestedInput
+    event?: EventUpdateOneRequiredWithoutAttendancesNestedInput
+  }
+
+  export type AttendanceUncheckedUpdateWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ticketId?: StringFieldUpdateOperationsInput | string
+    eventId?: StringFieldUpdateOperationsInput | string
+    scannedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    scannedBy?: StringFieldUpdateOperationsInput | string
+    poapAssetId?: NullableStringFieldUpdateOperationsInput | string | null
+    poapLeafIndex?: NullableIntFieldUpdateOperationsInput | number | null
+    poapMintTx?: NullableStringFieldUpdateOperationsInput | string | null
+    poapStatus?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type AttendanceUncheckedUpdateManyWithoutUserInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ticketId?: StringFieldUpdateOperationsInput | string
+    eventId?: StringFieldUpdateOperationsInput | string
+    scannedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    scannedBy?: StringFieldUpdateOperationsInput | string
+    poapAssetId?: NullableStringFieldUpdateOperationsInput | string | null
+    poapLeafIndex?: NullableIntFieldUpdateOperationsInput | number | null
+    poapMintTx?: NullableStringFieldUpdateOperationsInput | string | null
+    poapStatus?: StringFieldUpdateOperationsInput | string
+  }
+
   export type EventCreateManyOrganizerInput = {
     id?: string
     title: string
@@ -24904,6 +30638,9 @@ export namespace Prisma {
     merkleTreeAddress?: string | null
     merkleTreeDepth?: number | null
     nftType?: string
+    poapMerkleTreeAddress?: string | null
+    poapCollectionAddress?: string | null
+    poapMetadataUri?: string | null
     categoryId: string
   }
 
@@ -24927,10 +30664,15 @@ export namespace Prisma {
     merkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
     merkleTreeDepth?: NullableIntFieldUpdateOperationsInput | number | null
     nftType?: StringFieldUpdateOperationsInput | string
+    poapMerkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapCollectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapMetadataUri?: NullableStringFieldUpdateOperationsInput | string | null
     category?: CategoryUpdateOneRequiredWithoutEventsNestedInput
     orders?: OrderUpdateManyWithoutEventNestedInput
     tickets?: TicketUpdateManyWithoutEventNestedInput
     listings?: ListingUpdateManyWithoutEventNestedInput
+    attendances?: AttendanceUpdateManyWithoutEventNestedInput
+    scannerCodes?: ScannerCodeUpdateManyWithoutEventNestedInput
   }
 
   export type EventUncheckedUpdateWithoutOrganizerInput = {
@@ -24953,10 +30695,15 @@ export namespace Prisma {
     merkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
     merkleTreeDepth?: NullableIntFieldUpdateOperationsInput | number | null
     nftType?: StringFieldUpdateOperationsInput | string
+    poapMerkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapCollectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapMetadataUri?: NullableStringFieldUpdateOperationsInput | string | null
     categoryId?: StringFieldUpdateOperationsInput | string
     orders?: OrderUncheckedUpdateManyWithoutEventNestedInput
     tickets?: TicketUncheckedUpdateManyWithoutEventNestedInput
     listings?: ListingUncheckedUpdateManyWithoutEventNestedInput
+    attendances?: AttendanceUncheckedUpdateManyWithoutEventNestedInput
+    scannerCodes?: ScannerCodeUncheckedUpdateManyWithoutEventNestedInput
   }
 
   export type EventUncheckedUpdateManyWithoutOrganizerInput = {
@@ -24979,6 +30726,9 @@ export namespace Prisma {
     merkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
     merkleTreeDepth?: NullableIntFieldUpdateOperationsInput | number | null
     nftType?: StringFieldUpdateOperationsInput | string
+    poapMerkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapCollectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapMetadataUri?: NullableStringFieldUpdateOperationsInput | string | null
     categoryId?: StringFieldUpdateOperationsInput | string
   }
 
@@ -25002,6 +30752,9 @@ export namespace Prisma {
     merkleTreeAddress?: string | null
     merkleTreeDepth?: number | null
     nftType?: string
+    poapMerkleTreeAddress?: string | null
+    poapCollectionAddress?: string | null
+    poapMetadataUri?: string | null
     organizerId?: string | null
   }
 
@@ -25025,10 +30778,15 @@ export namespace Prisma {
     merkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
     merkleTreeDepth?: NullableIntFieldUpdateOperationsInput | number | null
     nftType?: StringFieldUpdateOperationsInput | string
+    poapMerkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapCollectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapMetadataUri?: NullableStringFieldUpdateOperationsInput | string | null
     organizer?: OrganizerUpdateOneWithoutEventsNestedInput
     orders?: OrderUpdateManyWithoutEventNestedInput
     tickets?: TicketUpdateManyWithoutEventNestedInput
     listings?: ListingUpdateManyWithoutEventNestedInput
+    attendances?: AttendanceUpdateManyWithoutEventNestedInput
+    scannerCodes?: ScannerCodeUpdateManyWithoutEventNestedInput
   }
 
   export type EventUncheckedUpdateWithoutCategoryInput = {
@@ -25051,10 +30809,15 @@ export namespace Prisma {
     merkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
     merkleTreeDepth?: NullableIntFieldUpdateOperationsInput | number | null
     nftType?: StringFieldUpdateOperationsInput | string
+    poapMerkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapCollectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapMetadataUri?: NullableStringFieldUpdateOperationsInput | string | null
     organizerId?: NullableStringFieldUpdateOperationsInput | string | null
     orders?: OrderUncheckedUpdateManyWithoutEventNestedInput
     tickets?: TicketUncheckedUpdateManyWithoutEventNestedInput
     listings?: ListingUncheckedUpdateManyWithoutEventNestedInput
+    attendances?: AttendanceUncheckedUpdateManyWithoutEventNestedInput
+    scannerCodes?: ScannerCodeUncheckedUpdateManyWithoutEventNestedInput
   }
 
   export type EventUncheckedUpdateManyWithoutCategoryInput = {
@@ -25077,6 +30840,9 @@ export namespace Prisma {
     merkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
     merkleTreeDepth?: NullableIntFieldUpdateOperationsInput | number | null
     nftType?: StringFieldUpdateOperationsInput | string
+    poapMerkleTreeAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapCollectionAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    poapMetadataUri?: NullableStringFieldUpdateOperationsInput | string | null
     organizerId?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
@@ -25127,6 +30893,28 @@ export namespace Prisma {
     updatedAt?: Date | string
     assetId?: string | null
     nftType?: string
+  }
+
+  export type AttendanceCreateManyEventInput = {
+    id?: string
+    ticketId: string
+    userId: string
+    scannedAt?: Date | string
+    scannedBy: string
+    poapAssetId?: string | null
+    poapLeafIndex?: number | null
+    poapMintTx?: string | null
+    poapStatus?: string
+  }
+
+  export type ScannerCodeCreateManyEventInput = {
+    id?: string
+    code: string
+    name: string
+    isActive?: boolean
+    usageCount?: number
+    createdAt?: Date | string
+    expiresAt?: Date | string | null
   }
 
   export type OrderUpdateWithoutEventInput = {
@@ -25185,6 +30973,7 @@ export namespace Prisma {
     nftType?: StringFieldUpdateOperationsInput | string
     order?: OrderUpdateOneRequiredWithoutTicketsNestedInput
     user?: UserUpdateOneRequiredWithoutTicketsNestedInput
+    attendance?: AttendanceUpdateOneWithoutTicketNestedInput
   }
 
   export type TicketUncheckedUpdateWithoutEventInput = {
@@ -25203,6 +30992,7 @@ export namespace Prisma {
     dataHash?: NullableStringFieldUpdateOperationsInput | string | null
     creatorHash?: NullableStringFieldUpdateOperationsInput | string | null
     nftType?: StringFieldUpdateOperationsInput | string
+    attendance?: AttendanceUncheckedUpdateOneWithoutTicketNestedInput
   }
 
   export type TicketUncheckedUpdateManyWithoutEventInput = {
@@ -25280,6 +31070,72 @@ export namespace Prisma {
     nftType?: StringFieldUpdateOperationsInput | string
   }
 
+  export type AttendanceUpdateWithoutEventInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    scannedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    scannedBy?: StringFieldUpdateOperationsInput | string
+    poapAssetId?: NullableStringFieldUpdateOperationsInput | string | null
+    poapLeafIndex?: NullableIntFieldUpdateOperationsInput | number | null
+    poapMintTx?: NullableStringFieldUpdateOperationsInput | string | null
+    poapStatus?: StringFieldUpdateOperationsInput | string
+    ticket?: TicketUpdateOneRequiredWithoutAttendanceNestedInput
+    user?: UserUpdateOneRequiredWithoutAttendancesNestedInput
+  }
+
+  export type AttendanceUncheckedUpdateWithoutEventInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ticketId?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    scannedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    scannedBy?: StringFieldUpdateOperationsInput | string
+    poapAssetId?: NullableStringFieldUpdateOperationsInput | string | null
+    poapLeafIndex?: NullableIntFieldUpdateOperationsInput | number | null
+    poapMintTx?: NullableStringFieldUpdateOperationsInput | string | null
+    poapStatus?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type AttendanceUncheckedUpdateManyWithoutEventInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    ticketId?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    scannedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    scannedBy?: StringFieldUpdateOperationsInput | string
+    poapAssetId?: NullableStringFieldUpdateOperationsInput | string | null
+    poapLeafIndex?: NullableIntFieldUpdateOperationsInput | number | null
+    poapMintTx?: NullableStringFieldUpdateOperationsInput | string | null
+    poapStatus?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type ScannerCodeUpdateWithoutEventInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    usageCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type ScannerCodeUncheckedUpdateWithoutEventInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    usageCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
+  export type ScannerCodeUncheckedUpdateManyWithoutEventInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    code?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    usageCount?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    expiresAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  }
+
   export type TicketCreateManyOrderInput = {
     id?: string
     eventId: string
@@ -25314,6 +31170,7 @@ export namespace Prisma {
     nftType?: StringFieldUpdateOperationsInput | string
     event?: EventUpdateOneRequiredWithoutTicketsNestedInput
     user?: UserUpdateOneRequiredWithoutTicketsNestedInput
+    attendance?: AttendanceUpdateOneWithoutTicketNestedInput
   }
 
   export type TicketUncheckedUpdateWithoutOrderInput = {
@@ -25332,6 +31189,7 @@ export namespace Prisma {
     dataHash?: NullableStringFieldUpdateOperationsInput | string | null
     creatorHash?: NullableStringFieldUpdateOperationsInput | string | null
     nftType?: StringFieldUpdateOperationsInput | string
+    attendance?: AttendanceUncheckedUpdateOneWithoutTicketNestedInput
   }
 
   export type TicketUncheckedUpdateManyWithoutOrderInput = {
