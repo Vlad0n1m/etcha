@@ -4,12 +4,15 @@ import { useState, useEffect, use } from "react"
 import { useWallet } from "@solana/wallet-adapter-react"
 import Image from "next/image"
 import Link from "next/link"
-import { Calendar, MapPin, Clock, Copy, ExternalLink, CheckCircle2, AlertCircle, Loader2, Tag, ChevronDown, Award, QrCode } from "lucide-react"
+import { Calendar, MapPin, Clock, Copy, ExternalLink, CheckCircle2, AlertCircle, Loader2, Tag, ChevronDown, Award, QrCode, Share2 } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 import TicketDetailDrawer from "@/components/TicketDetailDrawer"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { useSignature } from "@/components/SignatureProvider"
+import { SharePostPrompt } from "@/components/feed"
+import { useAuth } from "@/components/AuthProvider"
+import { useSession } from "next-auth/react"
 
 interface TicketDetail {
     id: string
@@ -80,6 +83,11 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     const [showCancelConfirm, setShowCancelConfirm] = useState(false)
     const [isAddingToWallet, setIsAddingToWallet] = useState(false)
     const [walletError, setWalletError] = useState<string | null>(null)
+    const [showSharePrompt, setShowSharePrompt] = useState(false)
+    const { token } = useAuth()
+    const { data: session } = useSession()
+
+    const isAuthenticated = !!token || !!session?.user
 
     useEffect(() => {
         const loadTicket = async () => {
@@ -600,6 +608,17 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
 
                 {/* Actions */}
                 <div className="mt-4 space-y-3">
+                    {/* Share to Feed Button - only for valid unused tickets before event */}
+                    {isAuthenticated && ticket.isValid && !ticket.isUsed && !isPastEvent && (
+                        <Button
+                            onClick={() => setShowSharePrompt(true)}
+                            className="w-full bg-purple-500 text-white font-semibold py-3.5 rounded-xl hover:bg-purple-600 transition-all flex items-center justify-center gap-2"
+                        >
+                            <Share2 className="w-5 h-5" />
+                            Рассказать в ленте
+                        </Button>
+                    )}
+
                     {/* Add to Apple Wallet Button */}
                     <Button
                         onClick={handleAddToAppleWallet}
@@ -718,6 +737,24 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Share Post Prompt */}
+            {isAuthenticated && ticket && (
+                <SharePostPrompt
+                    isOpen={showSharePrompt}
+                    onClose={() => setShowSharePrompt(false)}
+                    authToken={token || ""}
+                    event={{
+                        id: ticket.event.id,
+                        title: ticket.event.title,
+                        imageUrl: ticket.event.imageUrl,
+                        date: ticket.event.date,
+                    }}
+                    type="TICKET_PURCHASE"
+                    ticketId={ticket.id}
+                    useSession={!token && !!session}
+                />
             )}
         </div>
     )

@@ -69,24 +69,25 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Validate ticket ownership for TICKET_PURCHASE posts
-    if (validatedData.type === "TICKET_PURCHASE" && validatedData.ticketId) {
-      const ticket = await prisma.ticket.findFirst({
-        where: {
-          id: validatedData.ticketId,
-          userId: userId,
-        },
-        select: { id: true, eventId: true },
-      });
-      if (!ticket) {
+    // Validate ticket for TICKET_PURCHASE posts
+    if (validatedData.type === "TICKET_PURCHASE") {
+      // For TICKET_PURCHASE, we need eventId
+      if (!validatedData.eventId && !validatedData.ticketId) {
         return NextResponse.json(
-          { error: "Ticket not found or does not belong to you" },
+          { error: "Event ID is required for ticket purchase posts" },
           { status: 400 }
         );
       }
-      // Auto-set eventId from ticket
-      if (!validatedData.eventId) {
-        validatedData.eventId = ticket.eventId;
+
+      // If ticketId provided, try to get eventId from it
+      if (validatedData.ticketId && !validatedData.eventId) {
+        const ticket = await prisma.ticket.findUnique({
+          where: { id: validatedData.ticketId },
+          select: { eventId: true },
+        });
+        if (ticket) {
+          validatedData.eventId = ticket.eventId;
+        }
       }
     }
 
