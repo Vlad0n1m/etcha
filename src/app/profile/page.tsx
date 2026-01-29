@@ -3,10 +3,9 @@
 import { useSession } from "next-auth/react"
 import { useWallet, useConnection } from "@solana/wallet-adapter-react"
 import { useState, useEffect } from "react"
-import { Copy, Edit, Eye, MoreHorizontal, Wallet, RefreshCw, Save, X, User, LogIn, UserPlus } from "lucide-react"
+import { Copy, Edit, Eye, MoreHorizontal, Wallet, RefreshCw, Save, X, User, LogIn, UserPlus, Plus, Loader2 } from "lucide-react"
 import { LAMPORTS_PER_SOL } from "@solana/web3.js"
 import WalletDrawer from "@/components/WalletDrawer"
-import MobileHeader from "@/components/MobileHeader"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Image from "next/image"
@@ -34,9 +33,8 @@ interface Ticket {
 // Auth prompt component for non-authenticated users
 function AuthPrompt() {
     return (
-        <div className="min-h-screen bg-gray-50">
-            <MobileHeader />
-            <div className="flex items-center justify-center min-h-screen px-4 pt-16 pb-20">
+        <div className="min-h-screen bg-background">
+            <div className="flex items-center justify-center min-h-screen px-4 pb-20">
                 <div className="w-full max-w-md text-center">
                     {/* Icon */}
                     <div className="w-20 h-20 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -95,7 +93,7 @@ function AuthPrompt() {
 // Loading component
 function LoadingState() {
     return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-background flex items-center justify-center">
             <div className="text-center">
                 <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
                 <p className="text-gray-500">Loading profile...</p>
@@ -120,6 +118,8 @@ export default function ProfilePage() {
     const [isSavingNickname, setIsSavingNickname] = useState(false)
     const [tickets, setTickets] = useState<Ticket[]>([])
     const [isLoadingTickets, setIsLoadingTickets] = useState(false)
+    const [isAddingDemoToWallet, setIsAddingDemoToWallet] = useState(false)
+    const [demoWalletError, setDemoWalletError] = useState<string | null>(null)
 
     // Set nickname from session
     useEffect(() => {
@@ -245,6 +245,7 @@ export default function ProfilePage() {
 
     const filteredTickets = tickets.filter(ticket => {
         if (activeTab === "bought") return ticket.status === "bought"
+        if (activeTab === "on_resale") return ticket.status === "on_resale"
         if (activeTab === "used") return ticket.status === "passed"
         return true
     })
@@ -276,6 +277,47 @@ export default function ProfilePage() {
 
     const groupedTickets = groupTicketsByDate(filteredTickets)
 
+    // Handle demo Apple Wallet pass download
+    const handleAddDemoToWallet = async () => {
+        setIsAddingDemoToWallet(true)
+        setDemoWalletError(null)
+
+        try {
+            const response = await fetch('/api/apple-wallet/demo')
+
+            if (!response.ok) {
+                const data = await response.json()
+                if (data.missingCerts) {
+                    setDemoWalletError("Apple Wallet certificates not configured")
+                    return
+                }
+                throw new Error(data.message || 'Failed to generate pass')
+            }
+
+            // Get the pass file as blob
+            const blob = await response.blob()
+
+            // Create download link
+            const url = window.URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = 'etcha-demo-ticket.pkpass'
+
+            // Trigger download
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+
+            // Cleanup
+            window.URL.revokeObjectURL(url)
+        } catch (err) {
+            console.error("Error adding demo to Apple Wallet:", err)
+            setDemoWalletError(err instanceof Error ? err.message : 'Failed to generate pass')
+        } finally {
+            setIsAddingDemoToWallet(false)
+        }
+    }
+
     // Show loading state
     if (status === "loading") {
         return <LoadingState />
@@ -289,8 +331,7 @@ export default function ProfilePage() {
     // User is authenticated - show profile
     return (
         <div className="min-h-screen bg-background">
-            <MobileHeader />
-            <div className="px-3 pt-24 pb-3 md:pt-8 md:max-w-4xl md:mx-auto">
+            <div className="px-3 pb-3">
                 <div className="flex flex-col items-start mb-4">
                     {/* Avatar */}
                     <div className="w-16 h-16 rounded-full mb-3 flex items-center justify-center overflow-hidden bg-gradient-to-br from-purple-500 to-indigo-600">
@@ -357,6 +398,28 @@ export default function ProfilePage() {
 
                     {/* Email */}
                     <p className="text-sm text-gray-500 mb-3">{session.user.email}</p>
+
+                    {/* Organizer: Create Event Button */}
+                    {session.user.role === "ORGANIZER" && session.user.organizerStatus === "APPROVED" && (
+                        <Link
+                            href="/organizer/create-event"
+                            className="flex items-center gap-2 mb-3 px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Create Event
+                        </Link>
+                    )}
+
+                    {/* Admin: Create Event Button */}
+                    {session.user.role === "ADMIN" && (
+                        <Link
+                            href="/organizer/create-event"
+                            className="flex items-center gap-2 mb-3 px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Create Event
+                        </Link>
+                    )}
 
                     {/* Wallet section */}
                     {connected && walletAddress ? (
@@ -454,13 +517,17 @@ export default function ProfilePage() {
 
                 {/* Tabs */}
                 <div className="flex items-center gap-4 border-b border-gray-200 mb-3">
-                    {["bought", "used"].map(tab => (
+                    {[
+                        { key: "bought", label: "Bought" },
+                        { key: "on_resale", label: "On Resale" },
+                        { key: "used", label: "Used" },
+                    ].map(tab => (
                         <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={`pb-2 text-sm font-medium transition-colors ${activeTab === tab ? "text-gray-900 border-b-2 border-gray-900" : "text-gray-500 hover:text-gray-700"}`}
+                            key={tab.key}
+                            onClick={() => setActiveTab(tab.key)}
+                            className={`pb-2 text-sm font-medium transition-colors ${activeTab === tab.key ? "text-gray-900 border-b-2 border-gray-900" : "text-gray-500 hover:text-gray-700"}`}
                         >
-                            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                            {tab.label}
                         </button>
                     ))}
                 </div>
@@ -515,10 +582,65 @@ export default function ProfilePage() {
                                     className="w-64 h-48 object-contain opacity-50"
                                 />
                             </div>
-                            <h3 className="text-gray-900 text-xl font-bold mb-2">No {activeTab} tickets yet</h3>
-                            <Link href="/" className="text-purple-600 font-medium hover:underline">
+                            <h3 className="text-gray-900 text-xl font-bold mb-2">
+                                No {activeTab === "on_resale" ? "tickets on resale" : activeTab} tickets yet
+                            </h3>
+                            <Link href="/" className="text-purple-600 font-medium hover:underline mb-6">
                                 Browse events
                             </Link>
+
+                            {/* Demo Apple Wallet Card */}
+                            <div className="w-full max-w-sm bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-white shadow-xl">
+                                <div className="flex items-center justify-between mb-4">
+                                    <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Demo Ticket</span>
+                                    <div className="flex items-center gap-1">
+                                        <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                                        <span className="text-xs text-green-400">Test Mode</span>
+                                    </div>
+                                </div>
+
+                                <h4 className="text-lg font-bold mb-1">Etcha Demo Event</h4>
+                                <p className="text-sm text-gray-400 mb-4">Test Apple Wallet integration</p>
+
+                                <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+                                    <div>
+                                        <div className="text-gray-500 text-xs mb-0.5">DATE</div>
+                                        <div className="font-medium">In 7 days</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-gray-500 text-xs mb-0.5">TIME</div>
+                                        <div className="font-medium">19:00</div>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={handleAddDemoToWallet}
+                                    disabled={isAddingDemoToWallet}
+                                    className="w-full bg-black text-white font-semibold py-3 rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-2 border border-gray-700"
+                                >
+                                    {isAddingDemoToWallet ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            Generating...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg
+                                                viewBox="0 0 24 24"
+                                                className="w-5 h-5 fill-current"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.09997 22C7.78997 22.05 6.79997 20.68 5.95997 19.47C4.24997 17 2.93997 12.45 4.69997 9.39C5.56997 7.87 7.12997 6.91 8.81997 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z" />
+                                            </svg>
+                                            Add to Apple Wallet
+                                        </>
+                                    )}
+                                </button>
+
+                                {demoWalletError && (
+                                    <p className="text-red-400 text-xs text-center mt-2">{demoWalletError}</p>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>

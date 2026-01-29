@@ -50,6 +50,10 @@ dev.db-journal
 /certbot/conf/
 /certbot/www/
 
+# Apple Wallet certificates
+/certs/apple-wallet/*.pem
+/certs/apple-wallet/*.p12
+
 # Docker env files
 .env.docker
 !.env.docker.example

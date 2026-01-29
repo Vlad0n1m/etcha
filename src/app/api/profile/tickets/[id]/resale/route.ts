@@ -8,6 +8,152 @@ import { Metaplex } from '@metaplex-foundation/js'
 const prisma = new PrismaClient()
 
 /**
+ * DELETE /api/profile/tickets/[id]/resale
+ * Cancel a resale listing for a ticket
+ * Body: { walletAddress: string }
+ */
+export async function DELETE(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const resolvedParams = await params
+        const ticketId = resolvedParams.id
+        const body = await request.json()
+        const { walletAddress } = body
+
+        console.log('=== Cancel Resale Listing Request ===')
+        console.log('Ticket ID:', ticketId)
+        console.log('Wallet Address:', walletAddress)
+
+        // Validation
+        if (!walletAddress) {
+            return NextResponse.json(
+                { success: false, message: 'walletAddress is required' },
+                { status: 400 }
+            )
+        }
+
+        if (!isValidSolanaAddress(walletAddress)) {
+            return NextResponse.json(
+                { success: false, message: 'Invalid wallet address format' },
+                { status: 400 }
+            )
+        }
+
+        // Find user by external wallet address
+        const user = await prisma.user.findUnique({
+            where: {
+                walletAddress: walletAddress,
+            },
+            select: {
+                id: true,
+            },
+        })
+
+        if (!user) {
+            console.log('User not found for wallet:', walletAddress)
+            return NextResponse.json(
+                { success: false, message: 'User not found' },
+                { status: 404 }
+            )
+        }
+
+        // ticketId from URL is actually nftMintAddress (see profile tickets API)
+        const nftMintAddress = ticketId
+
+        // Get ticket by nftMintAddress
+        const ticket = await prisma.ticket.findUnique({
+            where: {
+                nftMintAddress: nftMintAddress,
+            },
+            select: {
+                id: true,
+                nftMintAddress: true,
+                userId: true,
+            },
+        })
+
+        if (!ticket) {
+            console.log('Ticket not found for nftMintAddress:', nftMintAddress)
+            return NextResponse.json(
+                { success: false, message: 'Ticket not found' },
+                { status: 404 }
+            )
+        }
+
+        // Verify ownership
+        if (ticket.userId !== user.id) {
+            return NextResponse.json(
+                { success: false, message: 'Unauthorized: You do not own this ticket' },
+                { status: 403 }
+            )
+        }
+
+        // Find active listing for this ticket
+        const listing = await prisma.listing.findUnique({
+            where: {
+                nftMintAddress: nftMintAddress,
+            },
+        })
+
+        if (!listing) {
+            return NextResponse.json(
+                { success: false, message: 'No active listing found for this ticket' },
+                { status: 404 }
+            )
+        }
+
+        if (listing.status !== 'active') {
+            return NextResponse.json(
+                { success: false, message: `Cannot cancel listing with status: ${listing.status}` },
+                { status: 400 }
+            )
+        }
+
+        // Verify listing belongs to the user
+        if (listing.sellerId !== user.id) {
+            return NextResponse.json(
+                { success: false, message: 'Unauthorized: You do not own this listing' },
+                { status: 403 }
+            )
+        }
+
+        // Cancel the listing by updating status
+        const updatedListing = await prisma.listing.update({
+            where: {
+                id: listing.id,
+            },
+            data: {
+                status: 'cancelled',
+            },
+        })
+
+        console.log('Listing cancelled successfully - Listing ID:', updatedListing.id)
+        console.log('=== End Cancel Resale Listing Request ===')
+
+        return NextResponse.json({
+            success: true,
+            message: 'Listing cancelled successfully',
+            listing: {
+                id: updatedListing.id,
+                status: updatedListing.status,
+            },
+        })
+    } catch (error: unknown) {
+        console.error('Error cancelling resale listing:', error)
+        return NextResponse.json(
+            {
+                success: false,
+                message: 'Failed to cancel resale listing',
+                error: error instanceof Error ? error.message : String(error),
+            },
+            { status: 500 }
+        )
+    }
+}
+
+/**
  * POST /api/profile/tickets/[id]/resale
  * Create a resale listing for a ticket
  * Body: { price: number, walletAddress: string }

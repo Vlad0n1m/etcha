@@ -5,7 +5,6 @@ import { useWallet } from "@solana/wallet-adapter-react"
 import Image from "next/image"
 import Link from "next/link"
 import { Calendar, MapPin, Clock, Copy, ExternalLink, CheckCircle2, AlertCircle, Loader2, Tag, ChevronDown } from "lucide-react"
-import MobileHeader from "@/components/MobileHeader"
 import TicketDetailDrawer from "@/components/TicketDetailDrawer"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
@@ -69,6 +68,10 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     const [copied, setCopied] = useState<string | null>(null)
     const [showResaleDrawer, setShowResaleDrawer] = useState(false)
     const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+    const [isCancelling, setIsCancelling] = useState(false)
+    const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+    const [isAddingToWallet, setIsAddingToWallet] = useState(false)
+    const [walletError, setWalletError] = useState<string | null>(null)
 
     useEffect(() => {
         const loadTicket = async () => {
@@ -145,7 +148,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         }
     }
 
-    const handleResaleSuccess = async () => {
+    const reloadTicket = async () => {
         // Reload ticket data to get updated status
         if (connected && publicKey && signature) {
             try {
@@ -174,6 +177,97 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
         }
     }
 
+    const handleResaleSuccess = async () => {
+        await reloadTicket()
+    }
+
+    const handleCancelListing = async () => {
+        if (!connected || !publicKey) {
+            return
+        }
+
+        setIsCancelling(true)
+        setShowCancelConfirm(false)
+        try {
+            const response = await fetch(`/api/profile/tickets/${ticketId}/resale`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    walletAddress: publicKey.toString(),
+                }),
+            })
+
+            const data = await response.json()
+
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Failed to cancel listing')
+            }
+
+            // Update ticket state locally to reflect cancelled listing
+            setTicket(prev => prev ? {
+                ...prev,
+                listing: null,
+                status: "bought" as const,
+            } : null)
+        } catch (err) {
+            console.error("Error cancelling listing:", err)
+            setError(err instanceof Error ? err.message : 'Failed to cancel listing')
+        } finally {
+            setIsCancelling(false)
+        }
+    }
+
+    const handleAddToAppleWallet = async () => {
+        if (!connected || !publicKey) {
+            setWalletError("Please connect your wallet")
+            return
+        }
+
+        setIsAddingToWallet(true)
+        setWalletError(null)
+
+        try {
+            const response = await fetch(`/api/profile/tickets/${ticketId}/apple-wallet`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    walletAddress: publicKey.toString(),
+                }),
+            })
+
+            if (!response.ok) {
+                const data = await response.json()
+                if (data.missingCerts) {
+                    setWalletError("Apple Wallet is not configured yet. Please contact support.")
+                    return
+                }
+                throw new Error(data.message || 'Failed to generate pass')
+            }
+
+            // Get the pass file as blob
+            const blob = await response.blob()
+
+            // Create download link
+            const url = window.URL.createObjectURL(blob)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `ticket-${ticketId}.pkpass`
+
+            // Trigger download
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+
+            // Cleanup
+            window.URL.revokeObjectURL(url)
+        } catch (err) {
+            console.error("Error adding to Apple Wallet:", err)
+            setWalletError(err instanceof Error ? err.message : 'Failed to add to wallet')
+        } finally {
+            setIsAddingToWallet(false)
+        }
+    }
+
     const network = process.env.NEXT_PUBLIC_SOLANA_NETWORK || "devnet"
 
     if (!connected) {
@@ -198,7 +292,6 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     if (error || !ticket) {
         return (
             <div className="min-h-screen bg-background">
-                <MobileHeader />
                 <div className="flex flex-col items-center justify-center min-h-screen p-4">
                     <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
                     <h2 className="text-xl font-bold text-foreground mb-2">Error Loading Ticket</h2>
@@ -214,12 +307,11 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
     const eventDate = new Date(ticket.event.date)
     const now = new Date()
     const isPastEvent = eventDate < now
-    const canListForResale = !ticket.listing && !isPastEvent && ticket.status !== "on_resale"
+    const hasActiveListing = ticket.listing && ticket.listing.status === "active"
+    const canListForResale = !hasActiveListing && !isPastEvent && ticket.status !== "on_resale"
 
     return (
         <div className="min-h-screen bg-background pb-24">
-            <MobileHeader />
-
             {/* Removed sticky header to avoid double navbar */}
 
             {/* Event Image */}
@@ -313,7 +405,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                                     <span className="text-sm text-muted-foreground">Purchase Price</span>
                                     <span className="text-sm font-semibold text-foreground">{ticket.price.toFixed(4)} SOL</span>
                                 </div>
-                                {ticket.listing && (
+                                {hasActiveListing && ticket.listing && (
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm text-muted-foreground">Listed Price</span>
                                         <span className="text-sm font-semibold text-yellow-600">{ticket.listing.price.toFixed(4)} SOL</span>
@@ -405,6 +497,37 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
 
                 {/* Actions */}
                 <div className="mt-4 space-y-3">
+                    {/* Add to Apple Wallet Button */}
+                    <Button
+                        onClick={handleAddToAppleWallet}
+                        disabled={isAddingToWallet}
+                        className="w-full bg-black text-white font-semibold py-3.5 rounded-xl hover:bg-gray-800 transition-all flex items-center justify-center gap-2"
+                    >
+                        {isAddingToWallet ? (
+                            <>
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                Generating Pass...
+                            </>
+                        ) : (
+                            <>
+                                <svg
+                                    viewBox="0 0 24 24"
+                                    className="w-5 h-5 fill-current"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.09997 22C7.78997 22.05 6.79997 20.68 5.95997 19.47C4.24997 17 2.93997 12.45 4.69997 9.39C5.56997 7.87 7.12997 6.91 8.81997 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z" />
+                                </svg>
+                                Add to Apple Wallet
+                            </>
+                        )}
+                    </Button>
+
+                    {walletError && (
+                        <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+                            <p className="text-sm text-red-600 text-center">{walletError}</p>
+                        </div>
+                    )}
+
                     {canListForResale && (
                         <Button
                             onClick={() => setShowResaleDrawer(true)}
@@ -413,16 +536,30 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                             Put on Resale
                         </Button>
                     )}
-                    {ticket.listing && (
+                    {hasActiveListing && ticket.listing && (
                         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
                             <div className="flex items-center gap-2 mb-2">
                                 <Tag className="w-4 h-4 text-yellow-600" />
                                 <span className="text-sm font-medium text-yellow-800">Ticket Listed for Resale</span>
                             </div>
-                            <p className="text-xs text-yellow-700">
+                            <p className="text-xs text-yellow-700 mb-3">
                                 This ticket is currently listed at {ticket.listing.price.toFixed(4)} SOL.
-                                It will be removed from resale when sold or cancelled.
                             </p>
+                            <Button
+                                onClick={() => setShowCancelConfirm(true)}
+                                disabled={isCancelling}
+                                variant="outline"
+                                className="w-full border-yellow-300 text-yellow-800 hover:bg-yellow-100"
+                            >
+                                {isCancelling ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Cancelling...
+                                    </>
+                                ) : (
+                                    "Remove from Resale"
+                                )}
+                            </Button>
                         </div>
                     )}
                     {isPastEvent && (
@@ -446,6 +583,38 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                     walletAddress={publicKey.toString()}
                     onSuccess={handleResaleSuccess}
                 />
+            )}
+
+            {/* Cancel Listing Confirmation Modal */}
+            {showCancelConfirm && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
+                        <div className="flex items-center justify-center w-12 h-12 bg-yellow-100 rounded-full mx-auto mb-4">
+                            <AlertCircle className="w-6 h-6 text-yellow-600" />
+                        </div>
+                        <h3 className="text-lg font-bold text-center text-gray-900 mb-2">
+                            Remove from Resale?
+                        </h3>
+                        <p className="text-sm text-gray-600 text-center mb-6">
+                            Are you sure you want to remove this ticket from resale? It will no longer be available for purchase by others.
+                        </p>
+                        <div className="flex gap-3">
+                            <Button
+                                onClick={() => setShowCancelConfirm(false)}
+                                variant="outline"
+                                className="flex-1"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleCancelListing}
+                                className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white"
+                            >
+                                Yes, Remove
+                            </Button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     )

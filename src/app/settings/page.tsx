@@ -6,7 +6,6 @@ import { useWallet } from "@solana/wallet-adapter-react"
 import { useWalletModal } from "@solana/wallet-adapter-react-ui"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import MobileHeader from "@/components/MobileHeader"
 import {
     User,
     Wallet,
@@ -128,7 +127,7 @@ export default function SettingsPage() {
     // Loading state
     if (status === "loading") {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="text-center">
                     <div className="w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
                     <p className="text-gray-500">Loading...</p>
@@ -146,10 +145,8 @@ export default function SettingsPage() {
     const user = session.user
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <MobileHeader />
-
-            <div className="pt-20 md:pt-8 pb-24 md:pb-8">
+        <div className="min-h-screen bg-background">
+            <div className="pb-24 lg:pb-8">
                 <div className="max-w-2xl mx-auto px-4">
                     {/* Page Header */}
                     <div className="flex items-center justify-between mb-6">
@@ -171,8 +168,8 @@ export default function SettingsPage() {
                         <button
                             onClick={() => setActiveTab("profile")}
                             className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${activeTab === "profile"
-                                    ? "bg-white text-gray-900 shadow-sm"
-                                    : "text-gray-500 hover:text-gray-700"
+                                ? "bg-white text-gray-900 shadow-sm"
+                                : "text-gray-500 hover:text-gray-700"
                                 }`}
                         >
                             <User className="w-4 h-4 inline-block mr-2" />
@@ -181,8 +178,8 @@ export default function SettingsPage() {
                         <button
                             onClick={() => setActiveTab("wallet")}
                             className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${activeTab === "wallet"
-                                    ? "bg-white text-gray-900 shadow-sm"
-                                    : "text-gray-500 hover:text-gray-700"
+                                ? "bg-white text-gray-900 shadow-sm"
+                                : "text-gray-500 hover:text-gray-700"
                                 }`}
                         >
                             <Wallet className="w-4 h-4 inline-block mr-2" />

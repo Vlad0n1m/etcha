@@ -4,7 +4,6 @@ import React, { useState, useMemo, useCallback } from 'react'
 import EventCard from '@/components/EventCard'
 import BannerCarousel from '@/components/BannerCarousel'
 import EventFilters from '@/components/EventFilters'
-import MobileHeader from '@/components/MobileHeader'
 
 interface Event {
   id: string
@@ -138,11 +137,8 @@ export default function Home() {
 
   return (
     <>
-      {/* Mobile Header */}
-      <MobileHeader />
-
       {/* Banner Carousel */}
-      <div className="w-full pt-20">
+      <div className="w-full">
         <BannerCarousel banners={bannerData} />
       </div>
 

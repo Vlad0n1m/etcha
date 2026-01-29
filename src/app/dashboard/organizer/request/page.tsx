@@ -79,7 +79,7 @@ export default function OrganizerRequestPage() {
     // Already an organizer
     if (session?.user?.role === "ORGANIZER") {
         return (
-            <div className="min-h-screen bg-gray-50">
+            <div className="min-h-screen bg-background">
                 <div className="bg-white border-b border-gray-100">
                     <div className="max-w-md mx-auto px-4 py-4 flex items-center">
                         <Link
@@ -111,7 +111,7 @@ export default function OrganizerRequestPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-8">
+        <div className="min-h-screen bg-background pb-8">
             {/* Header */}
             <div className="bg-white border-b border-gray-100">
                 <div className="max-w-md mx-auto px-4 py-4 flex items-center">

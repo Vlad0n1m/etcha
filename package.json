@@ -45,6 +45,7 @@
     "mathjs": "^15.0.0",
     "next": "^16.1.6",
     "next-auth": "5.0.0-beta.30",
+    "passkit-generator": "^3.5.7",
     "prisma": "^6.18.0",
     "process": "^0.11.10",
     "react": "19.1.0",

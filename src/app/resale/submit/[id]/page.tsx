@@ -7,7 +7,6 @@ import Image from 'next/image'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ArrowLeft, TrendingUp } from "lucide-react"
-import MobileHeader from "@/components/MobileHeader"
 import Link from 'next/link'
 
 const mockTickets = [
@@ -85,8 +84,7 @@ export default function ResaleSubmitPage() {
 
     return (
         <div className="min-h-screen bg-background">
-            <MobileHeader />
-            <div className="px-4 pt-24 pb-20">
+            <div className="px-4 pb-20">
                 <Link href="/profile" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4">
                     <ArrowLeft className="w-4 h-4" />
                     Back to Profile

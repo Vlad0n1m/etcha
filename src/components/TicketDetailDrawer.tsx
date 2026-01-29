@@ -33,10 +33,11 @@ export default function TicketDetailDrawer({
     const [price, setPrice] = useState<string>("")
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [showConfirm, setShowConfirm] = useState(false)
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        
+
         if (!walletAddress) {
             setError("Please connect your wallet first")
             return
@@ -53,12 +54,20 @@ export default function TicketDetailDrawer({
             return
         }
 
+        // Show confirmation modal
+        setShowConfirm(true)
+    }
+
+    const handleConfirmSubmit = async () => {
+        setShowConfirm(false)
         setIsSubmitting(true)
         setError(null)
 
         try {
+            const priceValue = parseFloat(price)
+
             // Use cached signature from SignatureProvider
-            const signatureHex = Array.from(signature)
+            const signatureHex = Array.from(signature!)
                 .map(b => b.toString(16).padStart(2, '0'))
                 .join('')
 
@@ -150,7 +159,7 @@ export default function TicketDetailDrawer({
                         </div>
 
                         {/* Form */}
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                        <form onSubmit={handleFormSubmit} className="space-y-4">
                             <div>
                                 <label htmlFor="resale-price" className="block text-sm font-medium text-foreground mb-2">
                                     Resale Price (SOL)
@@ -194,7 +203,7 @@ export default function TicketDetailDrawer({
                             {/* Disclaimer */}
                             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                                 <p className="text-xs text-blue-800">
-                                    By listing this ticket, it will become available for purchase on the resale marketplace. 
+                                    By listing this ticket, it will become available for purchase on the resale marketplace.
                                     You can cancel the listing anytime before someone buys it.
                                 </p>
                             </div>
@@ -229,6 +238,41 @@ export default function TicketDetailDrawer({
                     </div>
                 </Drawer.Content>
             </Drawer.Portal>
+
+            {/* Confirmation Modal */}
+            {showConfirm && (
+                <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl">
+                        <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mx-auto mb-4">
+                            <AlertCircle className="w-6 h-6 text-blue-600" />
+                        </div>
+                        <h3 className="text-lg font-bold text-center text-gray-900 mb-2">
+                            List Ticket for Resale?
+                        </h3>
+                        <p className="text-sm text-gray-600 text-center mb-2">
+                            Are you sure you want to list this ticket for <span className="font-semibold">{price} SOL</span>?
+                        </p>
+                        <p className="text-xs text-gray-500 text-center mb-6">
+                            The ticket will be available for purchase by others on the resale marketplace.
+                        </p>
+                        <div className="flex gap-3">
+                            <Button
+                                onClick={() => setShowConfirm(false)}
+                                variant="outline"
+                                className="flex-1"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleConfirmSubmit}
+                                className="flex-1 bg-primary hover:bg-primary/90 text-white"
+                            >
+                                Yes, List
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </Drawer.Root>
     )
 }

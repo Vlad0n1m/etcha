@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import MobileHeader from "@/components/MobileHeader";
 import { createListing } from "@/lib/solana/MarketplaceClient";
 
 interface TicketData {
@@ -359,9 +358,7 @@ export default function TicketDetailPage({ params }: { params: Promise<{ nftAddr
 
     return (
         <div className="min-h-screen bg-background pb-24">
-            <MobileHeader />
-
-            <div className="px-4 pt-24 pb-8 max-w-2xl mx-auto">
+            <div className="px-4 pb-8">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <Link href="/profile" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">

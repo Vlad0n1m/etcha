@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import MobileHeader from "@/components/MobileHeader"
 import {
     ChevronLeft,
     Building2,
@@ -78,9 +77,8 @@ export default function OrganizerRequestPage() {
     // Already an organizer
     if (session?.user?.role === "ORGANIZER") {
         return (
-            <div className="min-h-screen bg-gray-50">
-                <MobileHeader />
-                <div className="pt-20 md:pt-8 pb-24 md:pb-8">
+            <div className="min-h-screen bg-background">
+                <div className="pb-24 lg:pb-8">
                     <div className="max-w-md mx-auto px-4">
                         <Link
                             href="/settings"
@@ -109,9 +107,8 @@ export default function OrganizerRequestPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <MobileHeader />
-            <div className="pt-20 md:pt-8 pb-24 md:pb-8">
+        <div className="min-h-screen bg-background">
+            <div className="pb-24 lg:pb-8">
                 <div className="max-w-md mx-auto px-4">
                     {/* Back Link */}
                     <Link

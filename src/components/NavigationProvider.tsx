@@ -3,7 +3,8 @@
 import React from 'react'
 import { usePathname } from 'next/navigation'
 import BottomNav from './BottomNav'
-import DesktopNavbar from './DesktopNavbar'
+import DesktopSidebar from './DesktopSidebar'
+import TopBanner from './TopBanner'
 
 export function NavigationProvider({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
@@ -19,18 +20,21 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
     // Auth pages have their own layout (no navigation)
     if (isAuthPage) {
         return (
-            <div className="bg-gray-50 min-h-screen">
+            <div className="bg-background min-h-screen">
                 {children}
             </div>
         )
     }
 
     // All other pages get the standard navigation
+    // Mobile: BottomNav only
+    // Desktop: Floating sidebar + centered 720px container
     return (
-        <div className="bg-gray-50 min-h-screen">
-            <DesktopNavbar />
-            {/* Add top padding for desktop navbar */}
-            <div className="md:pt-16">
+        <div className="bg-background min-h-screen pt-[30px] lg:pt-[60px]">
+            <TopBanner />
+            <DesktopSidebar />
+            {/* Centered container with max-width 720px on desktop */}
+            <div className="lg:max-w-[720px] lg:mx-auto">
                 {children}
             </div>
             <BottomNav />

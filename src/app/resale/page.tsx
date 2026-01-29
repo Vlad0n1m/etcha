@@ -6,7 +6,6 @@ import { Search, AlertCircle } from 'lucide-react';
 import React from 'react';
 import EventCardSkeleton from '@/components/EventCardSkeleton';
 import { Button } from '@/components/ui/button';
-import MobileHeader from '@/components/MobileHeader';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { Transaction, VersionedTransaction } from '@solana/web3.js';
 
@@ -175,9 +174,8 @@ function ResaleClient() {
     if (isLoading) {
         return (
             <div className="min-h-screen bg-background">
-                <MobileHeader />
                 <div className="container mx-auto px-4">
-                    <div className="mb-8 pt-24">
+                    <div className="mb-8">
                         <h1 className="text-3xl font-bold text-foreground mb-2">Ticket Resale Marketplace</h1>
                         <p className="text-muted-foreground">Discover and buy resale tickets for your favorite events. Sellers set their own prices.</p>
                     </div>
@@ -246,8 +244,7 @@ function ResaleClient() {
 
     return (
         <div className="min-h-screen bg-background mb-16">
-            <MobileHeader />
-            <div className="container mx-auto px-4 pt-24">
+            <div className="container mx-auto px-4">
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-foreground mb-2">Ticket Resale Marketplace</h1>
                     <p className="text-muted-foreground">Discover and buy resale tickets for your favorite events. Sellers set their own prices.</p>

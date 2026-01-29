@@ -61,11 +61,11 @@ export default function MintResultModal({ open, onClose, result }: MintResultMod
                                     <CheckCircle2 className="w-6 h-6 text-green-500" />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-bold text-foreground">Successfully Minted!</h2>
-                                    <p className="text-sm text-muted-foreground">
+                                    <Drawer.Title className="text-xl font-bold text-foreground">Successfully Minted!</Drawer.Title>
+                                    <Drawer.Description className="text-sm text-muted-foreground">
                                         You received {result.nftMintAddresses.length} NFT ticket
                                         {result.nftMintAddresses.length > 1 ? "s" : ""}
-                                    </p>
+                                    </Drawer.Description>
                                 </div>
                             </div>
                             <button

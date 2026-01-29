@@ -1,0 +1,17 @@
+{
+    "formatVersion": 1,
+    "passTypeIdentifier": "pass.etcha",
+    "teamIdentifier": "82RXQU98CV",
+    "organizationName": "Etcha",
+    "description": "Event Ticket",
+    "foregroundColor": "rgb(255, 255, 255)",
+    "backgroundColor": "rgb(26, 26, 46)",
+    "labelColor": "rgb(160, 160, 160)",
+    "eventTicket": {
+        "headerFields": [],
+        "primaryFields": [],
+        "secondaryFields": [],
+        "auxiliaryFields": [],
+        "backFields": []
+    }
+}
