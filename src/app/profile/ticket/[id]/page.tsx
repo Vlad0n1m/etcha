@@ -64,6 +64,12 @@ interface TicketDetail {
         poapStatus: string
         poapMintTx: string | null
     } | null
+    ticketType: {
+        id: string
+        name: string
+        price: number
+        description: string | null
+    } | null
 }
 
 export default function TicketDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -430,6 +436,11 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
                                 <p className="text-sm font-medium text-foreground">
                                     Ticket #{ticket.tokenId}
                                 </p>
+                                {ticket.ticketType && (
+                                    <p className="text-sm font-semibold text-primary mt-1">
+                                        {ticket.ticketType.name}
+                                    </p>
+                                )}
                                 <p className="text-xs text-muted-foreground mt-1">
                                     Show this QR code at the entrance
                                 </p>
@@ -510,6 +521,24 @@ export default function TicketDetailPage({ params }: { params: Promise<{ id: str
 
                     <div className={`grid transition-all duration-300 ease-out ${isDetailsOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
                         <div className="overflow-hidden px-5 pb-5 space-y-4">
+                            {/* Ticket Type Information */}
+                            {ticket.ticketType && (
+                                <div className="bg-primary/5 border border-primary/20 rounded-xl p-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <span className="text-xs text-muted-foreground">Ticket Type</span>
+                                            <p className="text-base font-semibold text-primary">{ticket.ticketType.name}</p>
+                                            {ticket.ticketType.description && (
+                                                <p className="text-xs text-muted-foreground mt-1">{ticket.ticketType.description}</p>
+                                            )}
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-lg font-bold text-foreground">{ticket.ticketType.price.toFixed(2)} SOL</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Price Information */}
                             <div className="bg-muted/50 rounded-xl p-4">
                                 <div className="flex items-center justify-between mb-2">

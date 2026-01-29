@@ -130,6 +130,14 @@ export async function POST(
                         poapMintTx: true,
                     },
                 },
+                ticketType: {
+                    select: {
+                        id: true,
+                        name: true,
+                        price: true,
+                        description: true,
+                    },
+                },
             },
         })
 
@@ -215,9 +223,11 @@ export async function POST(
         }
 
         // Calculate price per ticket
-        // If order.totalPrice is 0 or invalid, fall back to event price
+        // If ticket has a type, use the type price, otherwise fall back to order or event price
         let pricePerTicket = ticket.event.price
-        if (ticket.order.totalPrice > 0 && ticket.order.quantity > 0) {
+        if (ticket.ticketType) {
+            pricePerTicket = ticket.ticketType.price
+        } else if (ticket.order.totalPrice > 0 && ticket.order.quantity > 0) {
             pricePerTicket = ticket.order.totalPrice / ticket.order.quantity
         }
 
@@ -279,6 +289,13 @@ export async function POST(
                     poapAssetId: ticket.attendance.poapAssetId,
                     poapStatus: ticket.attendance.poapStatus,
                     poapMintTx: ticket.attendance.poapMintTx,
+                } : null,
+                // Ticket type information
+                ticketType: ticket.ticketType ? {
+                    id: ticket.ticketType.id,
+                    name: ticket.ticketType.name,
+                    price: ticket.ticketType.price,
+                    description: ticket.ticketType.description,
                 } : null,
             },
         }

@@ -576,10 +576,10 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                                             onClick={() => !isSoldOut && handleTicketTypeSelect(ticketType)}
                                             disabled={isSoldOut}
                                             className={`w-full p-4 rounded-xl border-2 transition-all text-left ${isSelected
-                                                    ? 'border-primary bg-primary/5'
-                                                    : isSoldOut
-                                                        ? 'border-border bg-muted/30 opacity-60 cursor-not-allowed'
-                                                        : 'border-border hover:border-primary/50'
+                                                ? 'border-primary bg-primary/5'
+                                                : isSoldOut
+                                                    ? 'border-border bg-muted/30 opacity-60 cursor-not-allowed'
+                                                    : 'border-border hover:border-primary/50'
                                                 }`}
                                         >
                                             <div className="flex items-center justify-between">
@@ -637,8 +637,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     {/* Ticket Limit Warning */}
                     {event.maxTicketsPerUser && (
                         <div className={`p-3 rounded-xl mb-5 flex items-center gap-2 ${isAtLimit
-                                ? 'bg-red-50 border border-red-200'
-                                : 'bg-blue-50 border border-blue-200'
+                            ? 'bg-red-50 border border-red-200'
+                            : 'bg-blue-50 border border-blue-200'
                             }`}>
                             <AlertCircle className={`w-4 h-4 flex-shrink-0 ${isAtLimit ? 'text-red-500' : 'text-blue-500'}`} />
                             <span className={`text-sm ${isAtLimit ? 'text-red-700' : 'text-blue-700'}`}>
@@ -950,8 +950,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             {/* Confirm Buy Modal */}
             {showBuyConfirm && selectedTicketType && (
                 <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                    <div className="bg-surface rounded-t-3xl sm:rounded-3xl w-full max-w-md border border-border/50 shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
-                        <div className="p-6">
+                    <div className="bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl w-full max-w-md border border-border/50 shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
+                        <div className="p-6 bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl">
                             {/* Event Preview */}
                             <div className="flex items-center gap-4 mb-6 pb-5 border-b border-border">
                                 <div className="w-16 h-16 rounded-2xl overflow-hidden bg-muted flex-shrink-0">
