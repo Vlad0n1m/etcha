@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, ArrowUp } from "lucide-react";
 import { PostCard, PostComposer, Post } from "@/components/feed";
+import PostDetailDrawer from "@/components/feed/PostDetailDrawer";
 import { useAuth } from "@/components/AuthProvider";
 import { useSession } from "next-auth/react";
 
@@ -25,6 +26,7 @@ export default function FeedPage() {
   } | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
   // Track scroll position
   useEffect(() => {
@@ -156,6 +158,18 @@ export default function FeedPage() {
     setPosts((prev) => prev.filter((p) => p.id !== postId));
   };
 
+  const handleLikeUpdate = (postId: string, isLiked: boolean, likesCount: number) => {
+    setPosts((prev) =>
+      prev.map((p) =>
+        p.id === postId ? { ...p, isLiked, likesCount } : p
+      )
+    );
+  };
+
+  const handleOpenDetail = (post: Post) => {
+    setSelectedPost(post);
+  };
+
   const handleRefresh = () => {
     setCursor(null);
     fetchPosts(false, true);
@@ -171,8 +185,8 @@ export default function FeedPage() {
             <button
               onClick={() => setActiveTab("all")}
               className={`flex-1 py-2 px-4 text-sm font-medium rounded-full transition-all ${activeTab === "all"
-                  ? "bg-white text-purple-600 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
+                ? "bg-white text-purple-600 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
                 }`}
             >
               Все
@@ -180,8 +194,8 @@ export default function FeedPage() {
             <button
               onClick={() => setActiveTab("following")}
               className={`flex-1 py-2 px-4 text-sm font-medium rounded-full transition-all ${activeTab === "following"
-                  ? "bg-white text-purple-600 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
+                ? "bg-white text-purple-600 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
                 }`}
             >
               Подписки
@@ -243,6 +257,8 @@ export default function FeedPage() {
                 authToken={authToken}
                 currentUserId={currentUserId}
                 onDelete={handlePostDelete}
+                onLike={handleLikeUpdate}
+                onOpenDetail={handleOpenDetail}
                 useSession={!walletToken && !!session}
               />
             ))}
@@ -271,6 +287,17 @@ export default function FeedPage() {
           </motion.button>
         )}
       </AnimatePresence>
+
+      {/* Post Detail Drawer */}
+      <PostDetailDrawer
+        post={selectedPost}
+        isOpen={!!selectedPost}
+        onClose={() => setSelectedPost(null)}
+        authToken={authToken}
+        onLike={handleLikeUpdate}
+        currentUserId={currentUserId}
+        useSession={!walletToken && !!session}
+      />
     </div>
   );
 }

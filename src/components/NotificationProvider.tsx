@@ -27,10 +27,17 @@ export interface NotificationData {
   };
 }
 
+interface SSEMessage {
+  type: "connected" | "new_notification" | "unread_count";
+  unreadCount?: number;
+  notification?: NotificationData;
+}
+
 interface NotificationContextType {
   unreadCount: number;
   notifications: NotificationData[];
   isLoading: boolean;
+  isConnected: boolean;
   fetchNotifications: () => Promise<void>;
   markAsRead: (ids: string[]) => Promise<void>;
   markAllAsRead: () => Promise<void>;
@@ -145,8 +152,107 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastNotificationIdRef = useRef<string | null>(null);
-  const isInitializedRef = useRef(false);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Show toast for new notification
+  const showNotificationToast = useCallback((notification: NotificationData) => {
+    toast.custom(
+      (t) => (
+        <div
+          className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 max-w-sm w-full cursor-pointer hover:bg-gray-50 transition-colors"
+          onClick={() => toast.dismiss(t)}
+        >
+          <NotificationToast notification={notification} />
+        </div>
+      ),
+      {
+        duration: 5000,
+        position: typeof window !== "undefined" && window.innerWidth < 1024 ? "top-center" : "bottom-right",
+      }
+    );
+  }, []);
+
+  // Handle SSE message
+  const handleSSEMessage = useCallback((event: MessageEvent) => {
+    try {
+      const data: SSEMessage = JSON.parse(event.data);
+
+      switch (data.type) {
+        case "connected":
+          setIsConnected(true);
+          if (data.unreadCount !== undefined) {
+            setUnreadCount(data.unreadCount);
+          }
+          break;
+
+        case "new_notification":
+          if (data.notification) {
+            // Add to notifications list
+            setNotifications((prev) => [data.notification!, ...prev]);
+            // Show toast
+            showNotificationToast(data.notification);
+            // Update last notification id
+            lastNotificationIdRef.current = data.notification.id;
+          }
+          break;
+
+        case "unread_count":
+          if (data.unreadCount !== undefined) {
+            setUnreadCount(data.unreadCount);
+          }
+          break;
+      }
+    } catch (error) {
+      console.error("Error parsing SSE message:", error);
+    }
+  }, [showNotificationToast]);
+
+  // Connect to SSE
+  const connectSSE = useCallback(() => {
+    if (!session?.user?.id || eventSourceRef.current) return;
+
+    try {
+      const eventSource = new EventSource("/api/notifications/stream");
+      eventSourceRef.current = eventSource;
+
+      eventSource.onmessage = handleSSEMessage;
+
+      eventSource.onerror = () => {
+        setIsConnected(false);
+        eventSource.close();
+        eventSourceRef.current = null;
+
+        // Reconnect after 3 seconds
+        reconnectTimeoutRef.current = setTimeout(() => {
+          connectSSE();
+        }, 3000);
+      };
+
+      eventSource.onopen = () => {
+        setIsConnected(true);
+      };
+    } catch (error) {
+      console.error("Error connecting to SSE:", error);
+      setIsConnected(false);
+    }
+  }, [session?.user?.id, handleSSEMessage]);
+
+  // Disconnect SSE
+  const disconnectSSE = useCallback(() => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    setIsConnected(false);
+  }, []);
 
   const fetchNotifications = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -158,6 +264,11 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
         const data = await response.json();
         setNotifications(data.notifications);
         setUnreadCount(data.unreadCount);
+
+        // Set initial last notification id
+        if (data.notifications.length > 0 && !lastNotificationIdRef.current) {
+          lastNotificationIdRef.current = data.notifications[0].id;
+        }
       }
     } catch (error) {
       console.error("Error fetching notifications:", error);
@@ -165,6 +276,45 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
       setIsLoading(false);
     }
   }, [session?.user?.id]);
+
+  // Polling fallback - check for new notifications
+  const checkForNewNotifications = useCallback(async () => {
+    if (!session?.user?.id) return;
+
+    try {
+      const response = await fetch("/api/notifications?limit=5&unreadOnly=true");
+      if (response.ok) {
+        const data = await response.json();
+
+        // Update unread count
+        setUnreadCount(data.unreadCount);
+
+        // Show toast for genuinely new notifications
+        if (data.notifications.length > 0) {
+          const latestNotification = data.notifications[0];
+
+          // Only show toast if this is a NEW notification we haven't seen
+          if (lastNotificationIdRef.current &&
+            latestNotification.id !== lastNotificationIdRef.current &&
+            new Date(latestNotification.createdAt) > new Date(Date.now() - 60000)) { // Within last minute
+
+            // Check if this notification is in our current list
+            const isAlreadyInList = notifications.some(n => n.id === latestNotification.id);
+
+            if (!isAlreadyInList) {
+              // Add to list and show toast
+              setNotifications(prev => [latestNotification, ...prev.filter(n => n.id !== latestNotification.id)]);
+              showNotificationToast(latestNotification);
+            }
+          }
+
+          lastNotificationIdRef.current = latestNotification.id;
+        }
+      }
+    } catch (error) {
+      console.error("Error checking for new notifications:", error);
+    }
+  }, [session?.user?.id, notifications, showNotificationToast]);
 
   const refreshCount = useCallback(async () => {
     if (!session?.user?.id) return;
@@ -179,51 +329,6 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
       console.error("Error fetching notification count:", error);
     }
   }, [session?.user?.id]);
-
-  const checkForNewNotifications = useCallback(async () => {
-    if (!session?.user?.id) return;
-
-    try {
-      const response = await fetch("/api/notifications?limit=5&unreadOnly=true");
-      if (response.ok) {
-        const data = await response.json();
-        setUnreadCount(data.unreadCount);
-
-        // Show toast for new notifications
-        if (data.notifications.length > 0 && isInitializedRef.current) {
-          const latestNotification = data.notifications[0];
-
-          // Only show toast if it's a new notification
-          if (lastNotificationIdRef.current && latestNotification.id !== lastNotificationIdRef.current) {
-            // Check if this notification is newer than the last one we saw
-            const isNew = !lastNotificationIdRef.current ||
-              new Date(latestNotification.createdAt) > new Date(notifications[0]?.createdAt || 0);
-
-            if (isNew) {
-              toast.custom(
-                (t) => (
-                  <div
-                    className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 max-w-sm w-full cursor-pointer hover:bg-gray-50 transition-colors"
-                    onClick={() => toast.dismiss(t)}
-                  >
-                    <NotificationToast notification={latestNotification} />
-                  </div>
-                ),
-                {
-                  duration: 5000,
-                  position: window.innerWidth < 1024 ? "top-center" : "bottom-right",
-                }
-              );
-            }
-          }
-
-          lastNotificationIdRef.current = latestNotification.id;
-        }
-      }
-    } catch (error) {
-      console.error("Error checking for new notifications:", error);
-    }
-  }, [session?.user?.id, notifications]);
 
   const markAsRead = useCallback(async (ids: string[]) => {
     if (!session?.user?.id || ids.length === 0) return;
@@ -266,27 +371,48 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
     }
   }, [session?.user?.id]);
 
-  // Initial fetch
+  // Initial fetch and SSE connection
   useEffect(() => {
     if (session?.user?.id && status === "authenticated") {
-      fetchNotifications().then(() => {
-        isInitializedRef.current = true;
-      });
+      fetchNotifications();
+      connectSSE();
     }
-  }, [session?.user?.id, status, fetchNotifications]);
 
-  // Poll for new notifications every 30 seconds
+    return () => {
+      disconnectSSE();
+    };
+  }, [session?.user?.id, status, fetchNotifications, connectSSE, disconnectSSE]);
+
+  // Polling fallback - runs every 10 seconds when SSE is not connected
   useEffect(() => {
     if (!session?.user?.id || status !== "authenticated") return;
 
-    const interval = setInterval(checkForNewNotifications, 30000);
-    return () => clearInterval(interval);
+    // Always poll as fallback, even if SSE is connected (SSE might miss messages)
+    pollingIntervalRef.current = setInterval(checkForNewNotifications, 10000);
+
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+    };
   }, [session?.user?.id, status, checkForNewNotifications]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      disconnectSSE();
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, [disconnectSSE]);
 
   const value = {
     unreadCount,
     notifications,
     isLoading,
+    isConnected,
     fetchNotifications,
     markAsRead,
     markAllAsRead,

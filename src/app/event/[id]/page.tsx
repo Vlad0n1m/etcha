@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, use, useEffect, useCallback } from "react"
+import { useSession } from "next-auth/react"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, Calendar, MapPin, Clock, Loader2, Leaf } from "lucide-react"
+import { ChevronLeft, Calendar, MapPin, Clock, Loader2, Leaf, Users, Ticket, Share2, Heart, ExternalLink, Sparkles, UserPlus, UserCheck } from "lucide-react"
 import { useWallet, useConnection } from "@solana/wallet-adapter-react"
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui"
 import WalletDrawer from "@/components/WalletDrawer"
 import MintProgress, { MintStatus } from "@/components/MintProgress"
 import MintResultModal from "@/components/MintResultModal"
@@ -26,6 +26,7 @@ interface Event {
     category?: string
     company?: string
     organizer: {
+        id: string // User ID for follow functionality
         name: string
         avatar: string
         description: string
@@ -67,7 +68,11 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     const [showMintModal, setShowMintModal] = useState(false)
     const [showBuyConfirm, setShowBuyConfirm] = useState(false)
     const [isUpgrading, setIsUpgrading] = useState(false)
+    const [isFollowing, setIsFollowing] = useState(false)
+    const [isFollowLoading, setIsFollowLoading] = useState(false)
+    const [followersCount, setFollowersCount] = useState(0)
 
+    const { data: session } = useSession()
     const { connected, publicKey, sendTransaction, wallet } = useWallet()
     const { connection } = useConnection()
     const resolvedParams = use(params)
@@ -99,6 +104,48 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             fetchEvent()
         }
     }, [resolvedParams.id, fetchEvent])
+
+    // Check if user is following the organizer
+    const checkFollowStatus = useCallback(async () => {
+        if (!event?.organizer?.id || !session?.user) return
+
+        try {
+            const response = await fetch(`/api/users/${event.organizer.id}`)
+            if (response.ok) {
+                const data = await response.json()
+                setIsFollowing(data.isFollowing || false)
+                setFollowersCount(data.followersCount || 0)
+            }
+        } catch (err) {
+            console.error('Error checking follow status:', err)
+        }
+    }, [event?.organizer?.id, session?.user])
+
+    useEffect(() => {
+        checkFollowStatus()
+    }, [checkFollowStatus])
+
+    // Toggle follow organizer
+    const handleFollowToggle = async () => {
+        if (!event?.organizer?.id || !session?.user) return
+
+        setIsFollowLoading(true)
+        try {
+            const response = await fetch(`/api/users/${event.organizer.id}/follow`, {
+                method: 'POST',
+            })
+
+            if (response.ok) {
+                const data = await response.json()
+                setIsFollowing(data.isFollowing)
+                setFollowersCount(data.followersCount)
+            }
+        } catch (err) {
+            console.error('Error toggling follow:', err)
+        } finally {
+            setIsFollowLoading(false)
+        }
+    }
 
     const formatPrice = (price: number): string => {
         if (price >= 1000) {
@@ -276,10 +323,13 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     // Loading state
     if (isLoading) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center p-4">
+            <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center p-4">
                 <div className="text-center">
-                    <Loader2 className="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
-                    <p className="text-muted-foreground">Loading event...</p>
+                    <div className="relative">
+                        <div className="w-16 h-16 rounded-full bg-primary/10 animate-pulse mx-auto mb-4" />
+                        <Loader2 className="w-8 h-8 text-primary animate-spin absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                    </div>
+                    <p className="text-muted-foreground font-medium">Loading event...</p>
                 </div>
             </div>
         )
@@ -288,13 +338,18 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     // Error or not found state
     if (error || !event) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center p-4">
-                <div className="text-center">
-                    <h1 className="text-2xl font-bold text-foreground mb-4">
+            <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center p-4">
+                <div className="text-center bg-surface rounded-3xl p-8 border border-border shadow-lg max-w-md">
+                    <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+                        <Ticket className="w-8 h-8 text-red-500" />
+                    </div>
+                    <h1 className="text-2xl font-bold text-foreground mb-2">
                         {error || "Event Not Found"}
                     </h1>
-                    <Link href="/" className="text-primary hover:text-primary/80 font-medium">
-                        ← Back to Events
+                    <p className="text-muted-foreground mb-6">The event you're looking for doesn't exist or has been removed.</p>
+                    <Link href="/" className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-xl font-medium hover:bg-primary/90 transition-all">
+                        <ChevronLeft className="w-4 h-4" />
+                        Back to Events
                     </Link>
                 </div>
             </div>
@@ -304,33 +359,40 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     const totalPrice = event.price * ticketQuantity
 
     return (
-        <div className="min-h-screen bg-background pb-24" style={{ pointerEvents: 'auto' }}>
-            <div className="bg-surface/80 backdrop-blur-md border-b border-border/50 sticky top-0 z-50">
+        <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-32" style={{ pointerEvents: 'auto' }}>
+            {/* Hero Header with Glass Effect */}
+            <div className="bg-surface/70 backdrop-blur-xl border-b border-border/30 sticky top-0 z-50 shadow-sm">
                 <div className="flex items-center justify-between px-4 py-3 max-w-2xl mx-auto">
-                    <Link href="/" className="flex items-center gap-2 text-foreground hover:text-primary transition-colors">
+                    <Link href="/" className="flex items-center gap-2 text-foreground hover:text-primary transition-all hover:gap-3">
                         <ChevronLeft className="w-5 h-5" />
                         <span className="font-medium text-sm">Back</span>
                     </Link>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
+                        {/* Action buttons */}
+                        <button className="w-9 h-9 rounded-full bg-muted/50 flex items-center justify-center hover:bg-muted transition-colors">
+                            <Share2 className="w-4 h-4 text-muted-foreground" />
+                        </button>
+                        <button className="w-9 h-9 rounded-full bg-muted/50 flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-colors group">
+                            <Heart className="w-4 h-4 text-muted-foreground group-hover:text-red-500" />
+                        </button>
                         {/* Devnet badge */}
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 font-semibold uppercase tracking-wide">Devnet</span>
+                        <span className="text-[10px] px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-100 to-violet-100 text-purple-700 font-semibold uppercase tracking-wide border border-purple-200/50">Devnet</span>
                         {connected ? (
                             <WalletDrawer>
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className="flex items-center gap-2 border-green-500 text-green-700 hover:bg-green-50"
+                                    className="flex items-center gap-2 border-green-400 text-green-700 hover:bg-green-50 rounded-xl"
                                 >
-                                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                                     {formatAddress(publicKey?.toString() || "")}
                                 </Button>
                             </WalletDrawer>
                         ) : (
                             <WalletDrawer>
                                 <Button
-                                    variant="outline"
                                     size="sm"
-                                    className="bg-purple-500 text-white hover:bg-purple-600"
+                                    className="bg-gradient-to-r from-purple-500 to-violet-600 text-white hover:from-purple-600 hover:to-violet-700 rounded-xl shadow-lg shadow-purple-500/25"
                                 >
                                     Connect Wallet
                                 </Button>
@@ -340,94 +402,151 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
             </div>
 
-            <div className="relative h-56 w-full">
+            {/* Hero Image Section */}
+            <div className="relative h-72 w-full overflow-hidden">
                 <Image
                     src={event.imageUrl || "/no-ticket-svgrepo-com.svg"}
                     alt={event.title ? `${event.title} event cover image` : "Event cover image"}
                     fill
-                    className="object-cover"
+                    className="object-cover scale-105 hover:scale-100 transition-transform duration-700"
                     priority
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
 
-                <div className="absolute top-4 left-4 flex gap-2">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary/90 text-primary-foreground backdrop-blur-sm">
+                {/* Floating badges */}
+                <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+                    <span className="inline-flex items-center px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white/90 text-foreground backdrop-blur-md shadow-lg border border-white/50">
                         {event.category}
                     </span>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-500/90 text-white backdrop-blur-sm">
-                        <Leaf className="w-3 h-3" />
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-emerald-500 to-green-500 text-white backdrop-blur-md shadow-lg">
+                        <Leaf className="w-3.5 h-3.5" />
                         cNFT
                     </span>
+                </div>
+
+                {/* Tickets available badge */}
+                <div className="absolute top-4 right-4">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-md shadow-lg border border-white/50">
+                        <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="text-xs font-semibold text-foreground">{event.ticketsAvailable} left</span>
+                    </div>
                 </div>
             </div>
 
             <div className="px-4 max-w-2xl mx-auto">
-
-                <div className="bg-surface rounded-2xl p-5 -mt-8 relative z-10 border border-border shadow-lg">
-                    <div className="flex items-start justify-between gap-3 mb-4">
-                        <div className="flex-1">
-                            <h1 className="text-xl font-bold text-foreground mb-2 leading-tight">{event.title}</h1>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <span className="font-medium">{event.company}</span>
+                {/* Main Info Card */}
+                <div className="bg-surface rounded-3xl p-6 -mt-12 relative z-10 border border-border/50 shadow-xl">
+                    {/* Title Section */}
+                    <div className="mb-5">
+                        <h1 className="text-2xl font-bold text-foreground mb-2 leading-tight">{event.title}</h1>
+                        <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
+                                <Sparkles className="w-3 h-3 text-primary" />
                             </div>
+                            <span className="text-sm font-medium text-muted-foreground">{event.company}</span>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 pt-4 border-t border-border">
-                        <div className="flex items-start gap-2">
-                            <Calendar className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    {/* Event Details Grid */}
+                    <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-2xl mb-5">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <Calendar className="w-5 h-5 text-primary" />
+                            </div>
                             <div className="min-w-0">
-                                <div className="text-xs text-muted-foreground">Date</div>
-                                <div className="text-sm font-medium text-foreground">{formatDate(event.date)}</div>
+                                <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">Date</div>
+                                <div className="text-sm font-semibold text-foreground">{formatDate(event.date)}</div>
                             </div>
                         </div>
 
-                        <div className="flex items-start gap-2">
-                            <Clock className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <Clock className="w-5 h-5 text-primary" />
+                            </div>
                             <div className="min-w-0">
-                                <div className="text-xs text-muted-foreground">Time</div>
-                                <div className="text-sm font-medium text-foreground">{event.time} GMT+2</div>
+                                <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">Time</div>
+                                <div className="text-sm font-semibold text-foreground">{event.time}</div>
                             </div>
                         </div>
 
-                        <div className="flex items-start gap-2 col-span-2">
-                            <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                            <div className="min-w-0">
-                                <div className="text-xs text-muted-foreground">Location</div>
-                                <div className="text-sm font-medium text-foreground">Barcelona, Catalunya</div>
+                        <div className="flex items-center gap-3 col-span-2">
+                            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <MapPin className="w-5 h-5 text-primary" />
                             </div>
+                            <div className="min-w-0 flex-1">
+                                <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">Location</div>
+                                <div className="text-sm font-semibold text-foreground">Barcelona, Catalunya</div>
+                            </div>
+                            <button className="text-primary hover:text-primary/80 transition-colors">
+                                <ExternalLink className="w-4 h-4" />
+                            </button>
                         </div>
                     </div>
 
+                    {/* Price Section */}
                     {event.price > 0 && (
-                        <div className="bg-muted/50 rounded-xl p-4 mb-4">
-                            <div className="flex items-baseline gap-2 mb-1">
-                                <span className="text-3xl font-bold text-foreground">{formatPrice(event.price)}</span>
-                                <span className="text-sm font-medium text-muted-foreground">SOL</span>
-                            </div>
-                            <div className="text-xs text-muted-foreground">per ticket</div>
-                            <div className="mt-2 flex items-center gap-1.5 text-xs text-green-600">
-                                <Leaf className="w-3.5 h-3.5" />
-                                <span>Ultra-low transaction fees</span>
+                        <div className="bg-gradient-to-br from-primary/5 via-primary/10 to-violet-500/5 rounded-2xl p-5 mb-5 border border-primary/10">
+                            <div className="flex items-end justify-between">
+                                <div>
+                                    <div className="text-xs uppercase tracking-wide text-muted-foreground font-medium mb-1">Price per ticket</div>
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">{formatPrice(event.price)}</span>
+                                        <span className="text-lg font-semibold text-muted-foreground">SOL</span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                                    <Leaf className="w-4 h-4 text-emerald-600" />
+                                    <span className="text-xs font-semibold text-emerald-700">Low fees</span>
+                                </div>
                             </div>
                         </div>
                     )}
 
 
 
+                    {/* Quantity Selector */}
+                    {(event.nftType === 'cnft' || event.merkleTreeAddress) && event.ticketsAvailable > 1 && (
+                        <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl mb-5">
+                            <span className="text-sm font-medium text-foreground">Quantity</span>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={() => handleQuantityChange(-1)}
+                                    disabled={ticketQuantity <= 1}
+                                    className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                                >
+                                    -
+                                </button>
+                                <span className="w-8 text-center font-bold text-foreground">{ticketQuantity}</span>
+                                <button
+                                    onClick={() => handleQuantityChange(1)}
+                                    disabled={ticketQuantity >= event.ticketsAvailable}
+                                    className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                                >
+                                    +
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     {error && (
-                        <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-sm mb-4">
-                            {error}
+                        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm mb-5 flex items-start gap-3">
+                            <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-xs">!</span>
+                            </div>
+                            <span>{error}</span>
                         </div>
                     )}
 
                     {/* Legacy Event Upgrade Banner - only for old events without cNFT */}
                     {event.nftType !== 'cnft' && !event.merkleTreeAddress && (
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
-                            <div className="flex items-start gap-3">
+                        <div className="bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200/50 rounded-2xl p-5 mb-5">
+                            <div className="flex items-start gap-3 mb-4">
+                                <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+                                    <Sparkles className="w-5 h-5 text-amber-600" />
+                                </div>
                                 <div className="flex-1">
-                                    <p className="text-sm font-medium text-yellow-800">Event Upgrade Required</p>
-                                    <p className="text-xs text-yellow-700 mt-1">
+                                    <p className="text-sm font-semibold text-amber-900">Upgrade Required</p>
+                                    <p className="text-xs text-amber-700 mt-1 leading-relaxed">
                                         This event needs to be upgraded to enable ticket purchases with ultra-low fees.
                                     </p>
                                 </div>
@@ -435,7 +554,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                             <button
                                 onClick={handleUpgradeEvent}
                                 disabled={isUpgrading}
-                                className="mt-3 w-full bg-yellow-600 text-white font-medium py-2.5 rounded-lg hover:bg-yellow-700 transition-colors disabled:opacity-50"
+                                className="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-semibold py-3 rounded-xl hover:from-amber-600 hover:to-yellow-600 transition-all shadow-lg shadow-amber-500/25 disabled:opacity-50"
                             >
                                 {isUpgrading ? (
                                     <span className="flex items-center justify-center gap-2">
@@ -451,7 +570,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
 
                     {/* Mint Progress */}
                     {isMinting && (
-                        <div className="mb-4">
+                        <div className="mb-5">
                             <MintProgress status={mintStatus} message={mintProgress} />
                         </div>
                     )}
@@ -461,14 +580,29 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                         <button
                             onClick={handleBuyClick}
                             disabled={isMinting}
-                            className="w-full bg-primary text-primary-foreground font-semibold py-3.5 rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full bg-gradient-to-r from-primary to-violet-600 text-primary-foreground font-bold py-4 rounded-2xl hover:from-primary/90 hover:to-violet-600/90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-primary/25 text-base"
                         >
-                            {isMinting ? "Minting..." : event.price === 0 ? 'Get Ticket' : `Buy for ${formatPrice(totalPrice)} SOL`}
+                            {isMinting ? (
+                                <span className="flex items-center justify-center gap-2">
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                    Processing...
+                                </span>
+                            ) : event.price === 0 ? (
+                                <span className="flex items-center justify-center gap-2">
+                                    <Ticket className="w-5 h-5" />
+                                    Get Free Ticket
+                                </span>
+                            ) : (
+                                <span className="flex items-center justify-center gap-2">
+                                    <Ticket className="w-5 h-5" />
+                                    Buy {ticketQuantity > 1 ? `${ticketQuantity} tickets` : 'ticket'} for {formatPrice(totalPrice)} SOL
+                                </span>
+                            )}
                         </button>
                     ) : (
                         <button
                             disabled
-                            className="w-full bg-muted text-muted-foreground font-semibold py-3.5 rounded-xl cursor-not-allowed"
+                            className="w-full bg-muted text-muted-foreground font-semibold py-4 rounded-2xl cursor-not-allowed"
                         >
                             Upgrade event first to buy tickets
                         </button>
@@ -476,7 +610,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 </div>
 
                 {/* Resale offers */}
-                <div className="mt-4">
+                <div className="mt-6">
                     <ResaleSection
                         eventId={event.id}
                         eventTitle={event.title}
@@ -485,49 +619,113 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     />
                 </div>
 
-                <div className="bg-surface rounded-2xl p-5 mt-4 border border-border">
-                    <h2 className="text-base font-bold text-foreground mb-3">About Event</h2>
+                {/* About Event Card */}
+                <div className="bg-surface rounded-3xl p-6 mt-6 border border-border/50 shadow-sm">
+                    <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                            <Sparkles className="w-4 h-4 text-primary" />
+                        </div>
+                        About Event
+                    </h2>
                     <p className="text-sm text-muted-foreground leading-relaxed">{event.description}</p>
-
-                    {/* Schedule disabled for MVP */}
                 </div>
 
-                <div className="bg-surface rounded-2xl p-5 mt-4 border border-border">
-                    <h2 className="text-base font-bold text-foreground mb-3">Venue</h2>
-                    <div className="text-sm font-medium text-foreground mb-1">{event.company}</div>
-                    <div className="text-sm text-muted-foreground leading-relaxed">{event.fullAddress}</div>
+                {/* Venue Card */}
+                <div className="bg-surface rounded-3xl p-6 mt-4 border border-border/50 shadow-sm">
+                    <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                            <MapPin className="w-4 h-4 text-primary" />
+                        </div>
+                        Venue
+                    </h2>
+                    <div className="bg-muted/30 rounded-2xl p-4">
+                        <div className="text-base font-semibold text-foreground mb-1">{event.company}</div>
+                        <div className="text-sm text-muted-foreground leading-relaxed">{event.fullAddress}</div>
+                        <button className="mt-3 inline-flex items-center gap-2 text-sm text-primary font-medium hover:text-primary/80 transition-colors">
+                            <ExternalLink className="w-4 h-4" />
+                            View on map
+                        </button>
+                    </div>
                 </div>
 
-                <div className="bg-surface rounded-2xl p-5 mt-4 border border-border">
-                    <h2 className="text-base font-bold text-foreground mb-4">Organizer</h2>
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                {/* Organizer Card */}
+                <div className="bg-surface rounded-3xl p-6 mt-4 border border-border/50 shadow-sm">
+                    <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                            <Users className="w-4 h-4 text-primary" />
+                        </div>
+                        Organizer
+                    </h2>
+                    <div className="flex items-center gap-4 p-4 bg-muted/30 rounded-2xl">
+                        <Link
+                            href={event.organizer?.id ? `/profile/${event.organizer.id}` : '#'}
+                            className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-violet-500/20 flex items-center justify-center overflow-hidden flex-shrink-0 border border-border/50 hover:scale-105 transition-transform"
+                        >
                             <Image
                                 src={event.organizer?.avatar || "/etcha.png"}
                                 alt={event.organizer?.name || "Organizer"}
-                                width={48}
-                                height={48}
+                                width={56}
+                                height={56}
                                 className="w-full h-full object-cover"
                             />
-                        </div>
+                        </Link>
                         <div className="flex-1 min-w-0">
-                            <div className="text-sm font-semibold text-foreground mb-0.5">{event.organizer?.name || "Event Organizer"}</div>
-                            <div className="text-xs text-muted-foreground">{event.organizer?.description || "Professional event organizer"}</div>
+                            <Link
+                                href={event.organizer?.id ? `/profile/${event.organizer.id}` : '#'}
+                                className="text-base font-semibold text-foreground mb-0.5 hover:text-primary transition-colors"
+                            >
+                                {event.organizer?.name || "Event Organizer"}
+                            </Link>
+                            <div className="text-xs text-muted-foreground line-clamp-2">{event.organizer?.description || "Professional event organizer"}</div>
+                            {followersCount > 0 && (
+                                <div className="text-xs text-muted-foreground mt-1">
+                                    {followersCount} {followersCount === 1 ? 'follower' : 'followers'}
+                                </div>
+                            )}
                         </div>
-                        <button className="px-4 py-2 bg-muted text-foreground text-sm font-medium rounded-lg hover:bg-muted/80 transition-colors flex-shrink-0">
-                            Follow
-                        </button>
+                        {session?.user ? (
+                            <button
+                                onClick={handleFollowToggle}
+                                disabled={isFollowLoading}
+                                className={`px-5 py-2.5 text-sm font-semibold rounded-xl transition-all flex-shrink-0 flex items-center gap-2 disabled:opacity-50 ${isFollowing
+                                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                                        : 'bg-primary/10 text-primary hover:bg-primary/20'
+                                    }`}
+                            >
+                                {isFollowLoading ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : isFollowing ? (
+                                    <>
+                                        <UserCheck className="w-4 h-4" />
+                                        Following
+                                    </>
+                                ) : (
+                                    <>
+                                        <UserPlus className="w-4 h-4" />
+                                        Follow
+                                    </>
+                                )}
+                            </button>
+                        ) : (
+                            <Link
+                                href="/auth/login"
+                                className="px-5 py-2.5 bg-primary/10 text-primary text-sm font-semibold rounded-xl hover:bg-primary/20 transition-colors flex-shrink-0 flex items-center gap-2"
+                            >
+                                <UserPlus className="w-4 h-4" />
+                                Follow
+                            </Link>
+                        )}
                     </div>
 
-                    <div className="pt-4 border-t border-border space-y-2">
-                        <button className="w-full text-left text-sm text-muted-foreground hover:text-foreground transition-colors py-2">
-                            Contact organizer
+                    <div className="mt-4 grid grid-cols-3 gap-2">
+                        <button className="flex flex-col items-center justify-center gap-1.5 p-3 bg-muted/30 rounded-xl hover:bg-muted/50 transition-colors">
+                            <span className="text-xs text-muted-foreground">Contact</span>
                         </button>
-                        <button className="w-full text-left text-sm text-muted-foreground hover:text-foreground transition-colors py-2">
-                            Return policy
+                        <button className="flex flex-col items-center justify-center gap-1.5 p-3 bg-muted/30 rounded-xl hover:bg-muted/50 transition-colors">
+                            <span className="text-xs text-muted-foreground">Policy</span>
                         </button>
-                        <button className="w-full text-left text-sm text-muted-foreground hover:text-foreground transition-colors py-2">
-                            Report event
+                        <button className="flex flex-col items-center justify-center gap-1.5 p-3 bg-muted/30 rounded-xl hover:bg-muted/50 transition-colors">
+                            <span className="text-xs text-muted-foreground">Report</span>
                         </button>
                     </div>
                 </div>
@@ -562,29 +760,72 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
 
             {/* Confirm Buy Modal */}
             {showBuyConfirm && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-sm border border-border shadow-xl">
-                        <div className="p-5">
-                            <h3 className="text-base font-bold text-foreground mb-2">Confirm Purchase</h3>
-                            <p className="text-sm text-muted-foreground mb-4">
-                                Are you sure you want to buy this ticket for {formatPrice(totalPrice)} SOL?
-                            </p>
-                            <div className="flex gap-2">
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-surface rounded-t-3xl sm:rounded-3xl w-full max-w-md border border-border/50 shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
+                        <div className="p-6">
+                            {/* Event Preview */}
+                            <div className="flex items-center gap-4 mb-6 pb-5 border-b border-border">
+                                <div className="w-16 h-16 rounded-2xl overflow-hidden bg-muted flex-shrink-0">
+                                    <Image
+                                        src={event.imageUrl || "/no-ticket-svgrepo-com.svg"}
+                                        alt={event.title}
+                                        width={64}
+                                        height={64}
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-base font-bold text-foreground truncate">{event.title}</h3>
+                                    <p className="text-sm text-muted-foreground">{formatDate(event.date)} • {event.time}</p>
+                                </div>
+                            </div>
+
+                            {/* Purchase Details */}
+                            <div className="space-y-3 mb-6">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm text-muted-foreground">Quantity</span>
+                                    <span className="text-sm font-semibold text-foreground">{ticketQuantity} {ticketQuantity > 1 ? 'tickets' : 'ticket'}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm text-muted-foreground">Price per ticket</span>
+                                    <span className="text-sm font-semibold text-foreground">{formatPrice(event.price)} SOL</span>
+                                </div>
+                                <div className="h-px bg-border my-3" />
+                                <div className="flex justify-between items-center">
+                                    <span className="text-base font-semibold text-foreground">Total</span>
+                                    <span className="text-xl font-bold bg-gradient-to-r from-primary to-violet-600 bg-clip-text text-transparent">{formatPrice(totalPrice)} SOL</span>
+                                </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-3">
                                 <button
                                     onClick={() => setShowBuyConfirm(false)}
                                     disabled={isMinting}
-                                    className="flex-1 bg-muted text-foreground font-medium py-2.5 rounded-xl hover:bg-muted/80 transition-colors disabled:opacity-50"
+                                    className="flex-1 bg-muted text-foreground font-semibold py-3.5 rounded-2xl hover:bg-muted/80 transition-all disabled:opacity-50"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={startMint}
                                     disabled={isMinting}
-                                    className="flex-1 bg-primary text-primary-foreground font-semibold py-2.5 rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50"
+                                    className="flex-1 bg-gradient-to-r from-primary to-violet-600 text-primary-foreground font-bold py-3.5 rounded-2xl hover:from-primary/90 hover:to-violet-600/90 transition-all disabled:opacity-50 shadow-lg shadow-primary/25"
                                 >
-                                    {isMinting ? 'Processing...' : 'Confirm'}
+                                    {isMinting ? (
+                                        <span className="flex items-center justify-center gap-2">
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Processing...
+                                        </span>
+                                    ) : (
+                                        'Confirm Purchase'
+                                    )}
                                 </button>
                             </div>
+
+                            {/* Security note */}
+                            <p className="text-[11px] text-center text-muted-foreground mt-4">
+                                Secured by Solana blockchain • Ultra-low fees
+                            </p>
                         </div>
                     </div>
                 </div>

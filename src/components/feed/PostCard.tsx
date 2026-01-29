@@ -18,6 +18,7 @@ interface PostCardProps {
   onDelete?: (postId: string) => void;
   currentUserId?: string | null;
   useSession?: boolean;
+  onOpenDetail?: (post: Post) => void;
 }
 
 const PostCard: React.FC<PostCardProps> = ({
@@ -27,6 +28,7 @@ const PostCard: React.FC<PostCardProps> = ({
   onDelete,
   currentUserId,
   useSession = false,
+  onOpenDetail,
 }) => {
   const [isLiked, setIsLiked] = useState(post.isLiked);
   const [likesCount, setLikesCount] = useState(post.likesCount);
@@ -34,7 +36,6 @@ const PostCard: React.FC<PostCardProps> = ({
   const [commentsCount, setCommentsCount] = useState(post.commentsCount);
   const [isLiking, setIsLiking] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const isOwnPost = currentUserId === post.author.id;
 
@@ -136,13 +137,24 @@ const PostCard: React.FC<PostCardProps> = ({
 
   const typeLabel = getPostTypeLabel();
 
+  // Handle card click - open detail if not clicking on interactive elements
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Don't open detail if clicking on interactive elements
+    const target = e.target as HTMLElement;
+    const isInteractive = target.closest('a, button, [role="button"], input, textarea');
+    if (!isInteractive) {
+      onOpenDetail?.(post);
+    }
+  };
+
   return (
     <motion.div
       layout
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="bg-white rounded-xl border border-gray-200 overflow-hidden"
+      className="bg-white rounded-xl border border-gray-200 overflow-hidden cursor-pointer hover:border-gray-300 transition-colors"
+      onClick={handleCardClick}
     >
       {/* Header */}
       <div className="p-4 pb-2">
@@ -254,12 +266,9 @@ const PostCard: React.FC<PostCardProps> = ({
       {post.images.length > 0 && (
         <div className={`grid gap-1 ${post.images.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
           {post.images.slice(0, 4).map((image, index) => (
-            <motion.div
+            <div
               key={index}
-              className={`relative cursor-pointer ${post.images.length === 3 && index === 0 ? "col-span-2" : ""
-                }`}
-              whileHover={{ scale: 1.02 }}
-              onClick={() => setSelectedImage(image)}
+              className={`relative ${post.images.length === 3 && index === 0 ? "col-span-2" : ""}`}
             >
               <Image
                 src={image}
@@ -269,11 +278,11 @@ const PostCard: React.FC<PostCardProps> = ({
                 className="w-full h-48 object-cover"
               />
               {post.images.length > 4 && index === 3 && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center pointer-events-none">
                   <span className="text-white text-xl font-bold">+{post.images.length - 4}</span>
                 </div>
               )}
-            </motion.div>
+            </div>
           ))}
         </div>
       )}
@@ -321,34 +330,6 @@ const PostCard: React.FC<PostCardProps> = ({
               onCommentAdded={() => setCommentsCount((c) => c + 1)}
               useSession={useSession}
             />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Image Modal */}
-      <AnimatePresence>
-        {selectedImage && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
-            onClick={() => setSelectedImage(null)}
-          >
-            <motion.img
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.9 }}
-              src={selectedImage}
-              alt="Full size"
-              className="max-w-full max-h-full object-contain"
-            />
-            <button
-              onClick={() => setSelectedImage(null)}
-              className="absolute top-4 right-4 text-white text-2xl"
-            >
-              &times;
-            </button>
           </motion.div>
         )}
       </AnimatePresence>

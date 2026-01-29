@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, use } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Loader2, Calendar, Users, Settings, Wallet, Copy, Eye, EyeOff, RefreshCw, Ticket, Plus } from "lucide-react";
+import { ArrowLeft, Loader2, Calendar, Users, Settings, Wallet, Copy, Eye, EyeOff, RefreshCw, Ticket, Plus, BadgeCheck } from "lucide-react";
 import { PostCard, PostComposer, FollowButton, Post, UserProfile } from "@/components/feed";
 import { useAuth } from "@/components/AuthProvider";
 import { useSession } from "next-auth/react";
@@ -419,9 +419,14 @@ export default function UserProfilePage({ params }: PageProps) {
           </div>
 
           {/* Name and Bio */}
-          <h2 className="text-xl font-bold text-gray-900 mb-1">
-            {profile.name || "Аноним"}
-          </h2>
+          <div className="flex items-center gap-1.5 mb-1">
+            <h2 className="text-xl font-bold text-gray-900">
+              {profile.name || "Аноним"}
+            </h2>
+            {profile.isOrganizer && (
+              <BadgeCheck className="w-5 h-5 text-blue-500 shrink-0" />
+            )}
+          </div>
 
           {profile.walletAddress && (
             <p className="text-sm text-gray-500 font-mono mb-3">

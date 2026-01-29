@@ -48,11 +48,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         image: true,
         walletAddress: true,
         createdAt: true,
+        role: true,
         profile: {
           select: {
             nickname: true,
             avatar: true,
             bio: true,
+          },
+        },
+        organizer: {
+          select: {
+            status: true,
           },
         },
         _count: {
@@ -83,6 +89,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       isFollowing = !!follow;
     }
 
+    // User is verified organizer if role is ORGANIZER and status is APPROVED
+    const isOrganizer =
+      user.role === "ORGANIZER" && user.organizer?.status === "APPROVED";
+
     return NextResponse.json({
       id: user.id,
       name: user.profile?.nickname || user.name,
@@ -95,6 +105,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       followingCount: user._count.following,
       isFollowing,
       isOwnProfile: currentUserId === userId,
+      isOrganizer,
     });
   } catch (error) {
     console.error("Error fetching user:", error);

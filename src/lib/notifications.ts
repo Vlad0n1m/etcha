@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/db";
 import { NotificationType } from "@/generated/prisma";
+import {
+  sendNotificationToUser,
+  sendUnreadCountToUser,
+} from "@/app/api/notifications/stream/route";
 
 /**
  * Create a notification
@@ -52,6 +56,18 @@ export async function createNotification({
         },
       },
     });
+
+    // Send real-time notification via SSE
+    sendNotificationToUser(userId, {
+      type: "new_notification",
+      notification,
+    });
+
+    // Also update unread count
+    const unreadCount = await prisma.notification.count({
+      where: { userId, isRead: false },
+    });
+    sendUnreadCountToUser(userId, unreadCount);
 
     return notification;
   } catch (error) {

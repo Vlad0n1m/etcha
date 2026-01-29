@@ -47,4 +47,5 @@ export interface UserProfile {
   followingCount: number;
   isFollowing: boolean;
   isOwnProfile: boolean;
+  isOrganizer: boolean;
 }

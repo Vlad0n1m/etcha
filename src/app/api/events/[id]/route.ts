@@ -57,6 +57,7 @@ export async function GET(
             description: event.description,
             fullAddress: event.fullAddress,
             organizer: {
+                id: event.organizer.userId, // User ID for follow functionality
                 name: event.organizer.companyName,
                 avatar: event.organizer.avatar || "/logo.png",
                 description: event.organizer.description || "Event organizer",
