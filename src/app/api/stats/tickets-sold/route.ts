@@ -3,14 +3,8 @@ import { prisma } from "@/lib/db"
 
 export async function GET() {
     try {
-        // Count all tickets with status SOLD or USED
-        const count = await prisma.ticket.count({
-            where: {
-                status: {
-                    in: ["SOLD", "USED"]
-                }
-            }
-        })
+        // Count all tickets (if a ticket exists, it was sold)
+        const count = await prisma.ticket.count()
 
         return NextResponse.json({
             success: true,
