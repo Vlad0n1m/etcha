@@ -4,7 +4,7 @@ import { useState, use, useEffect, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, Calendar, MapPin, Clock, Loader2, Leaf, Users, Ticket, Share2, Heart, ExternalLink, Sparkles, UserPlus, UserCheck } from "lucide-react"
+import { ChevronLeft, Calendar, MapPin, Clock, Loader2, Leaf, Users, Ticket, Share2, Heart, ExternalLink, Sparkles, UserPlus, UserCheck, ChevronDown, ChevronUp, AlertCircle } from "lucide-react"
 import { useWallet, useConnection } from "@solana/wallet-adapter-react"
 import WalletDrawer from "@/components/WalletDrawer"
 import MintProgress, { MintStatus } from "@/components/MintProgress"
@@ -13,6 +13,17 @@ import ResaleSection from "@/components/ResaleSection"
 import { Button } from "@/components/ui/button"
 
 
+interface TicketType {
+    id: string
+    name: string
+    price: number
+    quantity: number
+    sold: number
+    available: number
+    description: string | null
+    sortOrder: number
+}
+
 interface Event {
     id: string
     title: string
@@ -20,9 +31,13 @@ interface Event {
     date: string
     time: string
     ticketsAvailable: number
+    totalTicketsAvailable?: number
+    ticketsSold?: number
     imageUrl: string
     description: string
     fullAddress: string
+    locationMapUrl?: string | null
+    maxTicketsPerUser?: number | null
     category?: string
     company?: string
     organizer: {
@@ -31,7 +46,7 @@ interface Event {
         avatar: string
         description: string
     }
-    // schedule?: string[] // Disabled for MVP
+    ticketTypes?: TicketType[]
     collectionNftAddress?: string
     // cNFT fields - now using shared platform tree
     merkleTreeAddress?: string // Legacy - kept for backwards compatibility
@@ -60,6 +75,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [ticketQuantity, setTicketQuantity] = useState(1)
+    const [selectedTicketType, setSelectedTicketType] = useState<TicketType | null>(null)
+    const [userTicketCount, setUserTicketCount] = useState(0)
     const [isWalletDrawerOpen, setIsWalletDrawerOpen] = useState(false)
     const [isMinting, setIsMinting] = useState(false)
     const [mintStatus, setMintStatus] = useState<MintStatus>("preparing")
@@ -71,6 +88,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     const [isFollowing, setIsFollowing] = useState(false)
     const [isFollowLoading, setIsFollowLoading] = useState(false)
     const [followersCount, setFollowersCount] = useState(0)
+    const [showFullDescription, setShowFullDescription] = useState(false)
 
     const { data: session } = useSession()
     const { connected, publicKey, sendTransaction, wallet } = useWallet()
@@ -91,6 +109,13 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
 
             const responseData = await response.json()
             setEvent(responseData.event)
+            setUserTicketCount(responseData.userTicketCount || 0)
+
+            // Auto-select the first available ticket type
+            if (responseData.event.ticketTypes && responseData.event.ticketTypes.length > 0) {
+                const firstAvailable = responseData.event.ticketTypes.find((tt: TicketType) => tt.available > 0)
+                setSelectedTicketType(firstAvailable || responseData.event.ticketTypes[0])
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to fetch event')
         } finally {
@@ -167,11 +192,31 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         return `${address.slice(0, 6)}...${address.slice(-6)}`
     }
 
+    // Calculate max tickets user can buy
+    const getMaxTicketsForUser = () => {
+        if (!event) return 0
+
+        const availableFromType = selectedTicketType?.available || 0
+
+        if (event.maxTicketsPerUser) {
+            const remainingLimit = event.maxTicketsPerUser - userTicketCount
+            return Math.min(availableFromType, remainingLimit)
+        }
+
+        return availableFromType
+    }
+
     const handleQuantityChange = (change: number) => {
+        const maxAllowed = getMaxTicketsForUser()
         const newQuantity = ticketQuantity + change
-        if (newQuantity >= 1 && newQuantity <= (event?.ticketsAvailable || 0)) {
+        if (newQuantity >= 1 && newQuantity <= maxAllowed) {
             setTicketQuantity(newQuantity)
         }
+    }
+
+    const handleTicketTypeSelect = (ticketType: TicketType) => {
+        setSelectedTicketType(ticketType)
+        setTicketQuantity(1) // Reset quantity when changing type
     }
 
     const handleUpgradeEvent = async () => {
@@ -207,6 +252,20 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             return
         }
 
+        if (!selectedTicketType) {
+            setError("Please select a ticket type")
+            return
+        }
+
+        // Check ticket limit
+        if (event.maxTicketsPerUser) {
+            const newTotal = userTicketCount + ticketQuantity
+            if (newTotal > event.maxTicketsPerUser) {
+                setError(`You can only purchase ${event.maxTicketsPerUser} tickets for this event. You already have ${userTicketCount}.`)
+                return
+            }
+        }
+
         // Check if event supports cNFT (either has nftType='cnft' or legacy merkleTreeAddress)
         if (event.nftType !== 'cnft' && !event.merkleTreeAddress) {
             // This is a legacy event without cNFT infrastructure
@@ -226,6 +285,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     eventId: event.id,
+                    ticketTypeId: selectedTicketType.id,
                     buyerWallet: publicKey.toBase58(),
                     quantity: ticketQuantity,
                 }),
@@ -270,6 +330,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     eventId: event.id,
+                    ticketTypeId: selectedTicketType.id,
                     merkleTreeAddress: mintMerkleTreeAddress,
                     platformTreeId: mintPlatformTreeId,
                     buyerWallet: publicKey.toBase58(),
@@ -290,6 +351,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     transactionSignature: signature,
                 })
                 setShowMintModal(true)
+                // Update user ticket count
+                setUserTicketCount(prev => prev + ticketQuantity)
             } else {
                 setMintStatus("error")
                 setMintProgress(result.message || "Failed to save ticket information")
@@ -316,6 +379,10 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
     }
 
     const handleBuyClick = () => {
+        if (!selectedTicketType) {
+            setError("Please select a ticket type")
+            return
+        }
         setShowBuyConfirm(true)
     }
 
@@ -356,7 +423,11 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
         )
     }
 
-    const totalPrice = event.price * ticketQuantity
+    const totalPrice = (selectedTicketType?.price || event.price) * ticketQuantity
+    const hasTicketTypes = event.ticketTypes && event.ticketTypes.length > 0
+    const maxAllowed = getMaxTicketsForUser()
+    const isAtLimit = event.maxTicketsPerUser && userTicketCount >= event.maxTicketsPerUser
+    const descriptionIsLong = event.description.length > 300
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 pb-32" style={{ pointerEvents: 'auto' }}>
@@ -475,16 +546,77 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                             </div>
                             <div className="min-w-0 flex-1">
                                 <div className="text-[11px] uppercase tracking-wide text-muted-foreground font-medium">Location</div>
-                                <div className="text-sm font-semibold text-foreground">Barcelona, Catalunya</div>
+                                <div className="text-sm font-semibold text-foreground">{event.fullAddress}</div>
                             </div>
-                            <button className="text-primary hover:text-primary/80 transition-colors">
-                                <ExternalLink className="w-4 h-4" />
-                            </button>
+                            {event.locationMapUrl && (
+                                <a
+                                    href={event.locationMapUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-primary hover:text-primary/80 transition-colors"
+                                >
+                                    <ExternalLink className="w-4 h-4" />
+                                </a>
+                            )}
                         </div>
                     </div>
 
-                    {/* Price Section */}
-                    {event.price > 0 && (
+                    {/* Ticket Types Selection */}
+                    {hasTicketTypes && (
+                        <div className="mb-5">
+                            <h3 className="text-sm font-semibold text-foreground mb-3">Select Ticket Type</h3>
+                            <div className="space-y-2">
+                                {event.ticketTypes!.map((ticketType) => {
+                                    const isSoldOut = ticketType.available <= 0
+                                    const isSelected = selectedTicketType?.id === ticketType.id
+
+                                    return (
+                                        <button
+                                            key={ticketType.id}
+                                            onClick={() => !isSoldOut && handleTicketTypeSelect(ticketType)}
+                                            disabled={isSoldOut}
+                                            className={`w-full p-4 rounded-xl border-2 transition-all text-left ${isSelected
+                                                    ? 'border-primary bg-primary/5'
+                                                    : isSoldOut
+                                                        ? 'border-border bg-muted/30 opacity-60 cursor-not-allowed'
+                                                        : 'border-border hover:border-primary/50'
+                                                }`}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`text-base font-semibold ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                                                            {ticketType.name}
+                                                        </span>
+                                                        {isSoldOut && (
+                                                            <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-600 font-medium">
+                                                                SOLD OUT
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {ticketType.description && (
+                                                        <p className="text-xs text-muted-foreground mt-1">{ticketType.description}</p>
+                                                    )}
+                                                    <p className="text-xs text-muted-foreground mt-1">
+                                                        {ticketType.available}/{ticketType.quantity} available
+                                                    </p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className={`text-lg font-bold ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                                                        {formatPrice(ticketType.price)}
+                                                    </span>
+                                                    <span className="text-sm text-muted-foreground ml-1">SOL</span>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Legacy Price Section (for events without ticket types) */}
+                    {!hasTicketTypes && event.price > 0 && (
                         <div className="bg-gradient-to-br from-primary/5 via-primary/10 to-violet-500/5 rounded-2xl p-5 mb-5 border border-primary/10">
                             <div className="flex items-end justify-between">
                                 <div>
@@ -502,10 +634,24 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                         </div>
                     )}
 
-
+                    {/* Ticket Limit Warning */}
+                    {event.maxTicketsPerUser && (
+                        <div className={`p-3 rounded-xl mb-5 flex items-center gap-2 ${isAtLimit
+                                ? 'bg-red-50 border border-red-200'
+                                : 'bg-blue-50 border border-blue-200'
+                            }`}>
+                            <AlertCircle className={`w-4 h-4 flex-shrink-0 ${isAtLimit ? 'text-red-500' : 'text-blue-500'}`} />
+                            <span className={`text-sm ${isAtLimit ? 'text-red-700' : 'text-blue-700'}`}>
+                                {isAtLimit
+                                    ? `You have reached the limit of ${event.maxTicketsPerUser} tickets for this event.`
+                                    : `Limit: ${event.maxTicketsPerUser} tickets per account. You have ${userTicketCount}.`
+                                }
+                            </span>
+                        </div>
+                    )}
 
                     {/* Quantity Selector */}
-                    {(event.nftType === 'cnft' || event.merkleTreeAddress) && event.ticketsAvailable > 1 && (
+                    {(event.nftType === 'cnft' || event.merkleTreeAddress) && maxAllowed > 1 && !isAtLimit && (
                         <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl mb-5">
                             <span className="text-sm font-medium text-foreground">Quantity</span>
                             <div className="flex items-center gap-3">
@@ -519,7 +665,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                                 <span className="w-8 text-center font-bold text-foreground">{ticketQuantity}</span>
                                 <button
                                     onClick={() => handleQuantityChange(1)}
-                                    disabled={ticketQuantity >= event.ticketsAvailable}
+                                    disabled={ticketQuantity >= maxAllowed}
                                     className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                                 >
                                     +
@@ -579,7 +725,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     {(event.nftType === 'cnft' || event.merkleTreeAddress) ? (
                         <button
                             onClick={handleBuyClick}
-                            disabled={isMinting}
+                            disabled={isMinting || isAtLimit || (selectedTicketType?.available || 0) <= 0}
                             className="w-full bg-gradient-to-r from-primary to-violet-600 text-primary-foreground font-bold py-4 rounded-2xl hover:from-primary/90 hover:to-violet-600/90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-primary/25 text-base"
                         >
                             {isMinting ? (
@@ -587,7 +733,17 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                                     <Loader2 className="w-5 h-5 animate-spin" />
                                     Processing...
                                 </span>
-                            ) : event.price === 0 ? (
+                            ) : isAtLimit ? (
+                                <span className="flex items-center justify-center gap-2">
+                                    <Ticket className="w-5 h-5" />
+                                    Ticket Limit Reached
+                                </span>
+                            ) : (selectedTicketType?.available || 0) <= 0 ? (
+                                <span className="flex items-center justify-center gap-2">
+                                    <Ticket className="w-5 h-5" />
+                                    Sold Out
+                                </span>
+                            ) : totalPrice === 0 ? (
                                 <span className="flex items-center justify-center gap-2">
                                     <Ticket className="w-5 h-5" />
                                     Get Free Ticket
@@ -627,7 +783,27 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                         </div>
                         About Event
                     </h2>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{event.description}</p>
+                    <div className={`text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap ${!showFullDescription && descriptionIsLong ? 'line-clamp-6' : ''}`}>
+                        {event.description}
+                    </div>
+                    {descriptionIsLong && (
+                        <button
+                            onClick={() => setShowFullDescription(!showFullDescription)}
+                            className="mt-3 flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                        >
+                            {showFullDescription ? (
+                                <>
+                                    Show less
+                                    <ChevronUp className="w-4 h-4" />
+                                </>
+                            ) : (
+                                <>
+                                    Show more
+                                    <ChevronDown className="w-4 h-4" />
+                                </>
+                            )}
+                        </button>
+                    )}
                 </div>
 
                 {/* Venue Card */}
@@ -641,10 +817,22 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     <div className="bg-muted/30 rounded-2xl p-4">
                         <div className="text-base font-semibold text-foreground mb-1">{event.company}</div>
                         <div className="text-sm text-muted-foreground leading-relaxed">{event.fullAddress}</div>
-                        <button className="mt-3 inline-flex items-center gap-2 text-sm text-primary font-medium hover:text-primary/80 transition-colors">
-                            <ExternalLink className="w-4 h-4" />
-                            View on map
-                        </button>
+                        {event.locationMapUrl ? (
+                            <a
+                                href={event.locationMapUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-3 inline-flex items-center gap-2 text-sm text-primary font-medium hover:text-primary/80 transition-colors"
+                            >
+                                <ExternalLink className="w-4 h-4" />
+                                Open in Maps
+                            </a>
+                        ) : (
+                            <button className="mt-3 inline-flex items-center gap-2 text-sm text-muted-foreground cursor-not-allowed">
+                                <ExternalLink className="w-4 h-4" />
+                                No map link provided
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -688,8 +876,8 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                                 onClick={handleFollowToggle}
                                 disabled={isFollowLoading}
                                 className={`px-5 py-2.5 text-sm font-semibold rounded-xl transition-all flex-shrink-0 flex items-center gap-2 disabled:opacity-50 ${isFollowing
-                                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                                        : 'bg-primary/10 text-primary hover:bg-primary/20'
+                                    ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                                    : 'bg-primary/10 text-primary hover:bg-primary/20'
                                     }`}
                             >
                                 {isFollowLoading ? (
@@ -748,6 +936,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                     setMintResult(null)
                     setMintStatus('preparing')
                     setMintProgress('')
+                    fetchEvent() // Refresh event data
                 }}
                 result={mintResult}
                 event={event ? {
@@ -759,7 +948,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
             />
 
             {/* Confirm Buy Modal */}
-            {showBuyConfirm && (
+            {showBuyConfirm && selectedTicketType && (
                 <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                     <div className="bg-surface rounded-t-3xl sm:rounded-3xl w-full max-w-md border border-border/50 shadow-2xl animate-in slide-in-from-bottom-4 duration-300">
                         <div className="p-6">
@@ -783,12 +972,16 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
                             {/* Purchase Details */}
                             <div className="space-y-3 mb-6">
                                 <div className="flex justify-between items-center">
+                                    <span className="text-sm text-muted-foreground">Ticket Type</span>
+                                    <span className="text-sm font-semibold text-foreground">{selectedTicketType.name}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
                                     <span className="text-sm text-muted-foreground">Quantity</span>
                                     <span className="text-sm font-semibold text-foreground">{ticketQuantity} {ticketQuantity > 1 ? 'tickets' : 'ticket'}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm text-muted-foreground">Price per ticket</span>
-                                    <span className="text-sm font-semibold text-foreground">{formatPrice(event.price)} SOL</span>
+                                    <span className="text-sm font-semibold text-foreground">{formatPrice(selectedTicketType.price)} SOL</span>
                                 </div>
                                 <div className="h-px bg-border my-3" />
                                 <div className="flex justify-between items-center">

@@ -6,7 +6,7 @@ import { useWallet } from "@solana/wallet-adapter-react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import { ChevronLeft, Upload, Loader2, Calendar, MapPin, Tag, Ticket, Leaf, AlertCircle, Wallet } from "lucide-react"
+import { ChevronLeft, Upload, Loader2, Calendar, MapPin, Tag, Ticket, Leaf, Wallet, Plus, Trash2, Eye, EyeOff, ExternalLink } from "lucide-react"
 
 interface Category {
     id: string
@@ -14,9 +14,17 @@ interface Category {
     value: string
 }
 
+interface TicketTypeInput {
+    id: string
+    name: string
+    price: number
+    quantity: number
+    description: string
+}
+
 export default function CreateEventPage() {
     const { data: session, status } = useSession()
-    const { connected, connecting, publicKey } = useWallet()
+    const { connected, publicKey } = useWallet()
     const router = useRouter()
 
     // Auth check state
@@ -29,16 +37,20 @@ export default function CreateEventPage() {
     // Event fields
     const [title, setTitle] = useState("")
     const [description, setDescription] = useState("")
+    const [showDescriptionPreview, setShowDescriptionPreview] = useState(false)
     const [date, setDate] = useState("")
     const [time, setTime] = useState("")
     const [fullAddress, setFullAddress] = useState("")
+    const [locationMapUrl, setLocationMapUrl] = useState("")
     const [categoryId, setCategoryId] = useState("")
     const [image, setImage] = useState<string>("")
     const [imagePreview, setImagePreview] = useState<string>("")
 
-    // Collection/Ticket fields
-    const [ticketsAvailable, setTicketsAvailable] = useState<number>(0)
-    const [price, setPrice] = useState<number>(0)
+    // Ticket types
+    const [ticketTypes, setTicketTypes] = useState<TicketTypeInput[]>([
+        { id: "1", name: "Standard", price: 0.1, quantity: 100, description: "" }
+    ])
+    const [maxTicketsPerUser, setMaxTicketsPerUser] = useState<number | null>(null)
     const [symbol, setSymbol] = useState("TICKET")
 
     // UI states
@@ -116,6 +128,28 @@ export default function CreateEventPage() {
         }
     }
 
+    // Ticket type management
+    const addTicketType = () => {
+        const newId = Date.now().toString()
+        setTicketTypes([...ticketTypes, { id: newId, name: "", price: 0, quantity: 0, description: "" }])
+    }
+
+    const removeTicketType = (id: string) => {
+        if (ticketTypes.length > 1) {
+            setTicketTypes(ticketTypes.filter(t => t.id !== id))
+        }
+    }
+
+    const updateTicketType = (id: string, field: keyof TicketTypeInput, value: string | number) => {
+        setTicketTypes(ticketTypes.map(t =>
+            t.id === id ? { ...t, [field]: value } : t
+        ))
+    }
+
+    // Calculate totals
+    const totalTickets = ticketTypes.reduce((sum, t) => sum + (t.quantity || 0), 0)
+    const totalRevenue = ticketTypes.reduce((sum, t) => sum + (t.price * t.quantity), 0)
+
     const handleCreateEvent = async () => {
         // Require wallet to be connected for blockchain operations
         if (!session?.user?.walletAddress && !publicKey) {
@@ -127,6 +161,22 @@ export default function CreateEventPage() {
         if (!walletAddress) {
             setError("Wallet address not found. Please link your wallet.")
             return
+        }
+
+        // Validate ticket types
+        for (const tt of ticketTypes) {
+            if (!tt.name.trim()) {
+                setError("All ticket types must have a name")
+                return
+            }
+            if (tt.price <= 0) {
+                setError(`Ticket type "${tt.name}" must have a price greater than 0`)
+                return
+            }
+            if (tt.quantity <= 0) {
+                setError(`Ticket type "${tt.name}" must have a quantity greater than 0`)
+                return
+            }
         }
 
         setCreating(true)
@@ -156,6 +206,17 @@ export default function CreateEventPage() {
 
             setProgress("Creating event and NFT collection...")
 
+            // Sort ticket types by price (ascending) and assign sortOrder
+            const sortedTicketTypes = [...ticketTypes]
+                .sort((a, b) => a.price - b.price)
+                .map((t, index) => ({
+                    name: t.name,
+                    price: t.price,
+                    quantity: t.quantity,
+                    description: t.description || null,
+                    sortOrder: index,
+                }))
+
             // Step 2: Create event + collection
             const eventData = {
                 // Event data
@@ -164,17 +225,18 @@ export default function CreateEventPage() {
                 date,
                 time,
                 fullAddress,
+                locationMapUrl: locationMapUrl || null,
                 categoryId,
                 imageUrl: uploadedImageUrl || "/logo.png",
-                ticketsAvailable,
-                price,
+                ticketTypes: sortedTicketTypes,
+                maxTicketsPerUser: maxTicketsPerUser || null,
                 organizerWallet: walletAddress,
 
                 // Collection metadata
                 collectionMetadata: {
                     name: title,
                     symbol: symbol,
-                    description: description,
+                    description: description.substring(0, 500), // NFT metadata description limit
                     image: uploadedImageUrl || "/logo.png",
                 },
             }
@@ -203,7 +265,7 @@ export default function CreateEventPage() {
     }
 
     const isStep1Valid = title && description && date && time && fullAddress && categoryId && imagePreview
-    const isStep2Valid = ticketsAvailable > 0 && price > 0 && symbol
+    const isStep2Valid = ticketTypes.every(t => t.name && t.price > 0 && t.quantity > 0) && symbol
     const isFormValid = isStep1Valid && isStep2Valid
 
     // Show loading while checking auth
@@ -335,22 +397,63 @@ export default function CreateEventPage() {
                                     </p>
                                 </div>
 
-                                {/* Description */}
+                                {/* Description - Extended */}
                                 <div>
-                                    <label className="block text-sm font-medium text-foreground mb-2">
-                                        Description *
-                                    </label>
-                                    <textarea
-                                        value={description}
-                                        onChange={(e) => setDescription(e.target.value)}
-                                        className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                                        placeholder="Describe your event..."
-                                        rows={4}
-                                        maxLength={500}
-                                    />
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                        {description.length}/500 characters
-                                    </p>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="block text-sm font-medium text-foreground">
+                                            Description *
+                                        </label>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowDescriptionPreview(!showDescriptionPreview)}
+                                            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                                        >
+                                            {showDescriptionPreview ? (
+                                                <>
+                                                    <EyeOff className="w-3.5 h-3.5" />
+                                                    Edit
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Eye className="w-3.5 h-3.5" />
+                                                    Preview
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+
+                                    {showDescriptionPreview ? (
+                                        <div className="w-full px-4 py-3 bg-background border border-border rounded-lg text-foreground min-h-[200px] whitespace-pre-wrap">
+                                            {description || <span className="text-muted-foreground">No description yet...</span>}
+                                        </div>
+                                    ) : (
+                                        <textarea
+                                            value={description}
+                                            onChange={(e) => setDescription(e.target.value)}
+                                            className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-y min-h-[200px]"
+                                            placeholder="Describe your event in detail...&#10;&#10;You can use multiple paragraphs.&#10;&#10;• Add bullet points&#10;• List features&#10;• Share important info"
+                                            maxLength={10000}
+                                        />
+                                    )}
+
+                                    <div className="flex items-center justify-between mt-1">
+                                        <p className="text-xs text-muted-foreground">
+                                            Supports line breaks and formatting
+                                        </p>
+                                        <p className={`text-xs ${description.length > 9000 ? 'text-yellow-600' : 'text-muted-foreground'}`}>
+                                            {description.length.toLocaleString()}/10,000
+                                        </p>
+                                    </div>
+
+                                    {/* Progress bar for description */}
+                                    <div className="w-full h-1 bg-muted rounded-full mt-2 overflow-hidden">
+                                        <div
+                                            className={`h-full transition-all ${description.length > 9000 ? 'bg-yellow-500' :
+                                                    description.length > 5000 ? 'bg-green-500' : 'bg-primary'
+                                                }`}
+                                            style={{ width: `${Math.min((description.length / 10000) * 100, 100)}%` }}
+                                        />
+                                    </div>
                                 </div>
 
                                 {/* Date and Time */}
@@ -392,6 +495,24 @@ export default function CreateEventPage() {
                                         className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                                         placeholder="Barcelona, Catalunya"
                                     />
+                                </div>
+
+                                {/* Map Link */}
+                                <div>
+                                    <label className="block text-sm font-medium text-foreground mb-2">
+                                        <ExternalLink className="w-4 h-4 inline mr-1" />
+                                        Map Link <span className="text-xs text-muted-foreground">(optional)</span>
+                                    </label>
+                                    <input
+                                        type="url"
+                                        value={locationMapUrl}
+                                        onChange={(e) => setLocationMapUrl(e.target.value)}
+                                        className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                        placeholder="https://maps.google.com/..."
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Google Maps, Yandex Maps, 2GIS, or any other map service
+                                    </p>
                                 </div>
 
                                 {/* Category */}
@@ -488,46 +609,141 @@ export default function CreateEventPage() {
                             </div>
                         </div>
 
+                        {/* Ticket Types */}
+                        <div className="bg-surface rounded-2xl p-5 border border-border">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-base font-bold text-foreground">
+                                    Ticket Types
+                                </h2>
+                                <button
+                                    type="button"
+                                    onClick={addTicketType}
+                                    className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Add Type
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                {ticketTypes.map((ticketType, index) => (
+                                    <div
+                                        key={ticketType.id}
+                                        className="bg-background border border-border rounded-xl p-4 space-y-3"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-semibold text-foreground">
+                                                Ticket Type {index + 1}
+                                            </span>
+                                            {ticketTypes.length > 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeTicketType(ticketType.id)}
+                                                    className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {/* Name */}
+                                            <div className="col-span-2">
+                                                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                                                    Name *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={ticketType.name}
+                                                    onChange={(e) => updateTicketType(ticketType.id, "name", e.target.value)}
+                                                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                                    placeholder="Early Bird, VIP, Standard..."
+                                                />
+                                            </div>
+
+                                            {/* Price */}
+                                            <div>
+                                                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                                                    Price (SOL) *
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    value={ticketType.price || ""}
+                                                    onChange={(e) => updateTicketType(ticketType.id, "price", parseFloat(e.target.value) || 0)}
+                                                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                                    min={0.001}
+                                                    step={0.001}
+                                                    placeholder="0.1"
+                                                />
+                                            </div>
+
+                                            {/* Quantity */}
+                                            <div>
+                                                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                                                    Quantity *
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    value={ticketType.quantity || ""}
+                                                    onChange={(e) => updateTicketType(ticketType.id, "quantity", parseInt(e.target.value) || 0)}
+                                                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                                                    min={1}
+                                                    max={10000}
+                                                    placeholder="100"
+                                                />
+                                            </div>
+
+                                            {/* Description */}
+                                            <div className="col-span-2">
+                                                <label className="block text-xs font-medium text-muted-foreground mb-1">
+                                                    Description <span className="text-muted-foreground">(optional)</span>
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={ticketType.description}
+                                                    onChange={(e) => updateTicketType(ticketType.id, "description", e.target.value)}
+                                                    className="w-full px-3 py-2 bg-surface border border-border rounded-lg text-foreground text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                                    placeholder="What's included with this ticket..."
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Type Summary */}
+                                        {ticketType.price > 0 && ticketType.quantity > 0 && (
+                                            <div className="pt-2 border-t border-border">
+                                                <p className="text-xs text-muted-foreground">
+                                                    Revenue: <span className="font-semibold text-foreground">{(ticketType.price * ticketType.quantity).toFixed(4)} SOL</span>
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Additional Settings */}
                         <div className="bg-surface rounded-2xl p-5 border border-border">
                             <h2 className="text-base font-bold text-foreground mb-4">
-                                Ticket Settings
+                                Additional Settings
                             </h2>
 
                             <div className="space-y-4">
-                                {/* Total Supply */}
+                                {/* Max Tickets Per User */}
                                 <div>
                                     <label className="block text-sm font-medium text-foreground mb-2">
-                                        Total Tickets Available *
+                                        Max Tickets Per Account <span className="text-xs text-muted-foreground">(optional)</span>
                                     </label>
                                     <input
                                         type="number"
-                                        value={ticketsAvailable}
-                                        onChange={(e) => setTicketsAvailable(parseInt(e.target.value) || 0)}
+                                        value={maxTicketsPerUser ?? ""}
+                                        onChange={(e) => setMaxTicketsPerUser(e.target.value ? parseInt(e.target.value) : null)}
                                         className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                                         min={1}
-                                        max={10000}
-                                        placeholder="150"
+                                        placeholder="Leave empty for unlimited"
                                     />
                                     <p className="text-xs text-muted-foreground mt-1">
-                                        Number of NFT tickets to create (1-10,000)
+                                        Limit how many tickets one user can purchase for this event
                                     </p>
-                                </div>
-
-                                {/* Price */}
-                                <div>
-                                    <label className="block text-sm font-medium text-foreground mb-2">
-                                        Price per Ticket (SOL) *
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={price}
-                                        onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
-                                        className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                                        min={0.001}
-                                        step={0.001}
-                                        placeholder="0.5"
-                                    />
-                                    <p className="text-xs text-muted-foreground mt-1">Minimum 0.001 SOL</p>
                                 </div>
 
                                 {/* Collection Symbol */}
@@ -556,10 +772,18 @@ export default function CreateEventPage() {
                                     <div className="space-y-2">
                                         <div className="flex items-center justify-between">
                                             <span className="text-sm text-muted-foreground">
-                                                Total Revenue ({ticketsAvailable} × {price} SOL)
+                                                Total Tickets
                                             </span>
                                             <span className="text-sm font-semibold text-foreground">
-                                                {(price * ticketsAvailable).toFixed(4)} SOL
+                                                {totalTickets.toLocaleString()}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm text-muted-foreground">
+                                                Total Revenue (if all sold)
+                                            </span>
+                                            <span className="text-sm font-semibold text-foreground">
+                                                {totalRevenue.toFixed(4)} SOL
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-between">
@@ -567,7 +791,7 @@ export default function CreateEventPage() {
                                                 Your Share (97.5%)
                                             </span>
                                             <span className="text-base font-bold text-primary">
-                                                {(price * ticketsAvailable * 0.975).toFixed(4)} SOL
+                                                {(totalRevenue * 0.975).toFixed(4)} SOL
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-between">
@@ -575,7 +799,7 @@ export default function CreateEventPage() {
                                                 Platform Fee (2.5%)
                                             </span>
                                             <span className="text-xs text-muted-foreground">
-                                                {(price * ticketsAvailable * 0.025).toFixed(4)} SOL
+                                                {(totalRevenue * 0.025).toFixed(4)} SOL
                                             </span>
                                         </div>
                                         <div className="flex items-center justify-between pt-2 border-t border-border mt-2">
@@ -584,7 +808,7 @@ export default function CreateEventPage() {
                                                 Est. minting cost (cNFT)
                                             </span>
                                             <span className="text-xs text-green-600 font-medium">
-                                                ~{(ticketsAvailable * 0.0003).toFixed(4)} SOL
+                                                ~{(totalTickets * 0.0003).toFixed(4)} SOL
                                             </span>
                                         </div>
                                     </div>
@@ -634,4 +858,3 @@ export default function CreateEventPage() {
         </div>
     )
 }
-

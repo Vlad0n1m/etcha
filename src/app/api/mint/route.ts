@@ -4,6 +4,7 @@ import { isValidSolanaAddress } from '@/lib/utils/wallet'
 import { SolanaService } from '@/lib/solana/SolanaService'
 import { BubblegumService } from '@/lib/solana/BubblegumService'
 import { getPlatformTreeService } from '@/lib/solana/PlatformTreeService'
+import { auth } from '@/lib/auth'
 
 const prisma = new PrismaClient()
 
@@ -22,6 +23,7 @@ export async function POST(request: NextRequest) {
         // Validate required fields
         const {
             eventId,
+            ticketTypeId,
             buyerWallet,
             quantity = 1,
         } = body
@@ -49,7 +51,7 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Get event from database
+        // Get event from database with ticket types
         const event = await prisma.event.findUnique({
             where: { id: eventId },
             include: {
@@ -57,6 +59,9 @@ export async function POST(request: NextRequest) {
                     include: {
                         user: true,
                     },
+                },
+                ticketTypes: {
+                    orderBy: { sortOrder: 'asc' },
                 },
             },
         })
@@ -68,7 +73,44 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Check ticket availability
+        // Get the ticket type
+        let ticketType = null
+        let pricePerTicket = event.price // Default to event price for legacy support
+
+        if (ticketTypeId) {
+            ticketType = event.ticketTypes.find(tt => tt.id === ticketTypeId)
+            if (!ticketType) {
+                return NextResponse.json(
+                    { success: false, message: 'Ticket type not found' },
+                    { status: 404 }
+                )
+            }
+            pricePerTicket = ticketType.price
+
+            // Check ticket type availability
+            const ticketTypeRemaining = ticketType.quantity - ticketType.sold
+            if (ticketTypeRemaining < quantity) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        message: `Not enough ${ticketType.name} tickets available. Only ${ticketTypeRemaining} remaining.`,
+                    },
+                    { status: 400 }
+                )
+            }
+        } else if (event.ticketTypes.length > 0) {
+            // If event has ticket types but none was specified, use the first available
+            ticketType = event.ticketTypes.find(tt => (tt.quantity - tt.sold) >= quantity)
+            if (!ticketType) {
+                return NextResponse.json(
+                    { success: false, message: 'No ticket types available with requested quantity' },
+                    { status: 400 }
+                )
+            }
+            pricePerTicket = ticketType.price
+        }
+
+        // Check overall ticket availability
         const ticketsRemaining = event.ticketsAvailable - event.ticketsSold
         if (ticketsRemaining < quantity) {
             return NextResponse.json(
@@ -80,7 +122,39 @@ export async function POST(request: NextRequest) {
             )
         }
 
+        // Check per-user ticket limit
+        if (event.maxTicketsPerUser) {
+            // Get user by wallet address
+            const user = await prisma.user.findUnique({
+                where: { walletAddress: buyerWallet },
+            })
+
+            if (user) {
+                // Count existing tickets for this user and event
+                const existingTicketCount = await prisma.ticket.count({
+                    where: {
+                        eventId,
+                        userId: user.id,
+                    },
+                })
+
+                const newTotal = existingTicketCount + quantity
+                if (newTotal > event.maxTicketsPerUser) {
+                    return NextResponse.json(
+                        {
+                            success: false,
+                            message: `Ticket limit exceeded. Maximum ${event.maxTicketsPerUser} tickets per account. You already have ${existingTicketCount}.`,
+                        },
+                        { status: 400 }
+                    )
+                }
+            }
+        }
+
         console.log(`🌳 Preparing cNFT mint transaction for event: ${eventId}`)
+        if (ticketType) {
+            console.log(`Ticket type: ${ticketType.name} @ ${ticketType.price} SOL`)
+        }
 
         const organizerWallet = event.organizer?.user?.walletAddress
         if (!organizerWallet) {
@@ -132,8 +206,12 @@ export async function POST(request: NextRequest) {
 
         // Build mint transaction for the ticket
         const nextTicketNumber = event.ticketsSold + 1
+        const ticketName = ticketType
+            ? `${ticketType.name} #${String(nextTicketNumber).padStart(3, '0')}`
+            : `Ticket #${String(nextTicketNumber).padStart(3, '0')}`
+
         const metadata = {
-            name: `Ticket #${String(nextTicketNumber).padStart(3, '0')}`,
+            name: ticketName,
             symbol: 'TICKET',
             uri: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/metadata/ticket/${event.id}/${nextTicketNumber}`,
             sellerFeeBasisPoints: 250,
@@ -147,7 +225,7 @@ export async function POST(request: NextRequest) {
         console.log('Building mint transaction...')
         console.log('Metadata:', metadata)
         console.log('Recipient:', buyerWallet)
-        console.log('Price:', event.price)
+        console.log('Price:', pricePerTicket)
         console.log('Payment destination:', organizerWallet)
 
         let result
@@ -157,7 +235,7 @@ export async function POST(request: NextRequest) {
                 collectionMint: ticketTree.collectionAddress,
                 metadata,
                 recipient: buyerWallet,
-                priceInSol: event.price,
+                priceInSol: pricePerTicket,
                 paymentDestination: organizerWallet,
             })
             console.log('Transaction built successfully')
@@ -178,6 +256,8 @@ export async function POST(request: NextRequest) {
             assetIds: [result.expectedAssetId],
             merkleTreeAddress: ticketTree.address,
             platformTreeId: ticketTree.id,
+            ticketTypeId: ticketType?.id || null,
+            pricePerTicket,
             message: 'Ticket purchase transaction ready',
         })
 

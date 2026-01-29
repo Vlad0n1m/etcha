@@ -213,10 +213,12 @@ exports.Prisma.EventScalarFieldEnum = {
   imageUrl: 'imageUrl',
   description: 'description',
   fullAddress: 'fullAddress',
+  locationMapUrl: 'locationMapUrl',
   schedule: 'schedule',
   isActive: 'isActive',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
+  maxTicketsPerUser: 'maxTicketsPerUser',
   collectionNftAddress: 'collectionNftAddress',
   candyMachineAddress: 'candyMachineAddress',
   merkleTreeAddress: 'merkleTreeAddress',
@@ -227,6 +229,19 @@ exports.Prisma.EventScalarFieldEnum = {
   poapMetadataUri: 'poapMetadataUri',
   categoryId: 'categoryId',
   organizerId: 'organizerId'
+};
+
+exports.Prisma.TicketTypeScalarFieldEnum = {
+  id: 'id',
+  eventId: 'eventId',
+  name: 'name',
+  price: 'price',
+  quantity: 'quantity',
+  sold: 'sold',
+  sortOrder: 'sortOrder',
+  description: 'description',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.OrderScalarFieldEnum = {
@@ -247,6 +262,7 @@ exports.Prisma.TicketScalarFieldEnum = {
   eventId: 'eventId',
   orderId: 'orderId',
   userId: 'userId',
+  ticketTypeId: 'ticketTypeId',
   nftMintAddress: 'nftMintAddress',
   tokenId: 'tokenId',
   metadataUri: 'metadataUri',
@@ -434,6 +450,7 @@ exports.Prisma.ModelName = {
   Organizer: 'Organizer',
   Category: 'Category',
   Event: 'Event',
+  TicketType: 'TicketType',
   Order: 'Order',
   Ticket: 'Ticket',
   Listing: 'Listing',

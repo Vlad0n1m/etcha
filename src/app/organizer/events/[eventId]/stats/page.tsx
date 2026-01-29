@@ -9,15 +9,27 @@ import {
     Ticket,
     Users,
     DollarSign,
-    TrendingUp,
     QrCode,
     Award,
     Loader2,
     AlertCircle,
     RefreshCw,
     Clock,
+    Tag,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+
+interface TicketTypeStats {
+    id: string
+    name: string
+    price: number
+    quantity: number
+    sold: number
+    available: number
+    revenue: number
+    scannedCount: number
+    scannedRevenue: number
+}
 
 interface EventStats {
     event: {
@@ -27,6 +39,7 @@ interface EventStats {
         time: string
         price: number
         imageUrl: string
+        maxTicketsPerUser: number | null
     }
     tickets: {
         available: number
@@ -34,6 +47,7 @@ interface EventStats {
         remaining: number
         soldPercentage: number
     }
+    ticketTypes: TicketTypeStats[]
     attendance: {
         total: number
         percentage: number
@@ -47,11 +61,16 @@ interface EventStats {
         total: number
         organizerShare: number
         platformFee: number
+        scannedTotal: number
+        scannedOrganizerShare: number
+        scannedPlatformFee: number
     }
     recentScans: Array<{
         id: string
         scannedAt: string
         ticketNumber: number
+        ticketType: string
+        ticketPrice: number
         attendeeName: string
         poapStatus: string
     }>
@@ -170,6 +189,8 @@ export default function EventStatsPage({ params }: { params: Promise<{ eventId: 
     }
 
     if (!stats) return null
+
+    const hasTicketTypes = stats.ticketTypes && stats.ticketTypes.length > 0
 
     return (
         <div className="min-h-screen bg-background pb-20">
@@ -312,6 +333,94 @@ export default function EventStatsPage({ params }: { params: Promise<{ eventId: 
                     </div>
                 </div>
 
+                {/* Ticket Types Breakdown */}
+                {hasTicketTypes && (
+                    <div className="bg-surface rounded-2xl border border-border overflow-hidden">
+                        <div className="p-4 border-b border-border">
+                            <h2 className="font-semibold text-foreground flex items-center gap-2">
+                                <Tag className="w-4 h-4 text-muted-foreground" />
+                                Ticket Types Breakdown
+                            </h2>
+                        </div>
+                        <div className="divide-y divide-border">
+                            {stats.ticketTypes.map((tt) => {
+                                const soldPercentage = tt.quantity > 0
+                                    ? Math.round((tt.sold / tt.quantity) * 100)
+                                    : 0
+
+                                return (
+                                    <div key={tt.id} className="p-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div>
+                                                <span className="font-medium text-foreground">{tt.name}</span>
+                                                <span className="text-sm text-muted-foreground ml-2">
+                                                    {tt.price} SOL
+                                                </span>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="font-semibold text-foreground">
+                                                    {tt.sold}/{tt.quantity}
+                                                </span>
+                                                <span className="text-sm text-muted-foreground ml-1">sold</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="h-2 bg-muted rounded-full overflow-hidden mb-2">
+                                            <div
+                                                className="h-full bg-primary transition-all"
+                                                style={{ width: `${soldPercentage}%` }}
+                                            />
+                                        </div>
+
+                                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                            <span>{soldPercentage}% sold • {tt.available} remaining</span>
+                                            <span className="font-medium text-foreground">
+                                                Revenue: {tt.revenue.toFixed(2)} SOL
+                                            </span>
+                                        </div>
+
+                                        {tt.scannedCount > 0 && (
+                                            <div className="mt-2 text-xs text-green-600">
+                                                {tt.scannedCount} scanned • {tt.scannedRevenue.toFixed(2)} SOL verified
+                                            </div>
+                                        )}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {/* Scanned Revenue Summary */}
+                {stats.revenue.scannedTotal > 0 && (
+                    <div className="bg-green-50 border border-green-200 rounded-2xl p-4">
+                        <h3 className="font-medium text-green-800 mb-2">Verified Revenue (Scanned Tickets)</h3>
+                        <div className="grid grid-cols-3 gap-3 text-sm">
+                            <div>
+                                <p className="text-green-600">Total</p>
+                                <p className="font-bold text-green-800">{stats.revenue.scannedTotal.toFixed(2)} SOL</p>
+                            </div>
+                            <div>
+                                <p className="text-green-600">Your Share</p>
+                                <p className="font-bold text-green-800">{stats.revenue.scannedOrganizerShare.toFixed(2)} SOL</p>
+                            </div>
+                            <div>
+                                <p className="text-green-600">Platform Fee</p>
+                                <p className="font-bold text-green-800">{stats.revenue.scannedPlatformFee.toFixed(4)} SOL</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Ticket Limit Info */}
+                {stats.event.maxTicketsPerUser && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+                        <p className="text-sm text-blue-800">
+                            <span className="font-medium">Ticket Limit:</span> Maximum {stats.event.maxTicketsPerUser} tickets per account
+                        </p>
+                    </div>
+                )}
+
                 {/* Retry POAP Minting */}
                 {(stats.poap.pending > 0 || stats.poap.failed > 0) && (
                     <div className="bg-surface rounded-2xl p-4 border border-border">
@@ -368,6 +477,9 @@ export default function EventStatsPage({ params }: { params: Promise<{ eventId: 
                                             </p>
                                             <p className="text-sm text-muted-foreground">
                                                 {scan.attendeeName || "Anonymous"}
+                                            </p>
+                                            <p className="text-xs text-primary">
+                                                {scan.ticketType} • {scan.ticketPrice} SOL
                                             </p>
                                         </div>
                                     </div>

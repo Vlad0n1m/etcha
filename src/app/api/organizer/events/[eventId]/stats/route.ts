@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth"
 /**
  * GET /api/organizer/events/[eventId]/stats
  * 
- * Get detailed statistics for an event
+ * Get detailed statistics for an event including ticket type breakdown
  */
 export async function GET(
     request: NextRequest,
@@ -30,7 +30,7 @@ export async function GET(
             )
         }
 
-        // Get event with organizer info
+        // Get event with organizer info and ticket types
         const event = await prisma.event.findUnique({
             where: { id: eventId },
             select: {
@@ -42,8 +42,19 @@ export async function GET(
                 imageUrl: true,
                 ticketsAvailable: true,
                 ticketsSold: true,
+                maxTicketsPerUser: true,
                 organizer: {
                     select: { userId: true },
+                },
+                ticketTypes: {
+                    orderBy: { sortOrder: 'asc' },
+                    select: {
+                        id: true,
+                        name: true,
+                        price: true,
+                        quantity: true,
+                        sold: true,
+                    },
                 },
             },
         })
@@ -66,8 +77,8 @@ export async function GET(
             )
         }
 
-        // Get attendance stats
-        const [attendanceCount, poapStats, recentScans] = await Promise.all([
+        // Get attendance stats with ticket type info
+        const [attendanceCount, poapStats, recentScans, ticketTypeSalesStats] = await Promise.all([
             // Total attendance
             prisma.attendance.count({
                 where: { eventId },
@@ -78,19 +89,36 @@ export async function GET(
                 where: { eventId },
                 _count: { _all: true },
             }),
-            // Recent scans
+            // Recent scans with ticket type
             prisma.attendance.findMany({
                 where: { eventId },
                 orderBy: { scannedAt: "desc" },
                 take: 10,
                 include: {
                     ticket: {
-                        select: { tokenId: true },
+                        select: {
+                            tokenId: true,
+                            ticketType: {
+                                select: {
+                                    name: true,
+                                    price: true,
+                                },
+                            },
+                        },
                     },
                     user: {
                         select: { name: true },
                     },
                 },
+            }),
+            // Group scanned tickets by type to calculate actual revenue
+            prisma.ticket.groupBy({
+                by: ["ticketTypeId"],
+                where: {
+                    eventId,
+                    isUsed: true, // Only count scanned tickets for revenue
+                },
+                _count: { _all: true },
             }),
         ])
 
@@ -103,8 +131,38 @@ export async function GET(
             { pending: 0, minted: 0, failed: 0 } as Record<string, number>
         )
 
-        // Calculate revenue
-        const totalRevenue = event.ticketsSold * event.price
+        // Calculate revenue based on ticket types
+        let totalRevenue = 0
+        let scannedRevenue = 0
+        const ticketTypesWithStats = event.ticketTypes.map(tt => {
+            const typeRevenue = tt.sold * tt.price
+            totalRevenue += typeRevenue
+
+            // Find scanned count for this type
+            const scannedStat = ticketTypeSalesStats.find(s => s.ticketTypeId === tt.id)
+            const scannedCount = scannedStat?._count._all || 0
+            const scannedTypeRevenue = scannedCount * tt.price
+            scannedRevenue += scannedTypeRevenue
+
+            return {
+                id: tt.id,
+                name: tt.name,
+                price: tt.price,
+                quantity: tt.quantity,
+                sold: tt.sold,
+                available: tt.quantity - tt.sold,
+                revenue: typeRevenue,
+                scannedCount,
+                scannedRevenue: scannedTypeRevenue,
+            }
+        })
+
+        // If no ticket types (legacy event), calculate from event price
+        if (event.ticketTypes.length === 0) {
+            totalRevenue = event.ticketsSold * event.price
+            scannedRevenue = attendanceCount * event.price
+        }
+
         const platformFee = totalRevenue * 0.025
         const organizerShare = totalRevenue - platformFee
 
@@ -125,6 +183,7 @@ export async function GET(
                 time: event.time,
                 price: event.price,
                 imageUrl: event.imageUrl,
+                maxTicketsPerUser: event.maxTicketsPerUser,
             },
             tickets: {
                 available: event.ticketsAvailable,
@@ -132,6 +191,7 @@ export async function GET(
                 remaining: event.ticketsAvailable - event.ticketsSold,
                 soldPercentage,
             },
+            ticketTypes: ticketTypesWithStats,
             attendance: {
                 total: attendanceCount,
                 percentage: attendancePercentage,
@@ -145,11 +205,17 @@ export async function GET(
                 total: totalRevenue,
                 organizerShare,
                 platformFee,
+                // Revenue from actually scanned (used) tickets
+                scannedTotal: scannedRevenue,
+                scannedOrganizerShare: scannedRevenue * 0.975,
+                scannedPlatformFee: scannedRevenue * 0.025,
             },
             recentScans: recentScans.map((scan) => ({
                 id: scan.id,
                 scannedAt: scan.scannedAt.toISOString(),
                 ticketNumber: scan.ticket.tokenId,
+                ticketType: scan.ticket.ticketType?.name || "Standard",
+                ticketPrice: scan.ticket.ticketType?.price || event.price,
                 attendeeName: scan.user.name || "Anonymous",
                 poapStatus: scan.poapStatus,
             })),

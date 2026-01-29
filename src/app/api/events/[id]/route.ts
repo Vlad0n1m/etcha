@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { PrismaClient } from "@/generated/prisma"
+import { auth } from "@/lib/auth"
 
 const prisma = new PrismaClient()
 
@@ -10,7 +11,10 @@ export async function GET(
     try {
         const { id } = await params
 
-        // Fetch event with related data
+        // Get current user session (optional)
+        const session = await auth()
+
+        // Fetch event with related data including ticket types
         const event = await prisma.event.findUnique({
             where: { id },
             include: {
@@ -19,6 +23,9 @@ export async function GET(
                     include: {
                         user: true,
                     },
+                },
+                ticketTypes: {
+                    orderBy: { sortOrder: 'asc' },
                 },
             },
         })
@@ -43,25 +50,53 @@ export async function GET(
             )
         }
 
+        // Get user's ticket count for this event (if logged in)
+        let userTicketCount = 0
+        if (session?.user?.id) {
+            userTicketCount = await prisma.ticket.count({
+                where: {
+                    eventId: id,
+                    userId: session.user.id,
+                },
+            })
+        }
+
+        // Format ticket types for response
+        const formattedTicketTypes = event.ticketTypes.map(tt => ({
+            id: tt.id,
+            name: tt.name,
+            price: tt.price,
+            quantity: tt.quantity,
+            sold: tt.sold,
+            available: tt.quantity - tt.sold,
+            description: tt.description,
+            sortOrder: tt.sortOrder,
+        }))
+
         // Format response to match frontend EventData interface
         const formattedEvent = {
             id: event.id,
             title: event.title,
             company: event.organizer.companyName,
-            price: event.price,
+            price: event.price, // Base price for backward compatibility
             date: event.date.toISOString().split("T")[0], // Format as YYYY-MM-DD
             time: event.time,
             ticketsAvailable: event.ticketsAvailable - event.ticketsSold,
+            totalTicketsAvailable: event.ticketsAvailable,
+            ticketsSold: event.ticketsSold,
             imageUrl: event.imageUrl,
             category: event.category.name,
             description: event.description,
             fullAddress: event.fullAddress,
+            locationMapUrl: event.locationMapUrl,
+            maxTicketsPerUser: event.maxTicketsPerUser,
             organizer: {
                 id: event.organizer.userId, // User ID for follow functionality
                 name: event.organizer.companyName,
                 avatar: event.organizer.avatar || "/logo.png",
                 description: event.organizer.description || "Event organizer",
             },
+            ticketTypes: formattedTicketTypes,
             schedule: [], // Schedule disabled for MVP
             candyMachineAddress: event.candyMachineAddress,
             collectionNftAddress: event.collectionNftAddress,
@@ -74,6 +109,7 @@ export async function GET(
         return NextResponse.json({
             success: true,
             event: formattedEvent,
+            userTicketCount, // How many tickets the current user already owns
         })
     } catch (error) {
         console.error("Error fetching event:", error)
@@ -86,4 +122,3 @@ export async function GET(
         )
     }
 }
-

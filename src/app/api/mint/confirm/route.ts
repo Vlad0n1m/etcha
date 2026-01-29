@@ -14,7 +14,7 @@ const prisma = new PrismaClient()
  * Confirm ticket purchase:
  * 1. Verify payment transaction
  * 2. Mint cNFT ticket to buyer
- * 3. Save to database
+ * 3. Save to database with ticket type
  */
 export async function POST(request: NextRequest) {
     try {
@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
 
         const {
             eventId,
+            ticketTypeId,
             merkleTreeAddress,
             platformTreeId,
             buyerWallet,
@@ -51,6 +52,9 @@ export async function POST(request: NextRequest) {
         }
 
         console.log(`Confirming purchase for event ${eventId}, buyer ${buyerWallet}`)
+        if (ticketTypeId) {
+            console.log(`Ticket type ID: ${ticketTypeId}`)
+        }
 
         // Verify payment transaction on-chain
         const connection = new Connection(
@@ -76,7 +80,7 @@ export async function POST(request: NextRequest) {
             // Continue - transaction might be too recent to query
         }
 
-        // Get event from database
+        // Get event from database with ticket types
         const event = await prisma.event.findUnique({
             where: { id: eventId },
             include: {
@@ -85,6 +89,7 @@ export async function POST(request: NextRequest) {
                         user: true,
                     },
                 },
+                ticketTypes: true,
             },
         })
 
@@ -93,6 +98,25 @@ export async function POST(request: NextRequest) {
                 { success: false, message: 'Event not found' },
                 { status: 404 }
             )
+        }
+
+        // Get ticket type if specified
+        let ticketType = null
+        let pricePerTicket = event.price
+
+        if (ticketTypeId) {
+            ticketType = event.ticketTypes.find(tt => tt.id === ticketTypeId)
+            if (!ticketType) {
+                return NextResponse.json(
+                    { success: false, message: 'Ticket type not found' },
+                    { status: 404 }
+                )
+            }
+            pricePerTicket = ticketType.price
+        } else if (event.ticketTypes.length > 0) {
+            // Use the first ticket type as default
+            ticketType = event.ticketTypes[0]
+            pricePerTicket = ticketType.price
         }
 
         // Get platform tree for minting
@@ -146,6 +170,27 @@ export async function POST(request: NextRequest) {
             })
         }
 
+        // Final check on per-user ticket limit
+        if (event.maxTicketsPerUser) {
+            const existingTicketCount = await prisma.ticket.count({
+                where: {
+                    eventId,
+                    userId: user.id,
+                },
+            })
+
+            const newTotal = existingTicketCount + quantity
+            if (newTotal > event.maxTicketsPerUser) {
+                return NextResponse.json(
+                    {
+                        success: false,
+                        message: `Ticket limit exceeded. Maximum ${event.maxTicketsPerUser} tickets per account.`,
+                    },
+                    { status: 400 }
+                )
+            }
+        }
+
         // Initialize Solana services for minting
         console.log('Initializing Solana services for minting...')
         const solanaService = new SolanaService()
@@ -157,11 +202,14 @@ export async function POST(request: NextRequest) {
 
         for (let i = 0; i < quantity; i++) {
             const ticketNumber = event.ticketsSold + i + 1
+            const ticketName = ticketType
+                ? `${ticketType.name} #${String(ticketNumber).padStart(3, '0')}`
+                : `Ticket #${String(ticketNumber).padStart(3, '0')}`
 
-            console.log(`Minting ticket #${ticketNumber}...`)
+            console.log(`Minting ticket: ${ticketName}`)
 
             const metadata = {
-                name: `Ticket #${String(ticketNumber).padStart(3, '0')}`,
+                name: ticketName,
                 symbol: 'TICKET',
                 uri: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/metadata/ticket/${event.id}/${ticketNumber}`,
                 sellerFeeBasisPoints: 250,
@@ -182,12 +230,12 @@ export async function POST(request: NextRequest) {
 
                 assetIds.push(mintResult.assetId)
                 leafIndices.push(mintResult.leafIndex)
-                console.log(`Ticket #${ticketNumber} minted: ${mintResult.assetId}`)
+                console.log(`Ticket minted: ${mintResult.assetId}`)
 
                 // Increment platform tree minted count
                 await platformTreeService.incrementMintedCount(ticketTree.id)
             } catch (mintError) {
-                console.error(`Failed to mint ticket #${ticketNumber}:`, mintError)
+                console.error(`Failed to mint ticket:`, mintError)
 
                 // If we already minted some tickets, save what we have
                 if (assetIds.length > 0) {
@@ -206,52 +254,69 @@ export async function POST(request: NextRequest) {
         }
 
         // Calculate payment details
-        const pricePerTicket = event.price
         const actualQuantity = assetIds.length
         const totalPrice = pricePerTicket * actualQuantity
         const organizerShare = totalPrice * 0.975
         const platformShare = totalPrice * 0.025
 
-        // Create order in database
+        // Create order and update counts in a transaction
         console.log('Creating order in database...')
-        const order = await prisma.order.create({
-            data: {
-                eventId,
-                userId: user.id,
-                quantity: actualQuantity,
-                totalPrice,
-                status: 'confirmed',
-                transactionHash: transactionSignature,
-            },
-        })
 
-        // Create ticket records
-        console.log('Creating ticket records...')
-        const ticketData = assetIds.map((assetId, index) => ({
-            eventId,
-            orderId: order.id,
-            userId: user.id,
-            assetId,
-            nftMintAddress: assetId,
-            leafIndex: leafIndices[index],
-            tokenId: event.ticketsSold + index + 1,
-            nftType: 'cnft',
-            isValid: true,
-            isUsed: false,
-        }))
-
-        await prisma.ticket.createMany({
-            data: ticketData,
-        })
-
-        // Update event tickets sold
-        await prisma.event.update({
-            where: { id: eventId },
-            data: {
-                ticketsSold: {
-                    increment: actualQuantity,
+        const order = await prisma.$transaction(async (tx) => {
+            // Create order
+            const newOrder = await tx.order.create({
+                data: {
+                    eventId,
+                    userId: user.id,
+                    quantity: actualQuantity,
+                    totalPrice,
+                    status: 'confirmed',
+                    transactionHash: transactionSignature,
                 },
-            },
+            })
+
+            // Create ticket records
+            const ticketData = assetIds.map((assetId, index) => ({
+                eventId,
+                orderId: newOrder.id,
+                userId: user.id,
+                ticketTypeId: ticketType?.id || null,
+                assetId,
+                nftMintAddress: assetId,
+                leafIndex: leafIndices[index],
+                tokenId: event.ticketsSold + index + 1,
+                nftType: 'cnft',
+                isValid: true,
+                isUsed: false,
+            }))
+
+            await tx.ticket.createMany({
+                data: ticketData,
+            })
+
+            // Update event tickets sold
+            await tx.event.update({
+                where: { id: eventId },
+                data: {
+                    ticketsSold: {
+                        increment: actualQuantity,
+                    },
+                },
+            })
+
+            // Update ticket type sold count if applicable
+            if (ticketType) {
+                await tx.ticketType.update({
+                    where: { id: ticketType.id },
+                    data: {
+                        sold: {
+                            increment: actualQuantity,
+                        },
+                    },
+                })
+            }
+
+            return newOrder
         })
 
         console.log(`Purchase confirmed: ${actualQuantity} tickets minted`)
@@ -269,7 +334,8 @@ export async function POST(request: NextRequest) {
             },
             orderId: order.id,
             ticketsMinted: actualQuantity,
-            message: `${actualQuantity} ticket(s) purchased successfully`,
+            ticketType: ticketType?.name || 'Standard',
+            message: `${actualQuantity} ${ticketType?.name || ''} ticket(s) purchased successfully`,
         })
 
     } catch (error: unknown) {

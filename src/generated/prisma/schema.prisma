@@ -180,18 +180,22 @@ model Category {
 model Event {
   id               String   @id @default(cuid())
   title            String
-  price            Float // Price in SOL (replaced USDC)
+  price            Float // Price in SOL (legacy - for backward compatibility)
   date             DateTime
   time             String
-  ticketsAvailable Int
-  ticketsSold      Int      @default(0)
+  ticketsAvailable Int // Total tickets available (sum of all ticket types)
+  ticketsSold      Int      @default(0) // Total tickets sold (sum of all ticket types)
   imageUrl         String
-  description      String
+  description      String   @db.Text // Extended description up to 10k characters
   fullAddress      String
+  locationMapUrl   String? // Link to maps (Google Maps, Yandex Maps, etc.)
   schedule         String // JSON string of schedule items
   isActive         Boolean  @default(true)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+
+  // Ticket purchase limits
+  maxTicketsPerUser Int? // Maximum tickets per user account (null = unlimited)
 
   // Solana blockchain fields
   collectionNftAddress String? @unique // Collection NFT address on Solana
@@ -213,12 +217,33 @@ model Event {
   organizer    Organizer?    @relation(fields: [organizerId], references: [id])
   orders       Order[]
   tickets      Ticket[]
+  ticketTypes  TicketType[]
   listings     Listing[]
   attendances  Attendance[]
   scannerCodes ScannerCode[]
   posts        Post[]
 
   @@map("events")
+}
+
+// Ticket types for multi-tier pricing (Early Bird, VIP, Standard, etc.)
+model TicketType {
+  id          String   @id @default(cuid())
+  eventId     String
+  name        String // "Early Bird", "VIP", "Standard"
+  price       Float // Price in SOL
+  quantity    Int // Total available quantity for this type
+  sold        Int      @default(0) // Number of tickets sold for this type
+  sortOrder   Int      @default(0) // For sorting by price (ascending)
+  description String? // Optional description for this ticket type
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  event   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tickets Ticket[]
+
+  @@index([eventId, sortOrder])
+  @@map("ticket_types")
 }
 
 model Order {
@@ -246,6 +271,7 @@ model Ticket {
   eventId        String
   orderId        String
   userId         String
+  ticketTypeId   String? // Reference to ticket type (null for legacy tickets)
   nftMintAddress String   @unique // For legacy NFTs - mint address; For cNFT - asset ID
   tokenId        Int
   metadataUri    String?
@@ -264,8 +290,10 @@ model Ticket {
   event      Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
   order      Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
   user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ticketType TicketType? @relation(fields: [ticketTypeId], references: [id])
   attendance Attendance?
 
+  @@index([eventId, ticketTypeId])
   @@map("tickets")
 }
 

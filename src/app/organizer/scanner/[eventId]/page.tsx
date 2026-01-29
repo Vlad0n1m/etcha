@@ -24,6 +24,8 @@ interface ScanResult {
         id: string
         tokenId: number
         ownerName?: string
+        ticketType?: string
+        price?: number
     }
     attendance?: {
         id: string
@@ -422,11 +424,20 @@ export default function ScannerPage({ params }: { params: Promise<{ eventId: str
                                     {scanResult.message}
                                 </p>
                                 {scanResult.ticket && (
-                                    <p className="text-sm text-gray-600 mt-1">
-                                        Ticket #{scanResult.ticket.tokenId}
-                                        {scanResult.ticket.ownerName &&
-                                            ` • ${scanResult.ticket.ownerName}`}
-                                    </p>
+                                    <div className="text-sm text-gray-600 mt-1">
+                                        <p>
+                                            Ticket #{scanResult.ticket.tokenId}
+                                            {scanResult.ticket.ownerName &&
+                                                ` • ${scanResult.ticket.ownerName}`}
+                                        </p>
+                                        {scanResult.ticket.ticketType && (
+                                            <p className="font-medium text-primary mt-0.5">
+                                                {scanResult.ticket.ticketType}
+                                                {scanResult.ticket.price !== undefined &&
+                                                    ` • ${scanResult.ticket.price} SOL`}
+                                            </p>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         </div>

@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Find the ticket
+        // Find the ticket with ticket type info
         const ticket = await prisma.ticket.findUnique({
             where: { id: ticketId },
             include: {
@@ -100,6 +100,13 @@ export async function POST(request: NextRequest) {
                         name: true,
                         walletAddress: true,
                         internalWalletAddress: true,
+                    },
+                },
+                ticketType: {
+                    select: {
+                        id: true,
+                        name: true,
+                        price: true,
                     },
                 },
                 attendance: true,
@@ -194,6 +201,8 @@ export async function POST(request: NextRequest) {
                 id: ticket.id,
                 tokenId: ticket.tokenId,
                 ownerName: ticket.user.name,
+                ticketType: ticket.ticketType?.name || "Standard",
+                price: ticket.ticketType?.price || null,
             },
             event: {
                 id: ticket.event.id,
