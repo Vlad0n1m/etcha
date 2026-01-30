@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { PrismaClient } from "@/generated/prisma"
+import { prisma } from "@/lib/db"
 import { getPlatformTreeService } from "@/lib/solana/PlatformTreeService"
-
-const prisma = new PrismaClient()
 
 interface TicketTypeInput {
     name: string

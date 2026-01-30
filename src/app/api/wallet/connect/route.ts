@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@/generated/prisma'
+import { prisma } from '@/lib/db'
 import { deriveKeypairFromSignature, getDerivationSalt } from '@/lib/utils/keyDerivation.server'
 import { PublicKey } from '@solana/web3.js'
-
-const prisma = new PrismaClient()
 
 /**
  * POST /api/wallet/connect
@@ -39,7 +37,7 @@ export async function POST(request: NextRequest) {
 
         // Get salt (SECRET - stays on server only)
         const salt = getDerivationSalt()
-        
+
         // Derive internal keypair from signature + salt
         const internalKeypair = deriveKeypairFromSignature(signature, userPublicKey, salt)
         const internalWalletAddress = internalKeypair.publicKey.toString()

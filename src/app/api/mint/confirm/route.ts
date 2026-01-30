@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@/generated/prisma'
+import { prisma } from '@/lib/db'
 import { isValidSolanaAddress } from '@/lib/utils/wallet'
 import { Connection } from '@solana/web3.js'
 import { SolanaService } from '@/lib/solana/SolanaService'
 import { BubblegumService } from '@/lib/solana/BubblegumService'
 import { getPlatformTreeService } from '@/lib/solana/PlatformTreeService'
-
-const prisma = new PrismaClient()
 
 /**
  * POST /api/mint/confirm

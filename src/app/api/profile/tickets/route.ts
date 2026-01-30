@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@/generated/prisma'
+import { prisma } from '@/lib/db'
 import { isValidSolanaAddress } from '@/lib/utils/wallet'
-
-const prisma = new PrismaClient()
 
 /**
  * GET /api/profile/tickets?wallet=ADDRESS

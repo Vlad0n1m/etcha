@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@/generated/prisma'
+import { prisma } from '@/lib/db'
 import { PublicKey } from '@solana/web3.js'
-
-const prisma = new PrismaClient()
 
 /**
  * GET /api/wallet/check?walletAddress=<external_wallet>

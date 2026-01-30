@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@/generated/prisma'
+import { prisma } from '@/lib/db'
 import { transferNFTToBuyer } from '@/lib/services/AuctionHouseService'
 import { isValidSolanaAddress } from '@/lib/utils/wallet'
 import { deriveKeypairFromSignature, getDerivationSalt } from '@/lib/utils/keyDerivation.server'
 import { PublicKey, Connection, LAMPORTS_PER_SOL } from '@solana/web3.js'
-
-const prisma = new PrismaClient()
 
 /**
  * POST /api/resale/confirm-buy

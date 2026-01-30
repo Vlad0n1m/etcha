@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@/generated/prisma'
+import { prisma } from '@/lib/db'
 import { SolanaService } from '@/lib/solana/SolanaService'
 import { BubblegumService, MerkleTreeSize } from '@/lib/solana/BubblegumService'
-
-const prisma = new PrismaClient()
 
 /**
  * POST /api/events/[id]/upgrade-cnft

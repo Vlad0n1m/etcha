@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@/generated/prisma'
+import { prisma } from '@/lib/db'
 import {
     createCollection,
     createCandyMachineV3,
@@ -16,8 +16,6 @@ import {
     NFTMetadataInput,
 } from '@/lib/utils/nft-metadata'
 import { loadCandyMachineAuthority, isValidSolanaAddress } from '@/lib/utils/wallet'
-
-const prisma = new PrismaClient()
 
 /**
  * POST /api/collections/create

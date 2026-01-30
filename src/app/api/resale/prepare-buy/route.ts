@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@/generated/prisma'
+import { prisma } from '@/lib/db'
 import { isValidSolanaAddress } from '@/lib/utils/wallet'
 import { PublicKey, Connection, SystemProgram, Transaction, LAMPORTS_PER_SOL } from '@solana/web3.js'
-
-const prisma = new PrismaClient()
 
 /**
  * POST /api/resale/prepare-buy

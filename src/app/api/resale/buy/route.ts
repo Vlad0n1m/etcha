@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@/generated/prisma'
+import { prisma } from '@/lib/db'
 import { buyFromResale } from '@/lib/services/AuctionHouseService'
 import { isValidSolanaAddress, solToLamports } from '@/lib/utils/wallet'
 import { deriveKeypairFromSignature, getDerivationSalt } from '@/lib/utils/keyDerivation.server'
 import { PublicKey, Connection, LAMPORTS_PER_SOL } from '@solana/web3.js'
-
-const prisma = new PrismaClient()
 
 /**
  * POST /api/resale/buy
@@ -103,7 +101,7 @@ export async function POST(request: NextRequest) {
                 { status: 400 }
             )
         }
-        
+
         // Also check by internal wallet address (in case same person uses different external wallet)
         if (buyer && buyer.internalWalletAddress && listing.seller.internalWalletAddress) {
             if (buyer.internalWalletAddress === listing.seller.internalWalletAddress) {
@@ -119,7 +117,7 @@ export async function POST(request: NextRequest) {
         console.log('Deriving buyer keypair from signature...')
         console.log('Buyer wallet:', buyerWallet)
         console.log('Signature length:', signature.length)
-        
+
         const buyerKeypair = deriveKeypairFromSignature(signature, buyerWallet, salt)
         const buyerInternalAddress = buyerKeypair.publicKey.toString()
         console.log('Derived buyer internal address:', buyerInternalAddress)
@@ -161,11 +159,11 @@ export async function POST(request: NextRequest) {
         // Use stored seller signature from listing (saved when listing was created)
         // This allows instant purchase without seller being online
         const sellerSignature = listing.sellerSignature
-        
+
         if (!sellerSignature) {
             return NextResponse.json(
-                { 
-                    success: false, 
+                {
+                    success: false,
                     message: 'Seller signature not found in listing. This listing may have been created before signature storage was implemented.',
                 },
                 { status: 400 }
@@ -177,13 +175,13 @@ export async function POST(request: NextRequest) {
         console.log('Seller wallet:', listing.seller.walletAddress)
         console.log('Stored internalWalletAddress:', listing.seller.internalWalletAddress)
         console.log('Signature length:', sellerSignature.length)
-        
+
         const sellerKeypair = deriveKeypairFromSignature(
             sellerSignature,
             listing.seller.walletAddress,
             salt
         )
-        
+
         const derivedSellerAddress = sellerKeypair.publicKey.toString()
         console.log('Derived seller internal address:', derivedSellerAddress)
 
@@ -198,7 +196,7 @@ export async function POST(request: NextRequest) {
                 { status: 403 }
             )
         }
-        
+
         console.log('Seller signature verified successfully')
 
         // Check buyer's internal wallet balance before attempting purchase
@@ -206,14 +204,14 @@ export async function POST(request: NextRequest) {
             process.env.SOLANA_RPC_URL || process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://api.devnet.solana.com',
             'confirmed'
         )
-        
+
         const buyerBalance = await connection.getBalance(buyerKeypair.publicKey)
         const buyerBalanceSOL = buyerBalance / LAMPORTS_PER_SOL
         const requiredAmount = listing.price + 0.001 // Price + estimated fees
-        
+
         console.log(`Buyer internal wallet balance: ${buyerBalanceSOL.toFixed(4)} SOL`)
         console.log(`Required amount: ${requiredAmount.toFixed(4)} SOL`)
-        
+
         if (buyerBalanceSOL < requiredAmount) {
             return NextResponse.json(
                 {

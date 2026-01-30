@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@/generated/prisma'
+import { prisma } from '@/lib/db'
 import { getCandyMachineData } from '@/lib/services/CandyMachineService'
-
-const prisma = new PrismaClient()
 
 /**
  * GET /api/collections/[eventId]

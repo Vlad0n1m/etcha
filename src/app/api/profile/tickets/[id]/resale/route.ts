@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@/generated/prisma'
+import { prisma } from '@/lib/db'
 import { isValidSolanaAddress } from '@/lib/utils/wallet'
 import { deriveKeypairFromSignature, getDerivationSalt } from '@/lib/utils/keyDerivation.server'
 import { Connection } from '@solana/web3.js'
 import { Metaplex } from '@metaplex-foundation/js'
-
-const prisma = new PrismaClient()
 
 /**
  * DELETE /api/profile/tickets/[id]/resale

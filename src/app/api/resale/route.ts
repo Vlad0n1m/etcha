@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@/generated/prisma'
-
-const prisma = new PrismaClient()
+import { prisma } from '@/lib/db'
 
 /**
  * GET /api/resale
@@ -75,9 +73,9 @@ export async function GET(request: NextRequest) {
                     category: listing.event.category.name,
                     organizer: listing.event.organizer
                         ? {
-                              name: listing.event.organizer.companyName,
-                              walletAddress: listing.event.organizer.user.walletAddress,
-                          }
+                            name: listing.event.organizer.companyName,
+                            walletAddress: listing.event.organizer.user.walletAddress,
+                        }
                         : null,
                 },
                 seller: {
@@ -85,8 +83,8 @@ export async function GET(request: NextRequest) {
                     nickname: listing.seller.profile?.nickname || undefined,
                     organizer: listing.seller.organizer
                         ? {
-                              companyName: listing.seller.organizer.companyName,
-                          }
+                            companyName: listing.seller.organizer.companyName,
+                        }
                         : undefined,
                 },
             }
