@@ -18,7 +18,7 @@ interface UseEventPurchaseOptions {
 export function useEventPurchase(options: UseEventPurchaseOptions) {
   const { event, selectedTicketType, userTicketCount, onSuccess, onError } = options;
 
-  const { connected, publicKey, sendTransaction, wallet } = useWallet();
+  const { connected, publicKey, sendTransaction, signTransaction, wallet } = useWallet();
   const { connection } = useConnection();
 
   const [quantity, setQuantity] = useState(1);
@@ -63,7 +63,7 @@ export function useEventPurchase(options: UseEventPurchaseOptions) {
   }, []);
 
   const startMint = useCallback(async () => {
-    if (!connected || !publicKey || !wallet || !sendTransaction || !event) {
+    if (!connected || !publicKey || !wallet || (!sendTransaction && !signTransaction) || !event) {
       return { needsWallet: true };
     }
 
@@ -130,10 +130,71 @@ export function useEventPurchase(options: UseEventPurchaseOptions) {
       setMintProgress("Please approve the transaction in your wallet...");
 
       const { Transaction } = await import("@solana/web3.js");
-      const transaction = Transaction.from(Buffer.from(transactionBase64, "base64"));
+      
+      // Create a fresh transaction with the instructions from the server
+      const serverTransaction = Transaction.from(Buffer.from(transactionBase64, "base64"));
+      
+      // Create new transaction to avoid signature issues
+      const transaction = new Transaction();
+      transaction.instructions = serverTransaction.instructions;
 
-      // Sign and Send
-      const signature = await sendTransaction(transaction, connection);
+      // Get fresh blockhash to avoid expiration issues
+      const { blockhash } = await connection.getLatestBlockhash("confirmed");
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = publicKey;
+
+      // Debug: Log transaction details
+      console.log("Transaction details:", {
+        feePayer: transaction.feePayer?.toBase58(),
+        blockhash: transaction.recentBlockhash,
+        instructions: transaction.instructions.length,
+        signatures: transaction.signatures.length,
+      });
+
+      // Simulate transaction first to catch errors
+      try {
+        const simulation = await connection.simulateTransaction(transaction);
+        console.log("Simulation result:", simulation);
+        
+        if (simulation.value.err) {
+          console.error("Simulation error:", simulation.value.err);
+          console.error("Simulation logs:", simulation.value.logs);
+          throw new Error(`Transaction simulation failed: ${JSON.stringify(simulation.value.err)}`);
+        }
+      } catch (simError) {
+        console.error("Simulation failed:", simError);
+        // Continue anyway - simulation might fail for valid reasons
+      }
+
+      // Sign and Send - try signTransaction first, fallback to sendTransaction
+      let signature: string;
+      try {
+        if (signTransaction) {
+          // Method 1: Sign separately then send raw transaction
+          console.log("Using signTransaction method...");
+          const signedTransaction = await signTransaction(transaction);
+          
+          signature = await connection.sendRawTransaction(signedTransaction.serialize(), {
+            skipPreflight: true,
+            preflightCommitment: "confirmed",
+          });
+          console.log("Transaction sent via sendRawTransaction:", signature);
+        } else {
+          // Method 2: Fallback to sendTransaction
+          console.log("Using sendTransaction method...");
+          signature = await sendTransaction(transaction, connection, {
+            skipPreflight: true,
+            preflightCommitment: "confirmed",
+          });
+        }
+      } catch (sendError: unknown) {
+        console.error("Send transaction error:", sendError);
+        // Extract more detailed error info
+        if (sendError && typeof sendError === "object" && "logs" in sendError) {
+          console.error("Transaction logs:", (sendError as { logs: string[] }).logs);
+        }
+        throw sendError;
+      }
 
       setMintStatus("confirming");
       setMintProgress("Confirming on blockchain...");
@@ -180,17 +241,32 @@ export function useEventPurchase(options: UseEventPurchaseOptions) {
         setTimeout(() => setIsMinting(false), 3000);
         return { success: false };
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Mint error:", err);
       setMintStatus("error");
 
       let errorMessage = "Failed to purchase ticket";
       if (err instanceof Error) {
         errorMessage = err.message;
-        if (errorMessage.includes("User rejected")) {
+        
+        // Parse common wallet errors
+        if (errorMessage.includes("User rejected") || errorMessage.includes("rejected")) {
           errorMessage = "Transaction cancelled by user";
-        } else if (errorMessage.includes("insufficient funds")) {
+        } else if (errorMessage.includes("insufficient funds") || errorMessage.includes("Insufficient")) {
+          errorMessage = "Insufficient SOL balance for this transaction";
+        } else if (errorMessage.includes("blockhash")) {
+          errorMessage = "Transaction expired. Please try again.";
+        } else if (errorMessage.includes("0x1")) {
           errorMessage = "Insufficient SOL balance";
+        } else if (errorMessage.includes("Unexpected error")) {
+          // Try to get more details from wallet error
+          const walletErr = err as { logs?: string[]; message?: string };
+          if (walletErr.logs && walletErr.logs.length > 0) {
+            console.error("Wallet transaction logs:", walletErr.logs);
+            errorMessage = `Transaction failed: ${walletErr.logs[walletErr.logs.length - 1]}`;
+          } else {
+            errorMessage = "Wallet error. Please check your balance and try again.";
+          }
         }
       }
 

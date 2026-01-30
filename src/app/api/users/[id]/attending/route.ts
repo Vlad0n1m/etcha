@@ -49,7 +49,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             imageUrl: true,
             date: true,
             time: true,
-            location: true,
+            fullAddress: true,
             description: true,
           },
         },
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       imageUrl: event.imageUrl,
       date: event.date,
       time: event.time,
-      location: event.location,
+      location: event.fullAddress,
       description: event.description,
     }));
 
